@@ -16,9 +16,9 @@ import fs from 'fs';
 import Handlebars from 'handlebars';
 import crypto from 'crypto';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
-import { MASTER_PROMPT } from './src/ai/masterPrompt.ts';
-import { LEGAL_SNIPPETS, USERS } from './src/constants.ts';
-import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactProtection.ts';
+import { MASTER_PROMPT } from './src/ai/masterPrompt.js';
+import { LEGAL_SNIPPETS, USERS } from './src/constants.js';
+import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactProtection.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
