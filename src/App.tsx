@@ -1175,6 +1175,9 @@ const worksheetRowsToExpenseItems = (rows: ExpenseWorksheetRow[]) =>
       currency: 'NIS',
     }));
 
+// Hebrew block (letters, niqqud) – used to decide whether to suggest name translation
+const hasHebrew = (str: string): boolean => /[\u0590-\u05FF]/.test(str || '');
+
 // --- STEP 1: Setup & Selection ---
 const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, currentUser, timelineGallery, onAddTimelineImages, onRemoveTimelineImage, onSaveAndExit, readOnly }) => {
   const [newCustomSection, setNewCustomSection] = useState('');
@@ -1184,6 +1187,14 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
   const [isExtracting, setIsExtracting] = useState(false);
   const [isPolicyAnalyzing, setIsPolicyAnalyzing] = useState(false);
   const policyAnalysisInputRef = useRef<HTMLInputElement | null>(null);
+  const insuredNameRef = useRef(data.insuredName);
+  const plaintiffNameRef = useRef(data.plaintiffName);
+  useEffect(() => {
+    insuredNameRef.current = data.insuredName;
+  }, [data.insuredName]);
+  useEffect(() => {
+    plaintiffNameRef.current = data.plaintiffName;
+  }, [data.plaintiffName]);
   const [timelineDraftDates, setTimelineDraftDates] = useState<
     Record<ProceduralTimelineStageId, { month: string; year: string }>
   >(() => ({}));
@@ -1655,13 +1666,19 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
     }
   };
 
-  const renderInputWithClear = (value: string, updateField: (val: string) => void, placeholder: string) => (
+  const renderInputWithClear = (
+    value: string,
+    updateField: (val: string) => void,
+    placeholder: string,
+    onBlurOptional?: (currentValue: string) => void,
+  ) => (
     <div className="relative group">
       <input 
         className="w-full border border-borderDark p-2 rounded focus:ring-2 focus:ring-lpBlue outline-none pr-8" 
         placeholder={placeholder}
         value={value}
         onChange={readOnly ? undefined : (e) => updateField(e.target.value)}
+        onBlur={readOnly ? undefined : (onBlurOptional ? () => onBlurOptional(value) : undefined)}
         disabled={readOnly}
       />
       {value && (
@@ -1916,7 +1933,18 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.insuredName,
               (val) => updateData(maybeAutoFillSubject({ insuredName: val })),
-              "e.g., Dr. Cohen"
+              "e.g., Dr. Cohen",
+              (currentValue) => {
+                const trimmed = (currentValue || '').trim();
+                if (!trimmed || !hasHebrew(trimmed)) return;
+                translateLegalText(trimmed)
+                  .then((translated) => {
+                    if (!translated || translated.trim() === '' || translated === 'Error translation.') return;
+                    if (insuredNameRef.current !== trimmed) return;
+                    updateData(maybeAutoFillSubject({ insuredName: translated.trim() }));
+                  })
+                  .catch(() => {});
+              },
             )}
           </div>
           <div className="space-y-1 md:col-span-2">
@@ -1930,7 +1958,18 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.plaintiffName,
               (val) => updateData(maybeAutoFillSubject({ plaintiffName: val })),
-              "e.g., Mr. Levi"
+              "e.g., Mr. Levi",
+              (currentValue) => {
+                const trimmed = (currentValue || '').trim();
+                if (!trimmed || !hasHebrew(trimmed)) return;
+                translateLegalText(trimmed)
+                  .then((translated) => {
+                    if (!translated || translated.trim() === '' || translated === 'Error translation.') return;
+                    if (plaintiffNameRef.current !== trimmed) return;
+                    updateData(maybeAutoFillSubject({ plaintiffName: translated.trim() }));
+                  })
+                  .catch(() => {});
+              },
             )}
           </div>
         </div>
