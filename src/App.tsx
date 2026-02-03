@@ -2170,7 +2170,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                      </button>
                    </div>
                    {!isFixed && (
-                     <button onClick={() => removeSection(sec)} className="text-gray-400 hover:text-red-500 transition" title="הסר סעיף">
+                     <button onClick={() => removeSection(sec)} className="p-2 rounded-md text-textMuted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-400/40 transition" title="הסר סעיף">
                        <X className="w-4 h-4" />
                      </button>
                )}
@@ -3833,15 +3833,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               onClick={handleRunHebrewStyleReview}
               disabled={isHebrewStyleRunning}
               title="סורק את הדוח ומציג הערות על ניסוח וסגנון בעברית. לא משנה את הטקסט – מציע הערות בלבד."
-              className={`flex items-center text-xs px-3 py-1.5 rounded-full border ${
+              className={`flex items-center text-sm font-semibold px-4 py-2 rounded-lg border ${
                 isHebrewStyleRunning
                   ? 'bg-slate-100 text-slate-400 border-borderDark cursor-not-allowed'
-                  : 'bg-panel text-blue-800 border-blue-200 hover:bg-blue-50'
+                  : 'bg-blue-500/20 text-blue-200 border-blue-400/60 hover:bg-blue-500/30'
               }`}
             >
               {isHebrewStyleRunning ? (
                 <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" /> בדיקת ניסוח בעברית...
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> בדיקת ניסוח בעברית...
                 </>
               ) : (
                 <>בדיקת ניסוח (הערות בלבד)</>
@@ -3856,7 +3856,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }}
-                className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100"
+                className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/60 hover:bg-blue-500/30"
               >
                 הערת ניסוח
                 {hebrewStyleIssues.length > 1 && ` (${hebrewStyleIssues.length})`}
@@ -3867,15 +3867,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               onClick={handleRunToneRiskCheck}
               disabled={isToneRiskRunning}
               title="בודק ניסוחים שעלולים ליצור סיכון משפטי או להרחיב חשיפה למבטחת. לא משנה את הטקסט – מציג אזהרות בלבד."
-              className={`flex items-center text-xs px-3 py-1.5 rounded-full border ${
+              className={`flex items-center text-sm font-semibold px-4 py-2 rounded-lg border ${
                 isToneRiskRunning
                   ? 'bg-slate-100 text-slate-400 border-borderDark cursor-not-allowed'
-                  : 'bg-panel text-amber-800 border-amber-200 hover:bg-amber-50'
+                  : 'bg-amber-500/20 text-amber-200 border-amber-400/60 hover:bg-amber-500/30'
               }`}
             >
               {isToneRiskRunning ? (
                 <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" /> בדיקת Tone &amp; Risk...
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> בדיקת Tone &amp; Risk...
                 </>
               ) : (
                 <>בדיקת Tone &amp; Risk (למבטחת)</>
@@ -4201,9 +4201,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           >
             
             {/* Section Header */}
-            <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+            <div className="flex justify-between items-center mb-3 pb-3 border-b border-gold/30">
               <div className="flex flex-col gap-1">
-                <h3 className="font-bold text-lg text-lpBlue uppercase tracking-wide">
+                <h3 className="font-bold text-xl text-gold uppercase tracking-wider border-r-2 border-gold/50 pr-2">
                   {displayTitle}
                 </h3>
                 {sec.includes('Expenses') && data.expensesSnapshotAt && (
@@ -4258,7 +4258,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 <div className="flex items-center gap-2">
                   {!sec.includes('Expenses') && (
                     <button
-                      className="p-1.5 hover:bg-navySecondary rounded text-textMuted"
+                      className="inline-flex items-center px-2.5 py-2 rounded-lg border border-borderDark hover:border-gold/50 hover:bg-gold/10 text-textMuted hover:text-goldLight transition"
                       disabled={isAiProcessing}
                       onClick={() => {
                         startMedicalAnalysis({ mode: 'SECTION', section: sec, analysisType: getSectionAnalysisType(sec) });
@@ -4270,7 +4270,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   )}
                   {isExpertDisplay && (
                     <button
-                      className="p-1.5 hover:bg-navySecondary rounded text-textMuted"
+                      className="inline-flex items-center px-2.5 py-2 rounded-lg border border-borderDark hover:border-gold/50 hover:bg-gold/10 text-textMuted hover:text-goldLight transition"
                       disabled={isAiProcessing}
                       onClick={() => {
                         startMedicalAnalysis({ mode: 'SECTION', section: sec, analysisType: 'EXPERT', domain: 'dental' });
@@ -4300,13 +4300,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRefineText(sec)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 transition"
+                          className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 border border-purple-500/50 transition"
                           title="משפר את הטקסט הנוכחי לעברית משפטית מקצועית, תוך שמירה מלאה על העובדות. זהו הכלי המרכזי לשיפור הניסוח."
                         >
                           {refiningSection === sec ? (
-                            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                           ) : (
-                            <Sparkles className="w-4 h-4 mr-1" />
+                            <Sparkles className="w-4 h-4 mr-1.5" />
                           )}
                           שפר ניסוח בעברית
                         </button>
