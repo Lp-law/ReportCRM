@@ -3039,8 +3039,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
           if (!summaryText) {
             setShowToast({
-              msg: 'הניתוח הדנטלי לא החזיר טקסט להוספה. ודאו שהקובץ קריא ונסו שוב.',
-              type: 'error',
+              msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+              type: 'info',
             });
           } else {
             const normalizedText = summaryText;
@@ -3075,8 +3075,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
         } catch (error) {
           console.error('Dental opinion analysis failed', error);
           setShowToast({
-            msg: 'הניתוח הדנטלי נכשל. ודאו שהקובץ בפורמט נתמך.',
-            type: 'error',
+            msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+            type: 'info',
           });
         } finally {
           setIsAiProcessing(false);
@@ -3121,6 +3121,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
         medicalTarget.analysisType || 'CLAIM',
         analysisOptions
       );
+
+      if (response.success === false) {
+        setShowToast({
+          msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+          type: 'info',
+        });
+        return;
+      }
+
       const analysis = response?.analysis || null;
       if (medicalTarget.mode === 'SECTION') {
         const summaryText =
@@ -3130,7 +3139,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             section: medicalTarget.section,
           });
         if (!summaryText) {
-          setShowToast({ msg: 'הקובץ נותח אך לא התקבלה תצוגה מסכמת.', type: 'error' });
+          setShowToast({
+            msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+            type: 'info',
+          });
         } else {
           const sectionKey = medicalTarget.section || CLAIM_SECTION_KEY;
           const existingValue = data.content[sectionKey] || '';
@@ -3168,11 +3180,17 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           });
         }
       } else {
-        setShowToast({ msg: 'הניתוח לא החזיר תוצאה. נסו מסמך אחר.', type: 'error' });
+        setShowToast({
+          msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+          type: 'info',
+        });
       }
     } catch (error) {
       console.error(error);
-      setShowToast({ msg: 'הניתוח נכשל. ודאו שהקובץ בפורמט נתמך.', type: 'error' });
+      setShowToast({
+        msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
+        type: 'info',
+      });
     } finally {
       setIsAiProcessing(false);
       setMedicalProcessingTarget(null);

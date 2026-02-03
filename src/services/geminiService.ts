@@ -156,6 +156,10 @@ export const analyzeUploadedFile = async (fileBase64: string, mimeType: string, 
 export interface MedicalAnalysisResponse {
   analysis?: MedicalComplaintAnalysis | null;
   claimSummary?: string;
+  /** When false, analysis could not be completed; UI should show friendly message and allow continued work. */
+  success?: boolean;
+  /** Internal reason for failure (e.g. OCR_FAILED, AI_UNAVAILABLE); for logging only. */
+  reason?: string;
 }
 
 type ExpertCountMode = 'SINGLE' | 'MULTIPLE';
@@ -177,48 +181,56 @@ export const analyzeMedicalComplaint = async (
   analysisType: 'CLAIM' | 'DEMAND' | 'EXPERT' = 'CLAIM',
   options?: MedicalAnalysisOptions
 ): Promise<MedicalAnalysisResponse> => {
-  try {
-    const response = await fetch('/api/analyze-medical-complaint', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fileBase64,
-        mimeType,
-        analysisType,
-        expertCountMode: options?.expertCountMode,
-        partyRole: options?.partyRole,
-        sectionKey: options?.sectionKey,
-        plaintiffName: options?.plaintiffName,
-        insuredName: options?.insuredName,
-        insurerName: options?.insurerName,
-        reportSubject: options?.reportSubject,
-      }),
-    });
-    if (!response.ok) throw new Error('Medical analysis failed');
-    return await response.json();
-  } catch (error) {
-    console.error('Medical complaint analysis error:', error);
-    throw error;
+  const response = await fetch('/api/analyze-medical-complaint', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fileBase64,
+      mimeType,
+      analysisType,
+      expertCountMode: options?.expertCountMode,
+      partyRole: options?.partyRole,
+      sectionKey: options?.sectionKey,
+      plaintiffName: options?.plaintiffName,
+      insuredName: options?.insuredName,
+      insurerName: options?.insurerName,
+      reportSubject: options?.reportSubject,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  const analysis = data.analysis ?? null;
+  const claimSummary = typeof data.claimSummary === 'string' ? data.claimSummary : '';
+
+  if (!response.ok) {
+    console.error('Medical complaint analysis failed', response.status, data);
+    return { analysis: null, claimSummary: '', success: false, reason: data.reason || 'REQUEST_FAILED' };
   }
+  if (data.success === false) {
+    return { analysis: null, claimSummary: '', success: false, reason: data.reason };
+  }
+  return { analysis, claimSummary, success: true };
 };
 
 export const analyzeDentalOpinion = async (
   fileBase64: string,
   mimeType: string,
 ): Promise<string> => {
-  try {
-    const response = await fetch('/api/analyze-dental-opinion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileBase64, mimeType }),
-    });
-    if (!response.ok) throw new Error('Dental analysis failed');
-    const data = await response.json();
-    return typeof data.result === 'string' ? data.result : '';
-  } catch (error) {
-    console.error('Dental opinion analysis error:', error);
-    throw error;
+  const response = await fetch('/api/analyze-dental-opinion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileBase64, mimeType }),
+  });
+  const data = await response.json().catch(() => ({}));
+  const result = typeof data.result === 'string' ? data.result : '';
+
+  if (!response.ok) {
+    console.error('Dental opinion analysis failed', response.status, data);
+    return '';
   }
+  if (data.success === false) {
+    return '';
+  }
+  return result;
 };
 
 export const extractExpensesTable = async (fileBase64: string, mimeType: string) => {

@@ -2594,9 +2594,11 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
 
     const documentText = await getDocumentText(fileBase64, mimeType);
     if (!documentText) {
-      return res
-        .status(400)
-        .json({ error: 'Unable to extract text from document' });
+      return res.status(200).json({
+        success: false,
+        reason: 'INVALID_DOCUMENT',
+        result: '',
+      });
     }
 
     let dentalLexicon = '';
@@ -2898,10 +2900,14 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
       durationMs,
     });
 
-    res.json({ result });
+    res.json({ success: true, result });
   } catch (error) {
     console.error('Dental opinion analysis failed:', error);
-    res.status(500).json({ error: 'Failed to analyze dental opinion' });
+    let reason = 'AI_UNAVAILABLE';
+    const msg = error && typeof error.message === 'string' ? error.message : String(error);
+    if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
+    else if (/OCR|extract|document/i.test(msg)) reason = 'OCR_FAILED';
+    return res.status(200).json({ success: false, reason, result: '' });
   }
 });
 
@@ -2926,7 +2932,12 @@ app.post('/api/analyze-medical-complaint', async (req, res) => {
   try {
     const documentText = await getDocumentText(fileBase64, mimeType);
     if (!documentText) {
-      return res.status(400).json({ error: 'Unable to extract text from document' });
+      return res.status(200).json({
+        success: false,
+        reason: 'INVALID_DOCUMENT',
+        analysis: null,
+        claimSummary: '',
+      });
     }
     const shouldBuildMedicalAnalysis = analysisType !== 'EXPERT';
     const analysis = shouldBuildMedicalAnalysis ? await analyzeMedicalDocument(documentText) : null;
@@ -3004,10 +3015,19 @@ Always write in Hebrew.
       }
     }
 
-    res.json({ analysis, claimSummary });
+    res.json({ success: true, analysis, claimSummary });
   } catch (error) {
     console.error('Medical complaint analysis failed:', error);
-    res.status(500).json({ error: 'Failed to analyze complaint' });
+    let reason = 'AI_UNAVAILABLE';
+    const msg = error && typeof error.message === 'string' ? error.message : String(error);
+    if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
+    else if (/OCR|extract|document/i.test(msg)) reason = 'OCR_FAILED';
+    return res.status(200).json({
+      success: false,
+      reason,
+      analysis: null,
+      claimSummary: '',
+    });
   }
 });
 
