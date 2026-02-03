@@ -34,7 +34,7 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
   const trimmedSearch = search.trim();
 
   return (
-    <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <section className="bg-panel rounded-xl shadow-sm border border-borderDark p-4">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-sm font-bold text-slate-900">{adminHe.table.title}</h2>
@@ -50,27 +50,27 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="חיפוש לפי מבוטח / תובעת / מבטחת / מספר תיק / UMR"
-            className="flex-1 min-w-[220px] px-3 py-1.5 rounded-full border border-slate-200 text-xs text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-lpBlue"
+            className="flex-1 min-w-[220px] px-3 py-1.5 rounded-full border border-borderDark text-xs text-textLight bg-panel focus:outline-none focus:ring-1 focus:ring-gold"
           />
           <div className="flex flex-wrap gap-2 justify-end">
             <button
               type="button"
               onClick={onResetUiState}
-              className="px-3 py-1.5 rounded-full border border-slate-200 text-xs text-slate-600 hover:bg-slate-50"
+              className="px-3 py-1.5 rounded-full border border-borderDark text-xs text-textMuted hover:bg-navySecondary"
             >
               איפוס תצוגה
             </button>
             <button
               type="button"
               onClick={onFilterAll}
-              className="px-3 py-1.5 rounded-full border border-slate-200 text-xs text-slate-700 hover:bg-slate-50"
+              className="px-3 py-1.5 rounded-full border border-borderDark text-xs text-textLight hover:bg-navySecondary"
             >
               {adminHe.actions.allReports}
             </button>
             <button
               type="button"
               onClick={onFilterAll}
-              className="px-3 py-1.5 rounded-full border border-slate-200 text-xs text-slate-700 hover:bg-slate-50"
+              className="px-3 py-1.5 rounded-full border border-borderDark text-xs text-textLight hover:bg-navySecondary"
             >
               {adminHe.actions.clearFilter}
             </button>
@@ -92,37 +92,37 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-xs text-right">
-            <thead className="bg-slate-100 text-slate-700">
+            <thead className="bg-navySecondary text-textLight">
               <tr>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.id}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.status}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.hebrewStatus}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.insurer}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.insured}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.plaintiff}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {adminHe.table.columns.updatedAt}
                 </th>
-                <th className="px-3 py-2 font-semibold border-b border-slate-200">
+                <th className="px-3 py-2 font-semibold border-b border-borderDark">
                   {/* action column */}
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {reports.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
+                <tr key={r.id} className="hover:bg-navySecondary">
                   <td className="px-3 py-2 whitespace-nowrap">{r.odakanitNo || r.id}</td>
                   <td className="px-3 py-2 whitespace-nowrap">{r.status}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
@@ -138,7 +138,7 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectReport(r.id)}
-                      className="px-2 py-1 rounded-md border border-slate-300 text-[11px] hover:bg-slate-100"
+                      className="px-2 py-1 rounded-md border border-borderDark300 text-[11px] hover:bg-navySecondary"
                     >
                       {adminHe.queueItem.openReport}
                     </button>

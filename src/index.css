@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-100 text-slate-900 dark:bg-gray-900 dark:text-slate-100 transition-colors duration-300 font-sans;
+    @apply bg-bgDark text-textLight transition-colors duration-300 font-sans antialiased;
   }
 }
 
@@ -15,29 +15,45 @@
     sans-serif;
 }
 
+/* Navy & Gold theme utilities */
+@layer components {
+  .btn-primary {
+    @apply bg-navy text-gold font-semibold border border-borderDark rounded-lg px-4 py-2 hover:bg-navySecondary focus:outline-none focus:ring-2 focus:ring-gold/50;
+  }
+  .btn-secondary {
+    @apply bg-transparent text-gold border border-gold rounded-lg px-4 py-2 hover:bg-navySecondary/50 focus:outline-none focus:ring-2 focus:ring-gold/50;
+  }
+  .card-panel {
+    @apply bg-panel border border-borderDark rounded-lg text-textLight;
+  }
+  .input-field {
+    @apply bg-panel border border-borderDark rounded-md px-3 py-2 text-textLight placeholder-textMuted focus:outline-none focus:ring-1 focus:ring-gold;
+  }
+  .heading-gold {
+    @apply text-gold font-bold;
+  }
+}
+
 @media print {
   @page { margin: 0; size: A4; }
-  body { 
-    -webkit-print-color-adjust: exact !important; 
-    print-color-adjust: exact !important; 
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     background-color: white !important;
   }
-  /* Hide everything specifically marked or generic UI elements */
   .no-print, button, nav, header, .toast-container, .chat-widget { display: none !important; }
-  
-  /* Ensure the preview container takes full width/height */
   #root { display: block; }
-  .print-container { 
-      width: 100% !important; 
-      height: auto !important; 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      margin: 0 !important; 
-      padding: 0 !important; 
-      box-shadow: none !important;
-      border: none !important;
-      transform: none !important;
+  .print-container {
+    width: 100% !important;
+    height: auto !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    transform: none !important;
   }
   .page-break { page-break-before: always; }
 }

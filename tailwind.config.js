@@ -8,13 +8,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        lpBlue: '#1e3a8a', // Deep navy
-        lpGold: '#ca8a04', // Muted gold
-        lpGray: '#f3f4f6',
+        // Navy & Gold theme — law / insurance / Lloyd's
+        navy: '#0F172A',
+        navySecondary: '#1E293B',
+        gold: '#C9A227',
+        goldLight: '#E5C76B',
+        bgDark: '#0B1220',
+        panel: '#111827',
+        borderDark: '#1F2937',
+        textLight: '#CBD5E1',
+        textMuted: '#94A3B8',
+        danger: '#991b1b',
+        // Legacy aliases for gradual migration
+        lpBlue: '#0F172A',
+        lpGold: '#C9A227',
+        lpGray: '#111827',
       },
       fontFamily: {
         serif: ['"Playfair Display"', 'serif'],
-        sans: ['"Lato"', 'sans-serif'],
+        sans: ['"Lato"', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

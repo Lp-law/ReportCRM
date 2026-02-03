@@ -13,45 +13,45 @@ const STATUS_CONFIG: Record<
 > = {
   DRAFT: {
     label: t('statusDraft'),
-    bg: 'bg-blue-50',
-    text: 'text-blue-800',
-    border: 'border-blue-200',
+    bg: 'bg-navySecondary',
+    text: 'text-textMuted',
+    border: 'border-borderDark',
   },
   TASK_ASSIGNED: {
     label: t('statusActionRequired'),
-    bg: 'bg-orange-50',
-    text: 'text-orange-800',
-    border: 'border-orange-200',
+    bg: 'bg-gold/10',
+    text: 'text-goldLight',
+    border: 'border-gold',
   },
   WAITING_FOR_INVOICES: {
     label: t('statusWaitingInvoices'),
-    bg: 'bg-yellow-50',
-    text: 'text-yellow-800',
-    border: 'border-yellow-200',
+    bg: 'bg-gold/10',
+    text: 'text-goldLight',
+    border: 'border-gold',
   },
   PENDING_REVIEW: {
     label: t('statusPendingReview'),
-    bg: 'bg-orange-50',
-    text: 'text-orange-800',
-    border: 'border-orange-200',
+    bg: 'bg-gold/10',
+    text: 'text-goldLight',
+    border: 'border-gold',
   },
   APPROVED: {
     label: t('statusApproved'),
-    bg: 'bg-green-50',
-    text: 'text-green-800',
-    border: 'border-green-200',
+    bg: 'bg-gold/20',
+    text: 'text-goldLight',
+    border: 'border-gold',
   },
   READY_TO_SEND: {
     label: t('statusReadyToSend'),
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-800',
-    border: 'border-emerald-200',
+    bg: 'bg-danger/20',
+    text: 'text-red-300',
+    border: 'border-danger',
   },
   SENT: {
     label: t('statusSent'),
-    bg: 'bg-slate-50',
-    text: 'text-slate-800',
-    border: 'border-slate-200',
+    bg: 'bg-gold/20',
+    text: 'text-goldLight',
+    border: 'border-gold',
   },
 };
 
@@ -77,5 +77,3 @@ export const StatusPill: React.FC<StatusPillProps> = ({ status, ariaLabel }) => 
 };
 
 export default StatusPill;
-
-

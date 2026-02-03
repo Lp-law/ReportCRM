@@ -293,28 +293,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [reportsByLawyer, selectedLawyer, selectedCaseOdakanit]);
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
+    <div className="min-h-screen bg-navySecondary" dir="rtl">
       <div className="max-w-7xl mx-auto px-4 py-6">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{adminHe.title}</h1>
-            <p className="text-sm text-slate-600 mt-1">{adminHe.subtitle}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <h1 className="text-2xl font-bold text-textLight">{adminHe.title}</h1>
+            <p className="text-sm text-textMuted mt-1">{adminHe.subtitle}</p>
+            <p className="text-xs text-textMuted mt-1">
               מחובר/ת כ־<span className="font-semibold">{user.name}</span>{' '}
-              <span className="ml-1 text-slate-400">
+              <span className="ml-1 text-textMuted">
                 ({user.role === 'SUB_ADMIN' ? 'SUB_ADMIN' : 'ADMIN'})
               </span>
             </p>
           </div>
           <div className="flex flex-col items-stretch md:flex-row md:items-center gap-3">
-            <div className="inline-flex rounded-full bg-slate-100 p-1 text-xs font-semibold text-slate-600">
+            <div className="inline-flex rounded-full bg-slate-100 p-1 text-xs font-semibold text-textMuted">
               <button
                 type="button"
                 onClick={() => setActiveView('ADMIN')}
                 className={`px-3 py-1 rounded-full transition ${
                   activeView === 'ADMIN'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-panel text-textLight shadow-sm'
+                    : 'text-textMuted hover:text-textLight'
                 }`}
               >
                 דשבורד אדמין
@@ -324,8 +324,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 onClick={() => setActiveView('FINANCIAL_CONTROL')}
                 className={`px-3 py-1 rounded-full transition ${
                   activeView === 'FINANCIAL_CONTROL'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-panel text-textLight shadow-sm'
+                    : 'text-textMuted hover:text-textLight'
                 }`}
               >
                 בקרה פיננסית
@@ -335,7 +335,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenAssistant()}
-                className="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-indigo-200 bg-white text-xs font-semibold text-indigo-800 hover:bg-indigo-50 transition"
+                className="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-indigo-200 bg-panel text-xs font-semibold text-indigo-800 hover:bg-indigo-50 transition"
               >
                 העוזר החכם
               </button>
@@ -343,7 +343,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-red-200 bg-white text-sm font-semibold text-red-700 hover:bg-red-50 transition"
+              className="inline-flex items-center justify-center px-3 py-2 rounded-lg border border-red-200 bg-panel text-sm font-semibold text-red-700 hover:bg-red-50 transition"
             >
               התנתק
             </button>
@@ -366,7 +366,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <>
             {/* כרטיסיות לפי עורכת דין */}
             <section className="mb-6">
-              <h2 className="text-sm font-semibold text-slate-800 mb-2">
+              <h2 className="text-sm font-semibold text-textLight mb-2">
                 סיכום לפי עורכת דין
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
@@ -383,19 +383,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       }}
                       className={`flex flex-col items-stretch rounded-2xl border px-3 py-3 text-right shadow-sm transition ${
                         isActive
-                          ? 'border-lpBlue bg-blue-50/80'
-                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                          ? 'border-gold bg-blue-50/80'
+                          : 'border-borderDark bg-panel hover:bg-navySecondary'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[11px] font-semibold text-slate-700">
                           {card.lawyer.name}
                         </span>
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-textMuted">
                           {card.totalOpen} פתוחים
                         </span>
                       </div>
-                      <div className="flex flex-col gap-0.5 text-[11px] text-slate-600">
+                      <div className="flex flex-col gap-0.5 text-[11px] text-textMuted">
                         <span>
                           מוכן לשליחה:&nbsp;
                           <span className="font-semibold text-emerald-700">
@@ -424,13 +424,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
 
             {user.role === 'ADMIN' && closedCaseFolders.length > 0 && (
-              <section className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <section className="mb-6 bg-panel rounded-2xl border border-borderDark shadow-sm p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h2 className="text-sm font-semibold text-slate-900">
+                    <h2 className="text-sm font-semibold text-textLight">
                       תיקים סגורים
                     </h2>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-textMuted">
                       תיקים שסומנו כסגורים ואינם מופיעים בדשבורדים הרגילים. ניתן לפתוח לצפייה, לפתוח מחדש (מתוך מסך התיק) או למחוק לצמיתות.
                     </p>
                   </div>
@@ -438,7 +438,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-[11px]">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50">
+                      <tr className="border-b border-borderDark bg-navySecondary">
                         <th className="px-2 py-1 text-right font-semibold">
                           מס׳ תיק בעודכנית
                         </th>
@@ -462,8 +462,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           ? new Date(folder.closedAt).toLocaleDateString('he-IL')
                           : '—';
                         return (
-                          <tr key={folder.odakanitNo} className="border-b border-slate-100">
-                            <td className="px-2 py-1 text-right font-semibold text-slate-900">
+                          <tr key={folder.odakanitNo} className="border-b border-borderDark">
+                            <td className="px-2 py-1 text-right font-semibold text-textLight">
                               {folder.odakanitNo}
                             </td>
                             <td className="px-2 py-1 text-right text-slate-700">
@@ -472,7 +472,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <td className="px-2 py-1 text-right text-slate-700">
                               {folder.plaintiffName || '—'}
                             </td>
-                            <td className="px-2 py-1 text-right text-slate-600">
+                            <td className="px-2 py-1 text-right text-textMuted">
                               {closedAt}
                             </td>
                             <td className="px-2 py-1 text-left">
@@ -480,7 +480,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onOpenCaseFolder(folder.odakanitNo)}
-                                  className="inline-flex items-center rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-lpBlue border border-lpBlue hover:bg-blue-50"
+                                  className="inline-flex items-center rounded-full bg-panel px-3 py-1 text-[11px] font-semibold text-gold border border-gold hover:bg-navySecondary"
                                 >
                                   פתח תיק
                                 </button>
@@ -497,13 +497,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* LAWYER_CASES screen */}
             {adminScreen === 'LAWYER_CASES' && selectedLawyer && (
-              <section className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <section className="mb-6 bg-panel rounded-2xl border border-borderDark shadow-sm p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h2 className="text-sm font-semibold text-slate-900">
+                    <h2 className="text-sm font-semibold text-textLight">
                       תיקים לפי מספר עודכנית – {selectedLawyer.name}
               </h2>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-textMuted">
                       רשימת תיקים לפי מספר עודכנית עבור עורכת הדין שנבחרה.
                       </p>
                     </div>
@@ -513,20 +513,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       setAdminScreen('SUMMARY');
                       setSelectedCaseOdakanit(null);
                     }}
-                    className="text-[11px] px-3 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="text-[11px] px-3 py-1.5 rounded-full border border-borderDark text-slate-700 hover:bg-navySecondary"
                     >
                     חזרה לסיכום
                     </button>
           </div>
                 {lawyerCasesForSelectedLawyer.length === 0 ? (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-textMuted">
                     אין כרגע תיקים פעילים עבור עורכת דין זו.
               </p>
             ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-[11px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50">
+                        <tr className="border-b border-borderDark bg-navySecondary">
                           <th className="px-2 py-1 text-right font-semibold">
                             כותרת הדיווח
                           </th>
@@ -572,10 +572,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           return (
                             <tr
                               key={row.displayOdakanit}
-                              className={`border-b border-slate-100 ${
+                              className={`border-b border-borderDark ${
                                 isClickable
-                                  ? 'hover:bg-slate-50 cursor-pointer'
-                                  : 'bg-slate-50/40 text-slate-500'
+                                  ? 'hover:bg-navySecondary cursor-pointer'
+                                  : 'bg-navySecondary/40 text-textMuted'
                               }`}
                               onClick={() => {
                                 if (!isClickable) return;
@@ -584,10 +584,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               }}
                             >
                               <td className="px-2 py-1 text-right">
-                                <div className="text-slate-900">
+                                <div className="text-textLight">
                                   {primaryTitle || '—'}
                                 </div>
-                                <div className="text-[10px] text-slate-500">
+                                <div className="text-[10px] text-textMuted">
                                   {formatDateTime(row.lastUpdatedIso)}
                                 </div>
                               </td>
@@ -620,33 +620,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {adminScreen === 'CASE_REPORTS' &&
               selectedLawyer &&
               selectedCaseOdakanit && (
-                <section className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <section className="mb-6 bg-panel rounded-2xl border border-borderDark shadow-sm p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h2 className="text-sm font-semibold text-slate-900">
+                      <h2 className="text-sm font-semibold text-textLight">
                         דיווחים בתיק {selectedCaseOdakanit} – {selectedLawyer.name}
                       </h2>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-textMuted">
                         כל הדיווחים בתיק, כולל כאלו שנשלחו לחברת הביטוח.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setAdminScreen('LAWYER_CASES')}
-                      className="text-[11px] px-3 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      className="text-[11px] px-3 py-1.5 rounded-full border border-borderDark text-slate-700 hover:bg-navySecondary"
                     >
                       חזרה לתיקים
                     </button>
           </div>
                   {caseReportsForSelected.length === 0 ? (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-textMuted">
                       לא נמצאו דיווחים עבור תיק זה.
                     </p>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-[11px]">
                         <thead>
-                          <tr className="border-b border-slate-200 bg-slate-50">
+                          <tr className="border-b border-borderDark bg-navySecondary">
                             <th className="px-2 py-1 text-right font-semibold w-64">
                               כותרת / מבוטח / תובעת
                             </th>
@@ -686,11 +686,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             return (
                               <tr
                     key={r.id}
-                                className={`border-b border-slate-100 hover:bg-slate-100 cursor-pointer ${toneClass}`}
+                                className={`border-b border-borderDark hover:bg-slate-100 cursor-pointer ${toneClass}`}
                                 onClick={() => onSelectReport(r.id)}
                               >
                                 <td className="px-2 py-1 text-right">
-                                  <div className="text-slate-900 flex flex-wrap items-center gap-1 justify-end">
+                                  <div className="text-textLight flex flex-wrap items-center gap-1 justify-end">
                                     <span>{title}</span>
                                     {isFromIris && (
                                       <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
@@ -699,7 +699,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     )}
                                   </div>
                                   {(r.insuredName || r.plaintiffName) && (
-                                    <div className="text-[10px] text-slate-600">
+                                    <div className="text-[10px] text-textMuted">
                                       {[r.insuredName, r.plaintiffName]
                                         .filter(Boolean)
                                         .join(' / ')}
@@ -712,7 +712,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <td className="px-2 py-1 text-right text-slate-700">
                                   {getHebrewStatusLabel(r)} ({r.status})
                                 </td>
-                                <td className="px-2 py-1 text-right text-slate-500 whitespace-nowrap">
+                                <td className="px-2 py-1 text-right text-textMuted whitespace-nowrap">
                                   {formatDateTime(r.updatedAt || r.reportDate)}
                                 </td>
                                 <td className="px-2 py-1 text-left">

@@ -50,7 +50,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ data }) => {
 
   if (error) {
     return (
-      <div className="w-[210mm] min-h-[297mm] bg-white shadow-2xl mx-auto flex items-center justify-center text-sm text-red-600">
+      <div className="w-[210mm] min-h-[297mm] bg-panel border border-borderDark shadow-2xl mx-auto flex items-center justify-center text-sm text-red-300">
         {error}
       </div>
     );
@@ -58,7 +58,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ data }) => {
 
   if (loading && !html) {
     return (
-      <div className="w-[210mm] min-h-[297mm] bg-white shadow-2xl mx-auto flex flex-col items-center justify-center text-sm text-gray-500">
+      <div className="w-[210mm] min-h-[297mm] bg-panel shadow-2xl mx-auto flex flex-col items-center justify-center text-sm text-textMuted">
         <span>טוען תצוגה מקדימה...</span>
       </div>
     );
@@ -71,11 +71,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ data }) => {
     <div className="space-y-2">
       <iframe
         title="Report Preview"
-        className="w-[210mm] min-h-[297mm] bg-white shadow-2xl mx-auto border-none print:shadow-none print:w-full"
+        className="w-[210mm] min-h-[297mm] bg-panel shadow-2xl mx-auto border-none print:shadow-none print:w-full"
         srcDoc={html}
       />
       {shouldShowPolicyNotice && (
-        <p className="w-[210mm] mx-auto text-[11px] text-gray-500 text-right">
+        <p className="w-[210mm] mx-auto text-[11px] text-textMuted text-right">
           The policy file will be attached as Appendix A in the final PDF (not shown in this preview).
         </p>
       )}

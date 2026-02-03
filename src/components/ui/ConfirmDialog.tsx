@@ -62,25 +62,25 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   };
 
   const confirmClass = destructive
-    ? 'bg-red-600 text-white hover:bg-red-700'
-    : 'bg-lpBlue text-white hover:bg-blue-800';
+    ? 'bg-danger text-white hover:bg-red-800'
+    : 'bg-navy text-gold hover:bg-navySecondary';
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/30"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50"
       onClick={handleOverlayClick}
     >
       <div
-        className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-5 space-y-3"
+        className="bg-panel border border-borderDark rounded-xl shadow-xl max-w-md w-full mx-4 p-5 space-y-3"
         dir="rtl"
       >
-        <h2 className="text-sm font-bold text-slate-900 text-right">{title}</h2>
-        {message && <p className="text-xs text-slate-600 text-right whitespace-pre-line">{message}</p>}
+        <h2 className="text-sm font-bold text-gold text-right">{title}</h2>
+        {message && <p className="text-xs text-textMuted text-right whitespace-pre-line">{message}</p>}
         <div className="flex justify-end gap-2 mt-4">
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-md border border-slate-300 text-xs text-slate-700 bg-white hover:bg-slate-50"
+            className="px-3 py-1.5 rounded-md border border-borderDark text-xs text-textLight bg-navySecondary hover:bg-borderDark"
           >
             {cancelText}
           </button>

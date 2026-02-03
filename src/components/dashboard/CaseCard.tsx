@@ -65,36 +65,36 @@ export const CaseCard: React.FC<CaseCardProps> = ({
     <article
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className={`flex flex-col border border-gray-200 bg-white shadow-sm transition hover:border-gray-300 hover:shadow-md focus-within:ring-2 focus-within:ring-lpBlue focus-within:ring-offset-2 ${
+      className={`flex flex-col border border-borderDark bg-panel shadow-sm transition hover:border-gold/50 hover:shadow-md focus-within:ring-2 focus-within:ring-gold focus-within:ring-offset-2 ${
         density === 'COMPACT' ? 'rounded-xl p-3' : 'rounded-2xl p-4'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="text-right flex-1">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">
+          <h3 className="text-base font-semibold text-textLight mb-0.5">
             {primary}
           </h3>
-          <p className="text-sm font-semibold text-blue-800 mb-0.5">
+          <p className="text-sm font-semibold text-goldLight mb-0.5">
             {t('labelFile')}: {report.odakanitNo || '—'}
           </p>
           {density === 'COMPACT' ? (
             secondary && (
-              <p className="mt-0.5 text-xs text-gray-600">{secondary}</p>
+              <p className="mt-0.5 text-xs text-textMuted600">{secondary}</p>
             )
           ) : (
             <>
               {secondary && (
-                <p className="text-sm text-gray-600 mb-1.5">{secondary}</p>
+                <p className="text-sm text-textMuted600 mb-1.5">{secondary}</p>
               )}
               <div className="space-y-0.5 mt-1">
                 {dateLabel && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-textMuted">
                     {t('labelUpdated')} {dateLabel}
                   </p>
                 )}
                 {nextStep && (
-                  <p className="text-xs text-gray-600">
-                    <span className="font-medium text-gray-700">
+                  <p className="text-xs text-textMuted600">
+                    <span className="font-medium text-textLight">
                       {t('labelNextStep')}
                     </span>{' '}
                     {nextStep}
@@ -117,7 +117,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({
             </span>
           )}
           {typeof isNewCase === 'boolean' && (
-            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+            <span className="inline-flex items-center rounded-full border border-borderDark200 bg-navySecondary px-2 py-0.5 text-[11px] font-medium text-textMuted600">
               {isNewCase ? t('tagNewCase') : t('tagOngoingCase')}
             </span>
           )}
@@ -134,7 +134,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({
               className={`inline-flex items-center justify-center rounded-full border bg-white p-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${
                 pinned
                   ? 'border-amber-300 text-amber-600'
-                  : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+                  : 'border-borderDark200 text-textMuted hover:bg-navySecondary'
               }`}
               aria-label={
                 pinned ? `${t('unpin')} ${primary}` : `${t('pin')} ${primary}`
@@ -156,7 +156,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({
           <button
             type="button"
             onClick={onOpen}
-            className="inline-flex items-center rounded-full bg-lpBlue px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+            className="inline-flex items-center rounded-full bg-lpBlue px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             aria-label={`${t('openContinue')} ${primary}`}
           >
             <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
@@ -167,7 +167,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({
           <button
             type="button"
             onClick={onOpen}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-1.5 text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-full border border-borderDark200 bg-white p-1.5 text-textMuted600 hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             aria-label={`${t('preview')} ${primary}`}
           >
             <Eye className="h-3.5 w-3.5" aria-hidden="true" />
@@ -175,7 +175,7 @@ export const CaseCard: React.FC<CaseCardProps> = ({
           <button
             type="button"
             onClick={onOpen}
-            className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-1.5 text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-full border border-borderDark200 bg-white p-1.5 text-textMuted600 hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             aria-label={`${t('viewSections')} ${primary}`}
           >
             <FileText className="h-3.5 w-3.5" aria-hidden="true" />

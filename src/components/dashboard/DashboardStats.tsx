@@ -26,17 +26,17 @@ const StatCard: React.FC<{
     <div
       className={[
         'flex items-center justify-between rounded-2xl border px-4 py-3 shadow-sm transition',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2',
         selected
-          ? 'border-lpBlue bg-blue-50/80'
-          : 'border-gray-200 bg-white hover:bg-gray-50',
+          ? 'border-gold bg-gold/10'
+          : 'border-borderDark bg-panel hover:bg-navySecondary',
       ].join(' ')}
     >
       <div>
         <p
           className={[
             'text-[11px] uppercase tracking-wide',
-            selected ? 'font-bold text-gray-800' : 'font-semibold text-gray-500',
+            selected ? 'font-bold text-textLight' : 'font-semibold text-textMuted',
           ].join(' ')}
         >
           {label}
@@ -86,24 +86,24 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
       <StatCard
         label={t('statsFinanceTasks')}
         value={financeTasks}
-        icon={<FileSpreadsheet className="h-4 w-4 text-emerald-700" />}
-        accentClass="bg-emerald-50"
+        icon={<FileSpreadsheet className="h-4 w-4 text-goldLight" />}
+        accentClass="bg-gold/20"
         selected={selectedFilter === 'FINANCE'}
         onClick={() => handleClick('FINANCE')}
       />
       <StatCard
         label={t('statsWaitingOnOthers')}
         value={waitingOnOthers}
-        icon={<Clock className="h-4 w-4 text-yellow-600" />}
-        accentClass="bg-yellow-50"
+        icon={<Clock className="h-4 w-4 text-goldLight" />}
+        accentClass="bg-gold/20"
         selected={selectedFilter === 'WAITING'}
         onClick={() => handleClick('WAITING')}
       />
       <StatCard
         label={t('statsDraftsReady')}
         value={draftsAndReady}
-        icon={<Send className="h-4 w-4 text-emerald-600" />}
-        accentClass="bg-emerald-50"
+        icon={<Send className="h-4 w-4 text-goldLight" />}
+        accentClass="bg-gold/20"
         selected={selectedFilter === 'DRAFTS'}
         onClick={() => handleClick('DRAFTS')}
       />

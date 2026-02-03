@@ -134,16 +134,16 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
   return (
     <section
       id={REPORT_REVIEW_PANEL_ID}
-      className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+      className="mt-4 rounded-xl border border-borderDark bg-navySecondary px-4 py-3"
       dir="rtl"
       lang="he"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold text-slate-500">סטטוס סקירה</div>
-          <div className="text-sm font-medium text-slate-900">{statusLabel}</div>
+          <div className="text-xs font-semibold text-textMuted500">סטטוס סקירה</div>
+          <div className="text-sm font-medium text-textLight">{statusLabel}</div>
         </div>
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+        <span className="inline-flex items-center rounded-full bg-navySecondary px-3 py-1 text-xs font-medium text-textMuted700">
           {workflowBadge}
         </span>
       </div>
@@ -170,11 +170,11 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
         <div className="mb-3 space-y-3">
           {Object.keys(internalIssuesBySection).length > 0 && (
             <div>
-              <div className="mb-1 text-xs font-semibold text-slate-600">הערות פנימיות (ליאור)</div>
+              <div className="mb-1 text-xs font-semibold text-textMuted">הערות פנימיות (ליאור)</div>
               {Object.entries(internalIssuesBySection).map(([sectionKey, issues]) => (
-                <div key={sectionKey} className="rounded-lg bg-white p-2 mb-1">
+                <div key={sectionKey} className="rounded-lg bg-panel p-2 mb-1">
                   {sectionKey !== 'GENERAL' && (
-                    <div className="mb-1 text-[11px] font-semibold text-slate-500">
+                    <div className="mb-1 text-[11px] font-semibold text-textMuted500">
                       סעיף: {sectionKey}
                     </div>
                   )}
@@ -182,7 +182,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                     {issues.map((issue) => (
                       <li
                         key={issue.id}
-                        className="flex items-start justify-between gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5"
+                        className="flex items-start justify-between gap-2 rounded-md border border-borderDark bg-navySecondary px-2 py-1.5"
                       >
                         <div>
                           <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                                   ? 'bg-red-100 text-red-700'
                                   : issue.severity === 'NORMAL'
                                   ? 'bg-amber-50 text-amber-700'
-                                  : 'bg-slate-100 text-slate-600'
+                                  : 'bg-navySecondary text-textMuted'
                               }`}
                             >
                               {issue.severity === 'CRITICAL'
@@ -201,11 +201,11 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                                 ? 'מהותי'
                                 : 'סגנון'}
                             </span>
-                            <span className="text-xs font-medium text-slate-900">
+                            <span className="text-xs font-medium text-textLight">
                               {issue.title}
                             </span>
                           </div>
-                          <div className="mt-1 text-[11px] text-slate-700">
+                          <div className="mt-1 text-[11px] text-textMuted700">
                             {issue.instruction}
                           </div>
                         </div>
@@ -229,11 +229,11 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
 
           {Object.keys(externalIssuesBySection).length > 0 && (
             <div id={EXTERNAL_FEEDBACK_PANEL_ID}>
-              <div className="mb-1 text-xs font-semibold text-slate-600">משוב מחברת הביטוח</div>
+              <div className="mb-1 text-xs font-semibold text-textMuted">משוב מחברת הביטוח</div>
               {Object.entries(externalIssuesBySection).map(([sectionKey, issues]) => (
-                <div key={sectionKey} className="rounded-lg bg-white p-2 mb-1">
+                <div key={sectionKey} className="rounded-lg bg-panel p-2 mb-1">
                   {sectionKey !== 'GENERAL' && (
-                    <div className="mb-1 text-[11px] font-semibold text-slate-500">
+                    <div className="mb-1 text-[11px] font-semibold text-textMuted500">
                       סעיף: {sectionKey}
                     </div>
                   )}
@@ -241,7 +241,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                     {issues.map((issue) => (
                       <li
                         key={issue.id}
-                        className="flex items-start justify-between gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5"
+                        className="flex items-start justify-between gap-2 rounded-md border border-borderDark bg-navySecondary px-2 py-1.5"
                       >
                         <div>
                           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                                   ? 'bg-red-100 text-red-700'
                                   : issue.severity === 'NORMAL'
                                   ? 'bg-amber-50 text-amber-700'
-                                  : 'bg-slate-100 text-slate-600'
+                                  : 'bg-navySecondary text-textMuted'
                               }`}
                             >
                               {issue.severity === 'CRITICAL'
@@ -260,11 +260,11 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
                                 ? 'מהותי'
                                 : 'סגנון'}
                             </span>
-                            <span className="text-xs font-medium text-slate-900">
+                            <span className="text-xs font-medium text-textLight">
                               {issue.title}
                             </span>
                           </div>
-                          <div className="mt-1 text-[11px] text-slate-700">
+                          <div className="mt-1 text-[11px] text-textMuted700">
                             {issue.instruction}
                           </div>
                         </div>
@@ -335,7 +335,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
               </button>
             )}
             {onReopenHebrewDueToExternalFeedback && report.status !== 'SENT' && (
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-textMuted500">
                 פתיחה מחדש זמינה רק לאחר שליחת הדיווח (SENT).
               </span>
             )}
@@ -345,37 +345,37 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[180] flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-2xl" dir="rtl" lang="he">
-            <h3 className="mb-3 text-sm font-bold text-slate-900">בקשת תיקונים מלשכת ליאור</h3>
+          <div className="w-full max-w-md rounded-xl bg-panel p-4 shadow-2xl" dir="rtl" lang="he">
+            <h3 className="mb-3 text-sm font-bold text-textLight">בקשת תיקונים מלשכת ליאור</h3>
             <div className="mb-3 space-y-2">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700">
+                <label className="mb-1 block text-xs font-semibold text-textMuted700">
                   כותרת ההערה (חובה)
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-md border border-borderDark px-2 py-1.5 text-sm"
                   value={modalTitle}
                   onChange={(e) => setModalTitle(e.target.value)}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700">
+                <label className="mb-1 block text-xs font-semibold text-textMuted700">
                   הנחיה מפורטת (חובה)
                 </label>
                 <textarea
-                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-md border border-borderDark px-2 py-1.5 text-sm"
                   rows={3}
                   value={modalInstruction}
                   onChange={(e) => setModalInstruction(e.target.value)}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-700">
+                <label className="mb-1 block text-xs font-semibold text-textMuted700">
                   חומרת ההערה
                 </label>
                 <select
-                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"
+                  className="w-full rounded-md border border-borderDark px-2 py-1.5 text-xs"
                   value={modalSeverity}
                   onChange={(e) =>
                     setModalSeverity(e.target.value as 'CRITICAL' | 'NORMAL' | 'STYLE')
@@ -388,20 +388,20 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
               </div>
               {modalMode === 'EXTERNAL' && (
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">
+                  <label className="mb-1 block text-xs font-semibold text-textMuted700">
                     מזהה פנייה מחברת הביטוח (אופציונלי)
                   </label>
                   <input
                     type="text"
-                    className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                    className="w-full rounded-md border border-borderDark px-2 py-1.5 text-sm"
                     value={modalExternalRefId}
                     onChange={(e) => setModalExternalRefId(e.target.value)}
                   />
-                  <label className="mb-1 mt-3 block text-xs font-semibold text-slate-700">
+                  <label className="mb-1 mt-3 block text-xs font-semibold text-textMuted700">
                     אופן טיפול
                   </label>
                   <select
-                    className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"
+                    className="w-full rounded-md border border-borderDark px-2 py-1.5 text-xs"
                     value={modalExternalAction}
                     onChange={(e) =>
                       setModalExternalAction(
@@ -418,7 +418,7 @@ const ReportReviewPanel: React.FC<ReportReviewPanelProps> = ({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                className="rounded-md border border-borderDark px-3 py-1.5 text-xs font-medium text-textMuted700 hover:bg-navySecondary"
                 onClick={() => setIsModalOpen(false)}
               >
                 ביטול

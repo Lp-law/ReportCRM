@@ -100,18 +100,18 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/10 z-[180]" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-[190] w-full max-w-md bg-white border-l border-slate-200 shadow-2xl flex flex-col">
+      <div className="fixed inset-y-0 right-0 z-[190] w-full max-w-md bg-panel border-l border-borderDark200 shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-4 py-3 border-b border-borderDark200 flex items-center justify-between bg-navySecondary">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white">
               <Lightbulb className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900">
+              <span className="text-sm font-semibold text-textLight">
                 העוזר החכם
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-textMuted">
                 Step {step} · {screenLabel} · {roleLabel}
               </span>
             </div>
@@ -119,20 +119,20 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded hover:bg-slate-100 text-slate-500"
+            className="p-1 rounded hover:bg-navySecondary text-textMuted"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Quick Actions */}
-        <div className="px-4 py-3 border-b border-slate-100 bg-white">
+        <div className="px-4 py-3 border-b border-borderDark bg-panel">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-slate-600">
+            <span className="text-[11px] font-semibold text-textMuted600">
               פעולות מהירות למסך הנוכחי
             </span>
             {!hasReport && (
-              <span className="text-[10px] text-slate-400">
+              <span className="text-[10px] text-textMuted">
                 תחילה יש לבחור או לפתוח דו&quot;ח.
               </span>
             )}
@@ -146,7 +146,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                 onClick={() => onRunIntent(qa.intent)}
                 className={`text-[11px] px-3 py-1.5 rounded-full border transition ${
                   loading || !hasReport
-                    ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
+                    ? 'border-borderDark200 text-textMuted bg-navySecondary cursor-not-allowed'
                     : 'border-indigo-200 text-indigo-800 bg-indigo-50 hover:bg-indigo-100'
                 }`}
               >
@@ -159,7 +159,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
         {/* Response Area */}
         <div className="flex-1 overflow-auto px-4 py-3 space-y-3" dir="rtl">
           {loading && (
-            <div className="flex items-center gap-2 text-[12px] text-slate-600">
+            <div className="flex items-center gap-2 text-[12px] text-textMuted600">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>העוזר החכם מכין תשובה קצרה למסך הנוכחי…</span>
             </div>
@@ -177,10 +177,10 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
 
           {!loading && !error && response && (
             <div className="space-y-2">
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-sm font-semibold text-textLight">
                 {response.title}
               </div>
-              <ul className="list-disc pr-4 space-y-1 text-[12px] text-slate-700">
+              <ul className="list-disc pr-4 space-y-1 text-[12px] text-textLight">
                 {response.bullets.map((b, idx) => (
                   <li key={idx}>{b}</li>
                 ))}
@@ -192,7 +192,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                 </div>
               )}
               {response.nextSuggestion && (
-                <div className="mt-1 text-[11px] text-slate-600">
+                <div className="mt-1 text-[11px] text-textMuted600">
                   <span className="font-semibold">הצעה להמשך: </span>
                   {response.nextSuggestion}
                 </div>
@@ -201,7 +201,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
           )}
 
           {!loading && !error && !response && (
-            <div className="text-[12px] text-slate-500 space-y-1">
+            <div className="text-[12px] text-textMuted space-y-1">
               <div>
                 העוזר החכם מלווה אותך צעד‑צעד בשימוש נכון בכלים במסך זה, בלי לגעת
                 בתוכן הדו&quot;ח עצמו.
@@ -212,14 +212,14 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
         </div>
 
         {/* Disabled input hint */}
-        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50">
-          <div className="text-[10px] text-slate-500 mb-1">
+        <div className="px-4 py-3 border-t border-borderDark bg-navySecondary">
+          <div className="text-[10px] text-textMuted mb-1">
             בשלב זה אין צ&apos;אט חופשי – העוזר עובד לפי פעולות מהירות בלבד.
           </div>
           <input
             type="text"
             disabled
-            className="w-full text-[11px] px-2 py-1.5 rounded border border-dashed border-slate-200 bg-slate-50 text-slate-400"
+            className="w-full text-[11px] px-2 py-1.5 rounded border border-dashed border-borderDark200 bg-navySecondary text-textMuted"
             placeholder="אפשר לשאול אותי איך לעבוד נכון כאן – דרך הכפתורים למעלה."
           />
         </div>

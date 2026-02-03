@@ -73,8 +73,8 @@ const FileNameTitleSelectorModal: React.FC<FileNameTitleSelectorModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-[900] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
+      <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 py-3 border-b bg-navySecondary50">
           <h3 className="text-lg font-semibold text-gray-800">Select File Name Titles</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
             <X className="w-5 h-5" />
@@ -107,8 +107,8 @@ const FileNameTitleSelectorModal: React.FC<FileNameTitleSelectorModalProps> = ({
           )}
         </div>
 
-        <div className="flex justify-end gap-3 border-t px-5 py-4 bg-gray-50">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md">
+        <div className="flex justify-end gap-3 border-t px-5 py-4 bg-navySecondary50">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-navySecondary200 rounded-md">
             Cancel
           </button>
           <button

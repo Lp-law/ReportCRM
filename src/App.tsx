@@ -128,19 +128,19 @@ type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 const Toast = ({ message, type, onClose }: { message: string, type: ToastType, onClose: () => void }) => {
   const base =
-    'fixed top-4 right-4 z-[100] p-4 rounded-lg shadow-xl border-l-4 flex items-center gap-3 animate-slide-in bg-white';
+    'fixed top-4 right-4 z-[100] p-4 rounded-lg shadow-xl border-l-4 flex items-center gap-3 animate-slide-in bg-panel border-borderDark text-textLight';
   const theme =
     type === 'success'
-      ? 'border-green-500 text-green-800'
+      ? 'border-l-gold text-goldLight'
       : type === 'error'
-      ? 'border-red-500 text-red-800'
+      ? 'border-l-danger text-red-300'
       : type === 'warning'
-      ? 'border-amber-500 text-amber-800'
-      : 'border-blue-500 text-blue-800';
+      ? 'border-l-gold text-goldLight'
+      : 'border-l-gold text-textLight';
   return (
   <div className={`${base} ${theme}`}>
     <span>{message}</span>
-    <button onClick={onClose} className="hover:bg-gray-100 p-1 rounded"><X className="w-4 h-4"/></button>
+    <button onClick={onClose} className="hover:bg-navySecondary p-1 rounded text-textMuted"><X className="w-4 h-4"/></button>
   </div>
 );
 };
@@ -174,19 +174,19 @@ const BestPracticeDraftForm: React.FC<{
   return (
     <form onSubmit={handleSubmit} className="px-4 py-3 space-y-3 text-xs">
       <div className="space-y-1">
-        <label className="block font-semibold text-slate-800">Title</label>
+        <label className="block font-semibold text-textLight">Title</label>
         <input
           type="text"
-          className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+          className="w-full border border-borderDark rounded px-2 py-1 text-xs"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
       </div>
       <div className="space-y-1">
-        <label className="block font-semibold text-slate-800">Label / Type</label>
+        <label className="block font-semibold text-textLight">Label / Type</label>
         <select
-          className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+          className="w-full border border-borderDark rounded px-2 py-1 text-xs"
           value={label}
           onChange={(e) =>
             setLabel(e.target.value === 'LLOYDS_RECOMMENDED' ? 'LLOYDS_RECOMMENDED' : 'BEST_PRACTICE')
@@ -197,17 +197,17 @@ const BestPracticeDraftForm: React.FC<{
         </select>
       </div>
       <div className="space-y-1">
-        <label className="block font-semibold text-slate-800">Tags (optional)</label>
+        <label className="block font-semibold text-textLight">Tags (optional)</label>
         <input
           type="text"
-          className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+          className="w-full border border-borderDark rounded px-2 py-1 text-xs"
           placeholder="e.g. lloyds, settlement, high exposure"
           value={tagsInput}
           onChange={(e) => setTagsInput(e.target.value)}
         />
       </div>
       <div className="space-y-1">
-        <label className="block font-semibold text-slate-800">Behavior</label>
+        <label className="block font-semibold text-textLight">Behavior</label>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1">
             <input
@@ -229,11 +229,11 @@ const BestPracticeDraftForm: React.FC<{
           </label>
         </div>
       </div>
-      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 mt-2">
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-borderDark mt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+          className="px-3 py-1.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
         >
           ביטול
         </button>
@@ -294,56 +294,56 @@ const UserGuideModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-3xl h-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
-         <div className="bg-lpBlue p-4 text-white flex justify-between items-center">
+      <div className="bg-panel w-full max-w-3xl h-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
+         <div className="bg-navy p-4 text-gold flex justify-between items-center">
            <div className="flex items-center gap-2">
              <HelpCircle className="w-6 h-6" />
              <h2 className="font-bold text-lg">מרכז העזרה והתמיכה</h2>
            </div>
-           <button onClick={onClose} className="hover:bg-white/20 rounded p-1"><X className="w-5 h-5"/></button>
+           <button onClick={onClose} className="hover:bg-panel/20 rounded p-1"><X className="w-5 h-5"/></button>
          </div>
          <div className="flex border-b">
-           <button onClick={() => setTab('MANUAL')} className={`flex-1 p-3 font-bold ${tab === 'MANUAL' ? 'text-lpBlue border-b-2 border-lpBlue' : 'text-gray-500'}`}>מדריך אינטראקטיבי</button>
-           <button onClick={() => setTab('CHAT')} className={`flex-1 p-3 font-bold ${tab === 'CHAT' ? 'text-lpBlue border-b-2 border-lpBlue' : 'text-gray-500'}`}>שוחח עם עוזר בינה</button>
+           <button onClick={() => setTab('MANUAL')} className={`flex-1 p-3 font-bold ${tab === 'MANUAL' ? 'text-lpBlue border-b-2 border-lpBlue' : 'text-textMuted'}`}>מדריך אינטראקטיבי</button>
+           <button onClick={() => setTab('CHAT')} className={`flex-1 p-3 font-bold ${tab === 'CHAT' ? 'text-lpBlue border-b-2 border-lpBlue' : 'text-textMuted'}`}>שוחח עם עוזר בינה</button>
          </div>
-         <div className="flex-1 overflow-auto p-6 bg-gray-50" dir="rtl">
+         <div className="flex-1 overflow-auto p-6 bg-navySecondary" dir="rtl">
            {tab === 'MANUAL' ? (
             <div className="space-y-4">
-              <details className="bg-white p-4 rounded shadow-sm group">
-                <summary className="font-bold text-gray-800 cursor-pointer list-none flex justify-between">כניסה ובחירת תוכנה <ChevronRight className="group-open:rotate-90 transition"/></summary>
-                <div className="mt-2 text-gray-600 text-sm space-y-1">
+              <details className="bg-panel p-4 rounded shadow-sm group">
+                <summary className="font-bold text-textLight cursor-pointer list-none flex justify-between">כניסה ובחירת תוכנה <ChevronRight className="group-open:rotate-90 transition"/></summary>
+                <div className="mt-2 text-textMuted text-sm space-y-1">
                   <p>1. במסך הראשי בחרו את האפליקציה הרלוונטית (CRM / Finance / בעתיד גם אפליקציה שלישית).</p>
                   <p>2. לאחר הזדהות תראו דשבורד מותאם לתפקיד + כפתור Notifications עם תקציר יומי.</p>
                   <p>3. כפתור &quot;עזרה&quot; מחזיר תמיד למדריך זה ולצ&#39;אט התמיכה.</p>
                 </div>
               </details>
-              <details className="bg-white p-4 rounded shadow-sm group">
-                <summary className="font-bold text-gray-800 cursor-pointer list-none flex justify-between">פתיחת תיק פיננסי והקצאה לעו&quot;ד <ChevronRight className="group-open:rotate-90 transition"/></summary>
-                <div className="mt-2 text-gray-600 text-sm space-y-1">
+              <details className="bg-panel p-4 rounded shadow-sm group">
+                <summary className="font-bold text-textLight cursor-pointer list-none flex justify-between">פתיחת תיק פיננסי והקצאה לעו&quot;ד <ChevronRight className="group-open:rotate-90 transition"/></summary>
+                <div className="mt-2 text-textMuted text-sm space-y-1">
                   <p>1. לחצו על <strong>Open New Case Folder</strong>, הזינו מספר בעודכנית ובחרו עורכת דין.</p>
                   <p>2. הוסיפו הוראות, צרפו עד 4 חשבוניות (Word/PDF) ומלאו את טבלת ההוצאות.</p>
                   <p>3. רק אחרי FINANCE FINALIZE המשימה תופיע אצל עורכת הדין.</p>
                 </div>
               </details>
-              <details className="bg-white p-4 rounded shadow-sm group">
-                <summary className="font-bold text-gray-800 cursor-pointer list-none flex justify-between">ניהול טבלת ההוצאות <ChevronRight className="group-open:rotate-90 transition"/></summary>
-                <div className="mt-2 text-gray-600 text-sm space-y-1">
+              <details className="bg-panel p-4 rounded shadow-sm group">
+                <summary className="font-bold text-textLight cursor-pointer list-none flex justify-between">ניהול טבלת ההוצאות <ChevronRight className="group-open:rotate-90 transition"/></summary>
+                <div className="mt-2 text-textMuted text-sm space-y-1">
                   <p>• לחיצה על View Worksheet מציגה טבלה, היסטוריה, הערות והשוואה לדו&quot;ח קודם.</p>
                   <p>• איריס/לידור יכולות להוסיף שורה חדשה (כפתור ADD), לעדכן ספק וסכום ולנעול.</p>
                   <p>• אחרי נעילה, עורכת הדין מחדירה את הטבלה לדו&quot;ח דרך אייקון 📊 בסעיף Expenses.</p>
                 </div>
               </details>
-              <details className="bg-white p-4 rounded shadow-sm group">
-                <summary className="font-bold text-gray-800 cursor-pointer list-none flex justify-between">ספקים מועדפים ומסמכים נלווים <ChevronRight className="group-open:rotate-90 transition"/></summary>
-                <div className="mt-2 text-gray-600 text-sm space-y-1">
+              <details className="bg-panel p-4 rounded shadow-sm group">
+                <summary className="font-bold text-textLight cursor-pointer list-none flex justify-between">ספקים מועדפים ומסמכים נלווים <ChevronRight className="group-open:rotate-90 transition"/></summary>
+                <div className="mt-2 text-textMuted text-sm space-y-1">
                   <p>• דרך Manage Favorite Providers שומרים ספקים נפוצים לכל קטגוריה.</p>
                   <p>• בטופס ובמודאל הטבלה השמות מופיעים אוטומטית ברשימת הבחירה.</p>
                   <p>• ניתן לצרף עד 4 חשבוניות מס (PDF/Word) לכל דו&quot;ח – הן נשמרות כנספחים.</p>
                 </div>
               </details>
-              <details className="bg-white p-4 rounded shadow-sm group">
-                <summary className="font-bold text-gray-800 cursor-pointer list-none flex justify-between">התקדמות דו&quot;חות – עורכת דין וליאור <ChevronRight className="group-open:rotate-90 transition"/></summary>
-                <div className="mt-2 text-gray-600 text-sm space-y-1">
+              <details className="bg-panel p-4 rounded shadow-sm group">
+                <summary className="font-bold text-textLight cursor-pointer list-none flex justify-between">התקדמות דו&quot;חות – עורכת דין וליאור <ChevronRight className="group-open:rotate-90 transition"/></summary>
+                <div className="mt-2 text-textMuted text-sm space-y-1">
                   <p>• עורכת הדין מקבלת משימה רק אחרי ש-FINANCE סיים ולחץ FINALIZE.</p>
                   <p>• FINALIZE של העו&quot;ד צובע את הכרטיס באדום (READY TO SEND) עד שליאור שולח.</p>
                   <p>• ליאור רואה סל מיחזור (48 שעות → סל, 30 ימים → מחיקה) ויכול לערוך את התרגום והשליחה.</p>
@@ -357,7 +357,7 @@ const UserGuideModal = ({ onClose }: { onClose: () => void }) => {
                  {chatHistory.map((msg, i) => (
                    <div key={i} className="space-y-1">
                      <div className="bg-blue-100 text-blue-900 p-2 rounded-lg rounded-tr-none self-end w-fit ml-auto max-w-[80%]">{msg.q}</div>
-                     <div className="bg-white border text-gray-800 p-2 rounded-lg rounded-tl-none self-start w-fit mr-auto max-w-[80%]">{msg.a}</div>
+                     <div className="bg-panel border text-textLight p-2 rounded-lg rounded-tl-none self-start w-fit mr-auto max-w-[80%]">{msg.a}</div>
                    </div>
                  ))}
                </div>
@@ -369,7 +369,7 @@ const UserGuideModal = ({ onClose }: { onClose: () => void }) => {
                    onChange={e => setChatInput(e.target.value)}
                    onKeyDown={e => e.key === 'Enter' && handleAsk()}
                  />
-                 <button onClick={handleAsk} disabled={loading} className="bg-lpBlue text-white px-4 rounded hover:bg-blue-800">
+                 <button onClick={handleAsk} disabled={loading} className="bg-navy text-gold px-4 rounded hover:bg-navySecondary">
                    {loading ? <Loader2 className="w-5 h-5 animate-spin"/> : <Send className="w-5 h-5"/>}
                  </button>
                </div>
@@ -393,10 +393,10 @@ const FinancialTracker = ({ reports, currentUser, onMarkPaid }: { reports: Repor
   if (!unpaidReports.length) return null;
 
   return (
-    <div className="mb-8 bg-white rounded-xl shadow-sm border border-indigo-100 overflow-hidden">
+    <div className="mb-8 bg-panel rounded-xl shadow-sm border border-indigo-100 overflow-hidden">
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 p-4 text-white flex justify-between items-center">
          <h3 className="font-bold text-lg flex items-center"><Calculator className="w-6 h-6 mr-2"/> Financial Control - Outstanding Expenses</h3>
-         <div className="text-xl font-bold bg-white/20 px-4 py-1 rounded">Total: ₪{grandTotal.toLocaleString()}</div>
+         <div className="text-xl font-bold bg-panel/20 px-4 py-1 rounded">Total: ₪{grandTotal.toLocaleString()}</div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
@@ -410,7 +410,7 @@ const FinancialTracker = ({ reports, currentUser, onMarkPaid }: { reports: Repor
           </thead>
           <tbody className="divide-y divide-gray-100">
             {unpaidReports.map(r => (
-              <tr key={r.id} className="hover:bg-gray-50">
+              <tr key={r.id} className="hover:bg-navySecondary">
                  <td className="p-3">{new Date(r.reportDate).toLocaleDateString()}</td>
                  <td className="p-3 font-medium">{r.insuredName} ({r.marketRef})</td>
                  <td className="p-3 font-bold text-indigo-700">₪{r.expensesSum}</td>
@@ -1658,7 +1658,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
   const renderInputWithClear = (value: string, updateField: (val: string) => void, placeholder: string) => (
     <div className="relative group">
       <input 
-        className="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-lpBlue outline-none pr-8" 
+        className="w-full border border-borderDark p-2 rounded focus:ring-2 focus:ring-lpBlue outline-none pr-8" 
         placeholder={placeholder}
         value={value}
         onChange={readOnly ? undefined : (e) => updateField(e.target.value)}
@@ -1707,9 +1707,9 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
           </div>
       )}
       
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 relative overflow-hidden">
+      <div className="bg-panel p-6 rounded-lg shadow-sm border border-borderDark relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-lpGold"></div>
-        <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center">
+        <h3 className="font-bold text-lg mb-4 text-textLight flex items-center">
            <FileText className="w-5 h-5 mr-2 text-lpGold" />
            Re: Case Details (Mandatory Fields - English)
         </h3>
@@ -1742,7 +1742,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                        Remove
                      </button>
                    </div>
-                   <div className="flex items-center justify-center gap-2 text-xs text-gray-700 bg-white/70 px-3 py-1 rounded-full border border-gray-200">
+                   <div className="flex items-center justify-center gap-2 text-xs text-textLight bg-panel/70 px-3 py-1 rounded-full border border-borderDark">
                      <input
                        id="attach-policy-appendix"
                        type="checkbox"
@@ -1762,8 +1762,8 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                  <>
                    <div className={`flex flex-col items-center justify-center text-center px-4 ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                      <Upload className="w-8 h-8 text-lpBlue mb-2 group-hover:scale-110 transition-transform" />
-                     <span className="text-sm font-bold text-gray-700">Upload Policy Document</span>
-                     <span className="text-xs text-gray-500 mt-1">
+                     <span className="text-sm font-bold text-textLight">Upload Policy Document</span>
+                     <span className="text-xs text-textMuted mt-1">
                        Any file uploaded here (PDF/DOCX/scan) is treated as the official policy for this
                        case.
                      </span>
@@ -1782,10 +1782,10 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
         </div>
 
         {/* Lawyer appendices (free-form attachments) */}
-        <div className="mb-6 mt-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-slate-800 mb-2 flex items-center justify-between">
+        <div className="mb-6 mt-4 bg-slate-50 border border-dashed border-borderDark rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-textLight mb-2 flex items-center justify-between">
             <span>Additional Appendices (Lawyer)</span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-textMuted">
               {(data.lawyerAppendixFiles?.length || 0)}/{MAX_LAWYER_APPENDICES}
             </span>
           </h4>
@@ -1793,7 +1793,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             <div className="flex-1">
               <label
                htmlFor="lawyer-appendix-input"
-               className={`flex flex-col items-center justify-center px-3 py-3 border-2 border-dashed border-slate-300 rounded-lg text-xs text-slate-600 bg-white transition-colors ${
+               className={`flex flex-col items-center justify-center px-3 py-3 border-2 border-dashed border-borderDark rounded-lg text-xs text-textMuted bg-panel transition-colors ${
                  readOnly
                    ? 'cursor-not-allowed opacity-60'
                    : 'cursor-pointer hover:border-lpBlue hover:text-lpBlue'
@@ -1801,7 +1801,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               >
                 <Upload className="w-5 h-5 mb-1" />
                 <span className="font-semibold">Upload / drag legal appendices</span>
-                <span className="mt-1 text-[11px] text-slate-500">
+                <span className="mt-1 text-[11px] text-textMuted">
                   Supported: PDF, PNG, JPG, TIFF (up to {MAX_LAWYER_APPENDIX_SIZE_MB}MB per file)
                 </span>
                 <input
@@ -1817,15 +1817,15 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             </div>
           </div>
           {(data.lawyerAppendixFiles?.length || 0) > 0 && (
-            <div className="mt-3 border-t border-slate-200 pt-2 space-y-1 max-h-40 overflow-y-auto text-xs text-slate-700 text-left">
+            <div className="mt-3 border-t border-borderDark pt-2 space-y-1 max-h-40 overflow-y-auto text-xs text-textLight text-left">
               {data.lawyerAppendixFiles?.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 border border-slate-200"
+                  className="flex items-center justify-between gap-2 rounded bg-panel px-2 py-1 border border-borderDark"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium">{f.name}</div>
-                    <div className="text-[11px] text-slate-500 truncate">
+                    <div className="text-[11px] text-textMuted truncate">
                       {f.type || 'Unknown type'}
                     </div>
                   </div>
@@ -1845,20 +1845,20 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-1">
-             <label className="text-xs font-bold text-gray-500 uppercase flex items-center"><Calendar className="w-3 h-3 mr-1" /> Report Date</label>
+             <label className="text-xs font-bold text-textMuted uppercase flex items-center"><Calendar className="w-3 h-3 mr-1" /> Report Date</label>
              <input 
                 type="date" 
-                className="w-full border border-gray-300 p-2 rounded disabled:bg-gray-100 disabled:text-gray-500"
+                className="w-full border border-borderDark p-2 rounded disabled:bg-navySecondary disabled:text-textMuted"
                 value={formatDateForInput(data.reportDate)}
                 onChange={readOnly ? undefined : (e) => updateData({ reportDate: new Date(e.target.value).toISOString() })}
                 disabled={readOnly}
              />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">RE (Subject)</label>
+            <label className="text-xs font-bold text-textMuted uppercase">RE (Subject)</label>
             <input
               type="text"
-              className="w-full border border-gray-300 p-2 rounded text-sm disabled:bg-gray-100 disabled:text-gray-500"
+              className="w-full border border-borderDark p-2 rounded text-sm disabled:bg-navySecondary disabled:text-textMuted"
               placeholder="e.g. John Doe v. XYZ Medical Center – Claim Update"
               value={data.reportSubject || ''}
               onChange={readOnly ? undefined : (e) =>
@@ -1868,7 +1868,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Odakanit Case Number (Internal File)</label>
+            <label className="text-xs font-bold text-textMuted uppercase">Odakanit Case Number (Internal File)</label>
             {renderInputWithClear(
               data.odakanitNo || '',
               (val) => updateData({ odakanitNo: val }),
@@ -1876,9 +1876,9 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             )}
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Insurer Name</label>
+            <label className="text-xs font-bold text-textMuted uppercase">Insurer Name</label>
             <select 
-              className="w-full border border-gray-300 p-2 rounded disabled:bg-gray-100 disabled:text-gray-500"
+              className="w-full border border-borderDark p-2 rounded disabled:bg-navySecondary disabled:text-textMuted"
               value={showCustomInsurerInput ? 'OTHER' : data.insurerName} 
               onChange={readOnly ? undefined : (e) => handleInsurerSelect(e.target.value)} 
               disabled={readOnly}
@@ -1896,7 +1896,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             )}
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">{STEP1_FIELD_LABELS.lineSlip}</label>
+            <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.lineSlip}</label>
             {renderInputWithClear(
               data.lineSlipNo,
               (val) => updateData({ lineSlipNo: val, marketRef: val }),
@@ -1904,7 +1904,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             )}
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">{STEP1_FIELD_LABELS.certificate}</label>
+            <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.certificate}</label>
             {renderInputWithClear(
               data.certificateRef || '',
               (val) => updateData({ certificateRef: val }),
@@ -1912,7 +1912,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             )}
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Insured Name</label>
+            <label className="text-xs font-bold text-textMuted uppercase">Insured Name</label>
             {renderInputWithClear(
               data.insuredName,
               (val) => updateData(maybeAutoFillSubject({ insuredName: val })),
@@ -1921,10 +1921,10 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
           </div>
           <div className="space-y-1 md:col-span-2">
              <div className="flex justify-between items-end mb-1">
-               <label className="text-xs font-bold text-gray-500 uppercase">Party Name</label>
-               <div className="flex bg-gray-100 rounded p-0.5 text-xs">
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Plaintiff' ? 'bg-white shadow text-lpBlue font-bold' : 'text-gray-500'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Claimant' ? 'bg-white shadow text-lpBlue font-bold' : 'text-gray-500'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
+               <label className="text-xs font-bold text-textMuted uppercase">Party Name</label>
+               <div className="flex bg-navySecondary rounded p-0.5 text-xs">
+                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textMuted'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textMuted'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
                </div>
             </div>
             {renderInputWithClear(
@@ -1936,25 +1936,25 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-panel p-6 rounded-lg shadow-sm border border-borderDark">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h3 className="font-bold text-lg text-gray-800 flex items-center">
+            <h3 className="font-bold text-lg text-textLight flex items-center">
               <History className="w-5 h-5 mr-2 text-lpBlue" />
               Procedural Timeline
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-textMuted">
               בחרי את סוג ההליך, השלב הנוכחי ותאריכי Month/Year שיופיעו בציר הזמנים הדו&quot;חי.
             </p>
           </div>
         </div>
 
         <div className="mb-4">
-          <label className="block text-xs font-semibold text-gray-600 mb-1">
+          <label className="block text-xs font-semibold text-textMuted mb-1">
             Procedure Type
           </label>
           <select
-            className="border border-gray-300 rounded px-3 py-1 text-sm"
+            className="border border-borderDark rounded px-3 py-1 text-sm"
             value={data.proceduralTimeline?.procedureType || 'FIRST_INSTANCE'}
             onChange={(e) => handleProcedureTypeChange(e.target.value as ProceduralProcedureType)}
           >
@@ -1967,13 +1967,13 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
         </div>
 
         {!data.proceduralTimeline && isLegacyReport && (
-          <div className="border border-dashed border-gray-300 rounded-md p-3 bg-gray-50 text-xs text-gray-700">
+          <div className="border border-dashed border-borderDark rounded-md p-3 bg-navySecondary text-xs text-textLight">
             <p className="mb-2">
               This report uses the legacy timeline. You can enable the new Procedural Timeline (recommended for new reports).
             </p>
             <button
               type="button"
-              className="inline-flex items-center px-3 py-1 rounded-full bg-lpBlue text-white text-[11px] font-semibold hover:bg-blue-900"
+              className="inline-flex items-center px-3 py-1 rounded-full bg-navy text-gold text-[11px] font-semibold hover:bg-navySecondary"
               onClick={() => updateData({ proceduralTimeline: ensureProceduralTimeline() })}
             >
               Enable Procedural Timeline
@@ -2007,7 +2007,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               return (
                 <div
                   key={stage.id}
-                  className="flex items-start justify-between border border-gray-200 rounded-lg px-3 py-2 bg-white"
+                  className="flex items-start justify-between border border-borderDark rounded-lg px-3 py-2 bg-panel"
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -2019,18 +2019,18 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                       onChange={() => include && handleCurrentStageSelect(stage.id)}
                     />
                     <div>
-                      <div className="font-semibold text-sm text-gray-800 flex items-center gap-2">
+                      <div className="font-semibold text-sm text-textLight flex items-center gap-2">
                         <span>{stage.label}</span>
                         {isDynamic && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-navySecondary text-textMuted">
                             Dynamic
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-600 flex-wrap">
+                      <div className="mt-1 flex items-center gap-2 text-xs text-textMuted flex-wrap">
                         <span>Month / Year:</span>
                         <select
-                          className="border border-gray-300 rounded px-2 py-0.5 text-xs"
+                          className="border border-borderDark rounded px-2 py-0.5 text-xs"
                           value={month}
                           disabled={!include}
                           onChange={(e) =>
@@ -2053,7 +2053,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                         </select>
                         <input
                           type="number"
-                          className="w-20 border border-gray-300 rounded px-2 py-0.5 text-xs"
+                          className="w-20 border border-borderDark rounded px-2 py-0.5 text-xs"
                           placeholder="Year"
                           value={year}
                           disabled={!include}
@@ -2067,7 +2067,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                     </div>
                   </div>
                   {isDynamic && (
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
+                    <div className="flex items-center gap-1 text-xs text-textMuted">
                       <span>Include</span>
                       <input
                         type="checkbox"
@@ -2083,8 +2083,8 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center">
+      <div className="bg-panel p-6 rounded-lg shadow-sm border border-borderDark">
+        <h3 className="font-bold text-lg mb-4 text-textLight flex items-center">
            <ListPlus className="w-5 h-5 mr-2 text-green-600" />
            Current Report Sections
         </h3>
@@ -2096,10 +2096,10 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             const isCanonicalExpenses = hasFinanceExpenses && isCanonicalExpensesSection(sec);
             const isFixed = sec === 'Update' || isCanonicalExpenses;
             return (
-            <div key={`${sec}-${index}`} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded shadow-sm">
+            <div key={`${sec}-${index}`} className="flex items-center justify-between p-3 bg-panel border border-borderDark rounded shadow-sm">
                  <div className="flex items-center gap-2">
-                   <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">{index + 1}</span>
-                 <span className="font-medium text-gray-800">{sec}</span>
+                   <span className="w-6 h-6 rounded-full bg-navySecondary text-textMuted flex items-center justify-center text-xs font-bold">{index + 1}</span>
+                 <span className="font-medium text-textLight">{sec}</span>
                    {sec === 'Update' && (
                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
                        Fixed
@@ -2116,7 +2116,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                      <button
                        onClick={() => moveSection(index, 'UP')}
                        disabled={!canMoveUp}
-                       className={`p-1 rounded border ${canMoveUp ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
+                       className={`p-1 rounded border ${canMoveUp ? 'text-textMuted hover:bg-navySecondary' : 'text-gray-300 cursor-not-allowed'}`}
                        title="הזז למעלה"
                      >
                        <ChevronUp className="w-4 h-4" />
@@ -2124,7 +2124,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                      <button
                        onClick={() => moveSection(index, 'DOWN')}
                        disabled={!canMoveDown}
-                       className={`p-1 rounded border ${canMoveDown ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'}`}
+                       className={`p-1 rounded border ${canMoveDown ? 'text-textMuted hover:bg-navySecondary' : 'text-gray-300 cursor-not-allowed'}`}
                        title="הזז למטה"
                      >
                        <ChevronDown className="w-4 h-4" />
@@ -2141,19 +2141,19 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
           })}
         </div>
         {!isAddingSection ? (
-          <button onClick={() => setIsAddingSection(true)} className="w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded hover:border-green-500 hover:text-green-600 transition flex items-center justify-center font-medium">
+          <button onClick={() => setIsAddingSection(true)} className="w-full py-2 border-2 border-dashed border-borderDark text-textMuted rounded hover:border-green-500 hover:text-green-600 transition flex items-center justify-center font-medium">
             <Plus className="w-4 h-4 mr-2" /> Add Report Section
           </button>
         ) : (
-          <div className="bg-gray-50 p-4 rounded border animate-fade-in">
+          <div className="bg-navySecondary p-4 rounded border animate-fade-in">
              <div className="flex gap-2">
                 <select className="flex-1 border p-2 rounded" onChange={(e) => addSection(e.target.value)} defaultValue="">
                   <option value="" disabled>-- Select a Header --</option>
                   {AVAILABLE_SECTIONS.filter(s => !data.selectedSections.includes(s)).map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <button onClick={() => setIsAddingSection(false)} className="px-4 py-2 bg-gray-200 text-gray-600 rounded hover:bg-gray-300">Cancel</button>
+                <button onClick={() => setIsAddingSection(false)} className="px-4 py-2 bg-borderDark text-textMuted rounded hover:bg-borderDark">Cancel</button>
              </div>
-             <div className="mt-4 pt-4 border-t border-gray-200">
+             <div className="mt-4 pt-4 border-t border-borderDark">
                 <div className="flex gap-2">
                   <input className="flex-1 border p-2 rounded" placeholder="Type custom header name..." value={newCustomSection} onChange={e => setNewCustomSection(e.target.value)} />
                   <button onClick={() => { addCustomSection(); setIsAddingSection(false); }} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Add Custom</button>
@@ -2164,10 +2164,10 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
       </div>
 
       <div className="flex flex-wrap justify-between gap-2">
-        <button onClick={onSaveAndExit} className="flex items-center text-gray-600 px-4 py-2 border rounded hover:bg-gray-50 transition">
+        <button onClick={onSaveAndExit} className="flex items-center text-textMuted px-4 py-2 border rounded hover:bg-navySecondary transition">
           <ChevronLeft className="mr-2 w-4 h-4" /> Back to Dashboard
         </button>
-        <button onClick={handleNextWithValidation} className="flex items-center bg-lpBlue text-white px-6 py-2 rounded hover:bg-blue-900 transition shadow-md">
+        <button onClick={handleNextWithValidation} className="flex items-center bg-navy text-gold px-6 py-2 rounded hover:bg-navySecondary transition shadow-md">
           Next Step <ChevronRight className="ml-2 w-4 h-4" />
         </button>
       </div>
@@ -3606,7 +3606,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     />
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-2">
-        <button onClick={onBack} className="flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200">
+        <button onClick={onBack} className="flex items-center text-sm text-textMuted bg-navySecondary px-3 py-1.5 rounded-full hover:bg-borderDark">
           <ChevronLeft className="w-4 h-4 mr-1" /> חזרה לשלב 1
         </button>
         <div className="flex items-center gap-3">
@@ -3655,7 +3655,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               )}
 
               {onTranslate && !canTranslateNow && !isTranslating && (
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-textMuted">
                   יש לאשר את הדיווח בעברית לפני תרגום.
                 </p>
               )}
@@ -3673,16 +3673,16 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           )}
 
           {currentUser.role === 'ADMIN' && canEditEnglish && (
-            <div className="flex flex-col items-end gap-1 text-[11px] text-slate-700">
+            <div className="flex flex-col items-end gap-1 text-[11px] text-textLight">
               <span className="font-semibold">מצב תצוגת טקסט</span>
-              <div className="inline-flex rounded-full border border-slate-300 overflow-hidden bg-white">
+              <div className="inline-flex rounded-full border border-borderDark overflow-hidden bg-panel">
                 <button
                   type="button"
                   onClick={() => setEnglishViewMode('DUAL')}
                   className={`px-3 py-1 ${
                     englishViewMode === 'DUAL'
                       ? 'bg-slate-800 text-white'
-                      : 'bg-white text-slate-700 hover:bg-slate-100'
+                      : 'bg-panel text-textLight hover:bg-slate-100'
                   } text-[11px]`}
                 >
                   עברית + אנגלית
@@ -3690,10 +3690,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 <button
                   type="button"
                   onClick={() => setEnglishViewMode('ENGLISH_ONLY')}
-                  className={`px-3 py-1 border-r border-slate-300 ${
+                  className={`px-3 py-1 border-r border-borderDark ${
                     englishViewMode === 'ENGLISH_ONLY'
                       ? 'bg-slate-800 text-white'
-                      : 'bg-white text-slate-700 hover:bg-slate-100'
+                      : 'bg-panel text-textLight hover:bg-slate-100'
                   } text-[11px]`}
                 >
                   אנגלית בלבד
@@ -3741,12 +3741,12 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
         <div className="mb-3 mt-1 space-y-1">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-slate-600">
+              <span className="text-[11px] font-semibold text-textMuted">
                 בדיקות לפני שליחה
               </span>
             </div>
             {toneRiskLastRunAt && (
-              <div className="text-[11px] text-slate-500">
+              <div className="text-[11px] text-textMuted">
                 בדיקת Tone &amp; Risk אחרונה:{' '}
                 {new Date(toneRiskLastRunAt).toLocaleString('he-IL', {
                   day: '2-digit',
@@ -3766,8 +3766,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               title="סורק את הדוח ומציג הערות על ניסוח וסגנון בעברית. לא משנה את הטקסט – מציע הערות בלבד."
               className={`flex items-center text-xs px-3 py-1.5 rounded-full border ${
                 isHebrewStyleRunning
-                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                  : 'bg-white text-blue-800 border-blue-200 hover:bg-blue-50'
+                  ? 'bg-slate-100 text-slate-400 border-borderDark cursor-not-allowed'
+                  : 'bg-panel text-blue-800 border-blue-200 hover:bg-blue-50'
               }`}
             >
               {isHebrewStyleRunning ? (
@@ -3800,8 +3800,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               title="בודק ניסוחים שעלולים ליצור סיכון משפטי או להרחיב חשיפה למבטחת. לא משנה את הטקסט – מציג אזהרות בלבד."
               className={`flex items-center text-xs px-3 py-1.5 rounded-full border ${
                 isToneRiskRunning
-                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                  : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
+                  ? 'bg-slate-100 text-slate-400 border-borderDark cursor-not-allowed'
+                  : 'bg-panel text-amber-800 border-amber-200 hover:bg-amber-50'
               }`}
             >
               {isToneRiskRunning ? (
@@ -3816,13 +3816,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               <button
                 type="button"
                 onClick={handleClearToneRisk}
-                className="text-[11px] text-slate-600 hover:text-slate-800 underline"
+                className="text-[11px] text-textMuted hover:text-textLight underline"
               >
                 נקה תוצאות Tone &amp; Risk
               </button>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600">
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-textMuted">
             {hebrewStyleLastRunAt &&
               !hebrewStyleIssues.length &&
               !isHebrewStyleRunning && <span>אין הערות ניסוח.</span>}
@@ -3845,14 +3845,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               <button
                 type="button"
                 onClick={handleUndoToneRiskApply}
-                className="text-[11px] text-slate-600 hover:text-slate-800 underline"
+                className="text-[11px] text-textMuted hover:text-textLight underline"
               >
                 בטל החלפה אחרונה
               </button>
             )}
           </div>
           {toneRiskMeta && (
-            <div className="text-[11px] text-slate-600">
+            <div className="text-[11px] text-textMuted">
               נבדקו {toneRiskMeta.sectionsSent} סעיפים | אורך לפני: {toneRiskMeta.charsBefore} | אחרי קיצור: {toneRiskMeta.charsAfter}
               {toneRiskMeta.truncatedSections > 0 && (
                 <span className="ml-2 text-amber-700">
@@ -3865,11 +3865,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             {toneRiskIssues.map((issue) => (
               <div
                 key={issue.id}
-                className="bg-white border border-amber-200 rounded px-2 py-2 space-y-1"
+                className="bg-panel border border-amber-200 rounded px-2 py-2 space-y-1"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-textLight">
                       {issue.sectionKey || 'Unknown section'}
                     </span>
                     <span
@@ -3878,7 +3878,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                           ? 'bg-red-100 text-red-700'
                           : issue.severity === 'WARNING'
                           ? 'bg-amber-100 text-amber-700'
-                          : 'bg-slate-100 text-slate-600'
+                          : 'bg-slate-100 text-textMuted'
                       }`}
                     >
                       {issue.severity}
@@ -3888,15 +3888,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     </span>
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-700">
+                <div className="text-[11px] text-textLight">
                   <span className="font-semibold">ציטוט:</span>{' '}
                   <span className="italic">"{issue.excerpt}"</span>
                 </div>
-                <div className="text-[11px] text-slate-700">
+                <div className="text-[11px] text-textLight">
                   <span className="font-semibold">הסבר:</span> {issue.message}
                 </div>
                 {issue.suggestion && (
-                  <div className="text-[11px] text-slate-700">
+                  <div className="text-[11px] text-textLight">
                     <span className="font-semibold">ניסוח מוצע:</span>{' '}
                     <span className="whitespace-pre-wrap">{issue.suggestion}</span>
                   </div>
@@ -3911,7 +3911,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                             ?.writeText(issue.suggestion || '')
                             .catch(() => {})
                         }
-                        className="px-2 py-0.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                        className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                       >
                         העתק ניסוח מוצע
                       </button>
@@ -3931,7 +3931,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         prev.filter((other) => other.id !== issue.id),
                       )
                     }
-                    className="px-2 py-0.5 rounded border border-slate-200 text-[11px] text-slate-500 hover:bg-slate-100 ml-auto"
+                    className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textMuted hover:bg-slate-100 ml-auto"
                   >
                     התעלם
                   </button>
@@ -3951,7 +3951,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               נמצאו {hebrewStyleIssues.length} הערות ניסוח בעברית
             </div>
             {hebrewStyleLastRunAt && (
-              <div className="text-[11px] text-slate-500">
+              <div className="text-[11px] text-textMuted">
                 בדיקה אחרונה:{' '}
                 {new Date(hebrewStyleLastRunAt).toLocaleString('he-IL', {
                   day: '2-digit',
@@ -3971,11 +3971,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               return (
                 <div
                   key={issue.id}
-                  className="bg-white border border-blue-200 rounded px-2 py-2 space-y-1"
+                  className="bg-panel border border-blue-200 rounded px-2 py-2 space-y-1"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-700">
+                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-textLight">
                         {issue.sectionKey || 'Unknown section'}
                       </span>
                       <span
@@ -3984,7 +3984,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                             ? 'bg-red-100 text-red-700'
                             : issue.severity === 'WARNING'
                             ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'
+                            : 'bg-slate-100 text-textMuted'
                         }`}
                       >
                         {issue.severity}
@@ -3994,15 +3994,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       </span>
                     </div>
                   </div>
-                  <div className="text-[11px] text-slate-700">
+                  <div className="text-[11px] text-textLight">
                     <span className="font-semibold">ציטוט:</span>{' '}
                     <span className="italic">"{issue.excerpt}"</span>
                   </div>
-                  <div className="text-[11px] text-slate-700">
+                  <div className="text-[11px] text-textLight">
                     <span className="font-semibold">הסבר:</span> {issue.message}
                   </div>
                   {issue.suggestion && (
-                    <div className="text-[11px] text-slate-700">
+                    <div className="text-[11px] text-textLight">
                       <span className="font-semibold">ניסוח מוצע:</span>{' '}
                       <span className="whitespace-pre-wrap">{issue.suggestion}</span>
                     </div>
@@ -4014,7 +4014,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         onClick={() =>
                           navigator.clipboard?.writeText(issue.suggestion || '').catch(() => {})
                         }
-                        className="px-2 py-0.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                        className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                       >
                         העתק הצעה
                       </button>
@@ -4055,9 +4055,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                    {data.expensesSourceFile && (
                       <div className="mt-4 pt-2 border-t border-red-200">
                          <p className="text-xs font-bold text-red-800 mb-1">Attached Expenses Source File (Word/Excel):</p>
-                         <div className="flex items-center bg-white p-2 rounded border border-red-200 max-w-md">
+                         <div className="flex items-center bg-panel p-2 rounded border border-red-200 max-w-md">
                             <FileText className="w-4 h-4 text-blue-600 mr-2"/>
-                            <span className="text-sm text-gray-700 flex-1">{data.expensesSourceFile.name}</span>
+                            <span className="text-sm text-textLight flex-1">{data.expensesSourceFile.name}</span>
                             <a 
                                href={`data:${data.expensesSourceFile.type};base64,${data.expensesSourceFile.data}`} 
                                download={data.expensesSourceFile.name}
@@ -4117,7 +4117,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           return (
           <div
             key={sec}
-            className={`bg-white p-6 rounded-lg shadow-sm border transition-all ${isRestrictedUser && !sec.includes('Expenses') ? 'opacity-60 pointer-events-none border-gray-100' : 'border-gray-200'}`}
+            className={`bg-panel p-6 rounded-lg shadow-sm border transition-all ${isRestrictedUser && !sec.includes('Expenses') ? 'opacity-60 pointer-events-none border-gray-100' : 'border-borderDark'}`}
             onClick={(event) => {
               if (!onActiveSectionChange || typeof sec !== 'string' || !sec.trim()) return;
               const target = event.target as HTMLElement | null;
@@ -4138,7 +4138,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   {displayTitle}
                 </h3>
                 {sec.includes('Expenses') && data.expensesSnapshotAt && (
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-textMuted">
                     Based on the latest Expenses Table as of{' '}
                     {new Date(data.expensesSnapshotAt).toLocaleString('en-GB', {
                       day: '2-digit',
@@ -4189,7 +4189,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 <div className="flex items-center gap-2">
                   {!sec.includes('Expenses') && (
                     <button
-                      className="p-1.5 hover:bg-gray-100 rounded text-gray-500"
+                      className="p-1.5 hover:bg-navySecondary rounded text-textMuted"
                       disabled={isAiProcessing}
                       onClick={() => {
                         startMedicalAnalysis({ mode: 'SECTION', section: sec, analysisType: getSectionAnalysisType(sec) });
@@ -4201,7 +4201,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   )}
                   {isExpertDisplay && (
                     <button
-                      className="p-1.5 hover:bg-gray-100 rounded text-gray-500"
+                      className="p-1.5 hover:bg-navySecondary rounded text-textMuted"
                       disabled={isAiProcessing}
                       onClick={() => {
                         startMedicalAnalysis({ mode: 'SECTION', section: sec, analysisType: 'EXPERT', domain: 'dental' });
@@ -4214,7 +4214,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     </button>
                   )}
                   {sec.includes('Expenses') && canInsertWorksheet && (
-                    <button onClick={() => insertWorksheetIntoSection(sec)} className="p-1.5 hover:bg-green-50 rounded text-gray-500 hover:text-green-600" title="הוסף טבלת הוצאות עדכנית">
+                    <button onClick={() => insertWorksheetIntoSection(sec)} className="p-1.5 hover:bg-green-50 rounded text-textMuted hover:text-green-600" title="הוסף טבלת הוצאות עדכנית">
                       <Table className="w-4 h-4" />
                     </button>
                   )}
@@ -4242,7 +4242,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                           שפר ניסוח בעברית
                         </button>
                         <div
-                          className="flex rounded-full border border-purple-200 overflow-hidden text-[10px] bg-white"
+                          className="flex rounded-full border border-purple-200 overflow-hidden text-[10px] bg-panel"
                           title="בחרי את עוצמת השיפור בעברית"
                         >
                           <button
@@ -4270,7 +4270,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         </div>
                       </div>
                       {sec === 'Insurance Coverage' && hasPolicyDates && (
-                         <button onClick={autoFillInsuranceCoverage} className="p-1.5 hover:bg-blue-50 rounded text-gray-500 hover:text-blue-600" title="Auto-fill policy data">
+                         <button onClick={autoFillInsuranceCoverage} className="p-1.5 hover:bg-blue-50 rounded text-textMuted hover:text-blue-600" title="Auto-fill policy data">
                             <Wand2 className="w-4 h-4" />
                          </button>
                       )}
@@ -4280,7 +4280,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     hebrewRefineDiff.sectionKey === sec &&
                     hebrewRefineDiff.changedWords > 0 &&
                     hebrewRefineDiff.expiresAt > Date.now() && (
-                      <div className="mt-1 text-[11px] text-slate-600 bg-purple-50/40 border border-purple-100 rounded px-2 py-1">
+                      <div className="mt-1 text-[11px] text-textMuted bg-purple-50/40 border border-purple-100 rounded px-2 py-1">
                         <div className="flex items-center justify-between gap-2">
                           <span>
                             שונו בערך {hebrewRefineDiff.changedWords} מילים בסעיף זה.
@@ -4300,7 +4300,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                           </button>
                         </div>
                         {hebrewRefineDiff.open && (
-                          <div className="mt-1 text-[11px] text-slate-800 whitespace-pre-wrap leading-relaxed">
+                          <div className="mt-1 text-[11px] text-textLight whitespace-pre-wrap leading-relaxed">
                             {hebrewRefineDiff.tokens.map((tok, idx) => {
                               if (tok.type === 'same') {
                                 return ` ${tok.text}`;
@@ -4318,7 +4318,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   {getTemplatesForSection(sec).length > 0 && (
                     <button
                       onClick={() => handleToggleTemplatesPanel(sec)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-gray-50 text-gray-500 border hover:bg-yellow-50"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-navySecondary text-textMuted border hover:bg-yellow-50"
                     >
                       <Lightbulb className="w-3 h-3" /> Ideas
                     </button>
@@ -4328,7 +4328,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       <button
                         type="button"
                         onClick={() => handleSaveSelectionAsTemplate(sec)}
-                        className="px-2 py-1 rounded text-[11px] border border-dashed border-slate-300 text-slate-500 hover:bg-slate-50"
+                        className="px-2 py-1 rounded text-[11px] border border-dashed border-borderDark text-textMuted hover:bg-slate-50"
                       >
                         Save selection as template
                       </button>
@@ -4346,14 +4346,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             </div>
 
             {sec === 'Update' && isInitialReport(data) && (
-              <div className="mb-3 text-xs text-gray-700">
+              <div className="mb-3 text-xs text-textLight">
                 <span className="block mb-1 font-semibold">
                   הוסף נוסח פתיחה מובנה (אופציונלי)
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="px-3 py-1 rounded-full border border-gray-300 bg-gray-50 hover:bg-gray-100 text-[11px] font-semibold text-gray-700"
+                    className="px-3 py-1 rounded-full border border-borderDark bg-navySecondary hover:bg-navySecondary text-[11px] font-semibold text-textLight"
                     onClick={() => {
                       const template = UPDATE_INTRO_TEMPLATES.SOC;
                       const current = data.content['Update'] || '';
@@ -4371,7 +4371,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   </button>
                   <button
                     type="button"
-                    className="px-3 py-1 rounded-full border border-gray-300 bg-gray-50 hover:bg-gray-100 text-[11px] font-semibold text-gray-700"
+                    className="px-3 py-1 rounded-full border border-borderDark bg-navySecondary hover:bg-navySecondary text-[11px] font-semibold text-textLight"
                     onClick={() => {
                       const template = UPDATE_INTRO_TEMPLATES.LOD;
                       const current = data.content['Update'] || '';
@@ -4400,7 +4400,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       type="button"
                       className={`px-2 py-1 rounded-full border ${
                         bestPracticeTab === 'TEMPLATES'
-                          ? 'bg-white border-yellow-400 text-yellow-800 font-semibold'
+                          ? 'bg-panel border-yellow-400 text-yellow-800 font-semibold'
                           : 'bg-yellow-100/60 border-yellow-200 text-yellow-700'
                       }`}
                       onClick={() => setBestPracticeTab('TEMPLATES')}
@@ -4411,7 +4411,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       type="button"
                       className={`px-2 py-1 rounded-full border ${
                         bestPracticeTab === 'BEST_PRACTICES'
-                          ? 'bg-white border-emerald-400 text-emerald-800 font-semibold'
+                          ? 'bg-panel border-emerald-400 text-emerald-800 font-semibold'
                           : 'bg-emerald-50/70 border-emerald-200 text-emerald-700'
                       }`}
                       onClick={() => setBestPracticeTab('BEST_PRACTICES')}
@@ -4422,7 +4422,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       type="button"
                       className={`px-2 py-1 rounded-full border ${
                         bestPracticeTab === 'MY_SNIPPETS'
-                          ? 'bg-white border-sky-400 text-sky-800 font-semibold'
+                          ? 'bg-panel border-sky-400 text-sky-800 font-semibold'
                           : 'bg-sky-50/70 border-sky-200 text-sky-700'
                       }`}
                       onClick={() => setBestPracticeTab('MY_SNIPPETS')}
@@ -4464,7 +4464,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         setTemplateManagerSection(sec);
                         setIsTemplateManagerOpen(true);
                       }}
-                      className="text-[11px] px-2 py-1 rounded bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      className="text-[11px] px-2 py-1 rounded bg-panel text-textLight border border-borderDark hover:bg-slate-50"
                     >
                       Manage templates
                     </button>
@@ -4476,7 +4476,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         setBestPracticeManagerSection(sec);
                         setIsBestPracticeManagerOpen(true);
                       }}
-                      className="text-[11px] px-2 py-1 rounded bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      className="text-[11px] px-2 py-1 rounded bg-panel text-textLight border border-borderDark hover:bg-slate-50"
                     >
                       Manage best practices
                     </button>
@@ -4488,7 +4488,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         setIsMySnippetsManagerOpen(true);
                         setMySnippetDraft(null);
                       }}
-                      className="text-[11px] px-2 py-1 rounded bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      className="text-[11px] px-2 py-1 rounded bg-panel text-textLight border border-borderDark hover:bg-slate-50"
                     >
                       ניהול בלוקים
                     </button>
@@ -4508,7 +4508,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         : templates;
                       if (!filtered.length) {
                         return (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-textMuted">
                             No templates found for this section.
                           </p>
                         );
@@ -4519,14 +4519,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         return (
                           <div
                             key={tpl.id}
-                            className="flex items-center gap-2 bg-white border border-yellow-100 rounded px-2 py-2 hover:bg-yellow-100 cursor-pointer"
+                            className="flex items-center gap-2 bg-panel border border-yellow-100 rounded px-2 py-2 hover:bg-yellow-100 cursor-pointer"
                             onClick={() => applyTemplateToSection(sec, tpl)}
                           >
                             <div className="flex-1 min-w-0 text-right">
-                              <div className="font-semibold text-slate-800 truncate">
+                              <div className="font-semibold text-textLight truncate">
                                 {tpl.title}
                               </div>
-                              <div className="text-[11px] text-slate-600 max-h-10 overflow-hidden whitespace-pre-wrap">
+                              <div className="text-[11px] text-textMuted max-h-10 overflow-hidden whitespace-pre-wrap">
                                 {preview}
                               </div>
                             </div>
@@ -4556,7 +4556,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         : list;
                       if (!filtered.length) {
                         return (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-textMuted">
                             No best practices found for this section.
                           </p>
                         );
@@ -4568,11 +4568,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         return (
                           <div
                             key={bp.id}
-                            className="flex items-center gap-2 bg-white border border-emerald-100 rounded px-2 py-2 hover:bg-emerald-50 cursor-default"
+                            className="flex items-center gap-2 bg-panel border border-emerald-100 rounded px-2 py-2 hover:bg-emerald-50 cursor-default"
                           >
                             <div className="flex-1 min-w-0 text-right">
                               <div className="flex flex-wrap items-center justify-end gap-1 mb-0.5">
-                                <span className="font-semibold text-slate-800 truncate">
+                                <span className="font-semibold text-textLight truncate">
                                   {bp.title}
                                 </span>
                                 <span
@@ -4587,12 +4587,12 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                                     : 'Best practice'}
                                 </span>
                                 {bp.tags && bp.tags.length > 0 && (
-                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-slate-700">
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-textLight">
                                     {bp.tags.join(', ')}
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-slate-600 max-h-10 overflow-hidden whitespace-pre-wrap">
+                              <div className="text-[11px] text-textMuted max-h-10 overflow-hidden whitespace-pre-wrap">
                                 {preview}
                               </div>
                             </div>
@@ -4609,7 +4609,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleCopyBestPractice(bp)}
-                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-textLight border border-borderDark hover:bg-slate-100"
                               >
                                 Copy
                               </button>
@@ -4650,7 +4650,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       });
                       if (!sorted.length) {
                         return (
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-textMuted">
                             אין עדיין בלוקים אישיים.
                           </p>
                         );
@@ -4663,20 +4663,20 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         return (
                           <div
                             key={snip.id}
-                            className="flex items-center gap-2 bg-white border border-sky-100 rounded px-2 py-2 hover:bg-sky-50 cursor-default"
+                            className="flex items-center gap-2 bg-panel border border-sky-100 rounded px-2 py-2 hover:bg-sky-50 cursor-default"
                           >
                             <div className="flex-1 min-w-0 text-right">
                               <div className="flex flex-wrap items-center justify-end gap-1 mb-0.5">
-                                <span className="font-semibold text-slate-800 truncate">
+                                <span className="font-semibold text-textLight truncate">
                                   {snip.title}
                                 </span>
                                 {snip.tags && snip.tags.length > 0 && (
-                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-slate-700">
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-textLight">
                                     {snip.tags.join(', ')}
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[11px] text-slate-600 max-h-10 overflow-hidden whitespace-pre-wrap">
+                              <div className="text-[11px] text-textMuted max-h-10 overflow-hidden whitespace-pre-wrap">
                                 {preview}
                               </div>
                             </div>
@@ -4693,7 +4693,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleCopyMySnippet(snip)}
-                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-textLight border border-borderDark hover:bg-slate-100"
                               >
                                 העתקה
                               </button>
@@ -4709,7 +4709,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                                     body: snip.body,
                                   });
                                 }}
-                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
+                                className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-textLight border border-borderDark hover:bg-slate-100"
                               >
                                 עריכה
                               </button>
@@ -4758,16 +4758,16 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   {canManageExpenses && (
                     <div className="flex items-center justify-between mb-2">
                       <div className="relative text-xs">
-                        <button className="flex items-center text-indigo-600 bg-white px-2 py-1 rounded hover:bg-indigo-50" onClick={() => setExpensesUploadMenu(expensesUploadMenu === sec ? null : sec)}>
+                        <button className="flex items-center text-indigo-600 bg-panel px-2 py-1 rounded hover:bg-indigo-50" onClick={() => setExpensesUploadMenu(expensesUploadMenu === sec ? null : sec)}>
                           <Upload className="w-3 h-3 mr-1"/> Auto-extract
                         </button>
                         {expensesUploadMenu === sec && (
-                          <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                            <label className="w-full block px-3 py-2 hover:bg-gray-50 cursor-pointer text-right">
+                          <div className="absolute right-0 mt-2 w-44 bg-panel border border-borderDark rounded-lg shadow-lg z-20">
+                            <label className="w-full block px-3 py-2 hover:bg-navySecondary cursor-pointer text-right">
                               📎 העלאה רגילה
                               <input type="file" className="hidden" onChange={(e) => { setExpensesUploadMenu(null); handleSectionFileUpload(e, sec); }} accept=".pdf,.jpg,.png" />
                          </label>
-                            <button className="w-full text-right px-3 py-2 hover:bg-gray-50" onClick={() => startMedicalAnalysis({ mode: 'EXPENSES', section: sec })}>
+                            <button className="w-full text-right px-3 py-2 hover:bg-navySecondary" onClick={() => startMedicalAnalysis({ mode: 'EXPENSES', section: sec })}>
                               📄 ניתוח OCR
                             </button>
                           </div>
@@ -4790,12 +4790,12 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                        
                        {/* Render Items Table */}
                         <div className="overflow-x-auto border rounded">
-                          <table className="w-full text-sm border-collapse border-gray-300">
-                            <thead className="bg-gray-100">
+                          <table className="w-full text-sm border-collapse border-borderDark">
+                            <thead className="bg-navySecondary">
                               <tr>
-                                <th className="p-2 text-left text-gray-600">Date</th>
-                                <th className="p-2 text-left text-gray-600">Description</th>
-                                <th className="p-2 text-right text-gray-600">Amount</th>
+                                <th className="p-2 text-left text-textMuted">Date</th>
+                                <th className="p-2 text-left text-textMuted">Description</th>
+                                <th className="p-2 text-right text-textMuted">Amount</th>
                                 {!isRestrictedUser && <th className="p-2 w-8"></th>}
                               </tr>
                             </thead>
@@ -4830,13 +4830,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
                   {/* INVOICE ATTACHMENTS ZONE (Sub-Admin/Finance Focus) */}
                   <div className={`border-t-2 pt-4 mt-6 ${isRestrictedUser ? 'bg-green-50 p-4 rounded border-green-200' : ''}`}>
-                     <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center">
+                     <h4 className="font-bold text-sm text-textLight mb-2 flex items-center">
                         <Receipt className="w-4 h-4 mr-2"/> Tax Invoices (Appendices)
                      </h4>
                      
                      {(canManageExpenses || !data.isWaitingForInvoices) && (
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <button onClick={() => invoiceUploadRef.current?.click()} className="px-3 py-1.5 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center gap-1">
+                          <button onClick={() => invoiceUploadRef.current?.click()} className="px-3 py-1.5 text-xs bg-navySecondary text-textLight rounded hover:bg-borderDark flex items-center gap-1">
                             <Upload className="w-3 h-3"/> העלאה
                           </button>
                           <button onClick={() => startMedicalAnalysis({ mode: 'INVOICE' })} className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center gap-1">
@@ -4849,7 +4849,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                      {/* File List */}
                      <div className="mt-2 space-y-2">
                         {data.invoiceFiles.map(file => (
-                           <div key={file.id} className="flex items-center justify-between bg-white p-2 rounded border shadow-sm text-xs">
+                           <div key={file.id} className="flex items-center justify-between bg-panel p-2 rounded border shadow-sm text-xs">
                               <span className="flex items-center"><FileText className="w-3 h-3 mr-2 text-blue-500"/> {file.name}</span>
                               <button onClick={() => removeInvoice(file.id)} className="text-red-400 hover:text-red-600"><X className="w-3 h-3"/></button>
                            </div>
@@ -4862,7 +4862,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 {/* Hebrew editor hidden when in English-only view */}
                 {!(canEditEnglish && englishViewMode === 'ENGLISH_ONLY') && (
                   <AutoResizeTextarea
-                    className="w-full border border-gray-300 rounded-md p-4 min-h-[100px] text-right font-sans focus:ring-1 focus:ring-lpBlue outline-none transition-all"
+                    className="w-full border border-borderDark rounded-md p-4 min-h-[100px] text-right font-sans focus:ring-1 focus:ring-lpBlue outline-none transition-all"
                     dir="rtl"
                     value={data.content[sec] || ''}
                     onChange={(e: any) => handleContentChange(sec, e.target.value)}
@@ -4881,7 +4881,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 {canEditEnglish && (
                   <div className={englishViewMode === 'ENGLISH_ONLY' ? '' : 'mt-4 border-t pt-4'}>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-xs font-bold text-gray-500 uppercase block">
+                      <label className="text-xs font-bold text-textMuted uppercase block">
                         English Output (Editable)
                       </label>
                       {currentUser.role === 'ADMIN' &&
@@ -4900,7 +4900,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                                 ? 'border-emerald-400 text-emerald-600 bg-emerald-50 cursor-wait'
                                 : (data.translatedContent?.[sec] || '').trim()
                                 ? 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
-                                : 'border-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'border-borderDark text-slate-400 cursor-not-allowed'
                             }`}
                           >
                             {improvingSectionKey === sec ? (
@@ -4933,22 +4933,22 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
       {currentUser.role === 'ADMIN' && isTemplateManagerOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-panel rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="px-4 py-2 border-b flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Manage Templates</h3>
+              <h3 className="text-sm font-semibold text-textLight">Manage Templates</h3>
               <button
                 type="button"
                 onClick={() => setIsTemplateManagerOpen(false)}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-textMuted hover:text-textLight"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="px-4 py-3 border-b flex items-center gap-3 text-xs">
-              <label className="font-semibold text-slate-700">
+              <label className="font-semibold text-textLight">
                 Section:
                 <select
-                  className="ml-2 border border-slate-300 rounded px-2 py-1 text-xs"
+                  className="ml-2 border border-borderDark rounded px-2 py-1 text-xs"
                   value={templateManagerSection}
                   onChange={(e) => setTemplateManagerSection(e.target.value)}
                 >
@@ -4971,7 +4971,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   );
                 if (!list.length) {
                   return (
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[11px] text-textMuted">
                       No templates defined yet for this section.
                     </p>
                   );
@@ -4979,18 +4979,18 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 return list.map((tpl, idx) => (
                   <div
                     key={tpl.id}
-                    className="border border-slate-200 rounded-md p-2 bg-slate-50 space-y-1"
+                    className="border border-borderDark rounded-md p-2 bg-slate-50 space-y-1"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
-                        className="flex-1 border border-slate-300 rounded px-2 py-1 text-xs"
+                        className="flex-1 border border-borderDark rounded px-2 py-1 text-xs"
                         value={tpl.title}
                         onChange={(e) =>
                           handleTemplateFieldChange(tpl.id, { title: e.target.value })
                         }
                       />
-                      <label className="flex items-center gap-1 text-[11px] text-slate-700">
+                      <label className="flex items-center gap-1 text-[11px] text-textLight">
                         <input
                           type="checkbox"
                           checked={tpl.isEnabled !== false}
@@ -5004,7 +5004,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       </label>
                     </div>
                     <textarea
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-xs mt-1"
+                      className="w-full border border-borderDark rounded px-2 py-1 text-xs mt-1"
                       rows={3}
                       value={tpl.body}
                       onChange={(e) =>
@@ -5015,7 +5015,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          className="px-2 py-0.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                          className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                           onClick={() => handleReorderTemplate(tpl.id, 'UP')}
                           disabled={idx === 0}
                         >
@@ -5023,7 +5023,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         </button>
                         <button
                           type="button"
-                          className="px-2 py-0.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                          className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                           onClick={() => handleReorderTemplate(tpl.id, 'DOWN')}
                           disabled={idx === list.length - 1}
                         >
@@ -5052,22 +5052,22 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
       {currentUser.role === 'ADMIN' && isBestPracticeManagerOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-panel rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="px-4 py-2 border-b flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Manage Best Practices</h3>
+              <h3 className="text-sm font-semibold text-textLight">Manage Best Practices</h3>
               <button
                 type="button"
                 onClick={() => setIsBestPracticeManagerOpen(false)}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-textMuted hover:text-textLight"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="px-4 py-3 border-b flex items-center gap-3 text-xs">
-              <label className="font-semibold text-slate-700">
+              <label className="font-semibold text-textLight">
                 Section:
                 <select
-                  className="ml-2 border border-slate-300 rounded px-2 py-1 text-xs"
+                  className="ml-2 border border-borderDark rounded px-2 py-1 text-xs"
                   value={bestPracticeManagerSection}
                   onChange={(e) => setBestPracticeManagerSection(e.target.value)}
                 >
@@ -5093,7 +5093,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                   });
                 if (!list.length) {
                   return (
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[11px] text-textMuted">
                       No best practices defined yet for this section.
                     </p>
                   );
@@ -5101,19 +5101,19 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                 return list.map((bp) => (
                   <div
                     key={bp.id}
-                    className="border border-slate-200 rounded-md p-2 bg-slate-50 space-y-1"
+                    className="border border-borderDark rounded-md p-2 bg-slate-50 space-y-1"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
-                        className="flex-1 border border-slate-300 rounded px-2 py-1 text-xs"
+                        className="flex-1 border border-borderDark rounded px-2 py-1 text-xs"
                         value={bp.title}
                         onChange={(e) =>
                           handleBestPracticeFieldChange(bp.id, { title: e.target.value })
                         }
                       />
                       <select
-                        className="border border-slate-300 rounded px-2 py-1 text-[11px]"
+                        className="border border-borderDark rounded px-2 py-1 text-[11px]"
                         value={bp.label}
                         onChange={(e) =>
                           handleBestPracticeFieldChange(bp.id, {
@@ -5127,7 +5127,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                         <option value="BEST_PRACTICE">Best practice</option>
                         <option value="LLOYDS_RECOMMENDED">Lloyds recommended</option>
                       </select>
-                      <label className="flex items-center gap-1 text-[11px] text-slate-700">
+                      <label className="flex items-center gap-1 text-[11px] text-textLight">
                         <input
                           type="checkbox"
                           checked={bp.isEnabled !== false}
@@ -5139,7 +5139,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       </label>
                     </div>
                     <textarea
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-xs mt-1"
+                      className="w-full border border-borderDark rounded px-2 py-1 text-xs mt-1"
                       rows={3}
                       value={bp.body}
                       onChange={(e) =>
@@ -5148,7 +5148,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     />
                     <input
                       type="text"
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-[11px] mt-1"
+                      className="w-full border border-borderDark rounded px-2 py-1 text-[11px] mt-1"
                       placeholder="Tags (comma separated)"
                       value={(bp.tags || []).join(', ')}
                       onChange={(e) =>
@@ -5161,7 +5161,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       }
                     />
                     <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-2 text-[10px] text-textMuted">
                         <span>Usage: {bp.usageCount || 0}</span>
                         {bp.lastUsedAt && (
                           <span>
@@ -5198,23 +5198,23 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
       {isMySnippetsManagerOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-panel rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="px-4 py-2 border-b flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">בלוקים אישיים</h3>
+              <h3 className="text-sm font-semibold text-textLight">בלוקים אישיים</h3>
               <button
                 type="button"
                 onClick={() => {
                   setIsMySnippetsManagerOpen(false);
                   setMySnippetDraft(null);
                 }}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-textMuted hover:text-textLight"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 text-xs">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-textMuted">
                   בלוקים אישיים זמינים רק לך וניתן להכניס אותם לכל דו״ח בלחיצה.
                 </p>
                 <button
@@ -5235,14 +5235,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               </div>
 
               {mySnippets.length === 0 && (
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-textMuted">
                   עדיין אין לך בלוקים אישיים. אפשר ליצור אחד דרך &quot;בלוק חדש&quot;.
                 </p>
               )}
 
               {mySnippets.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-[11px] font-semibold text-slate-800">בלוקים קיימים</h4>
+                  <h4 className="text-[11px] font-semibold text-textLight">בלוקים קיימים</h4>
                   <div className="space-y-1">
                     {mySnippets
                       .slice()
@@ -5252,20 +5252,20 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       .map((snip) => (
                         <div
                           key={snip.id}
-                          className="flex items-center justify-between gap-2 border border-slate-200 rounded-md px-2 py-1 bg-slate-50"
+                          className="flex items-center justify-between gap-2 border border-borderDark rounded-md px-2 py-1 bg-slate-50"
                         >
                           <div className="flex-1 min-w-0 text-right">
                             <div className="flex flex-wrap items-center justify-end gap-1">
-                              <span className="font-semibold text-slate-800 truncate">
+                              <span className="font-semibold text-textLight truncate">
                                 {snip.title}
                               </span>
                               {snip.sectionKey && (
-                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-slate-700">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-textLight">
                                   {snip.sectionKey}
                                 </span>
                               )}
                               {snip.tags && snip.tags.length > 0 && (
-                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-slate-700">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] bg-slate-100 text-textLight">
                                   {snip.tags.join(', ')}
                                 </span>
                               )}
@@ -5274,7 +5274,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              className="px-2 py-0.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                              className="px-2 py-0.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                               onClick={() =>
                                 setMySnippetDraft({
                                   id: snip.id,
@@ -5311,7 +5311,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
               {mySnippetDraft && (
                 <form
-                  className="border-t border-slate-200 pt-3 space-y-3"
+                  className="border-t border-borderDark pt-3 space-y-3"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const title = mySnippetDraft.title.trim();
@@ -5333,15 +5333,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     setMySnippetDraft(null);
                   }}
                 >
-                  <h4 className="text-[11px] font-semibold text-slate-800">
+                  <h4 className="text-[11px] font-semibold text-textLight">
                     {mySnippetDraft.id ? 'עריכת בלוק' : 'בלוק חדש'}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="block font-semibold text-slate-700">כותרת</label>
+                      <label className="block font-semibold text-textLight">כותרת</label>
                       <input
                         type="text"
-                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-borderDark rounded px-2 py-1 text-xs"
                         value={mySnippetDraft.title}
                         onChange={(e) =>
                           setMySnippetDraft((prev) =>
@@ -5357,11 +5357,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block font-semibold text-slate-700">
+                      <label className="block font-semibold text-textLight">
                         סקשן (רשות)
                       </label>
                       <select
-                        className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                        className="w-full border border-borderDark rounded px-2 py-1 text-xs"
                         value={mySnippetDraft.sectionKey}
                         onChange={(e) =>
                           setMySnippetDraft((prev) =>
@@ -5384,12 +5384,12 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="block font-semibold text-slate-700">
+                    <label className="block font-semibold text-textLight">
                       תגיות (רשות, מופרדות בפסיקים)
                     </label>
                     <input
                       type="text"
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                      className="w-full border border-borderDark rounded px-2 py-1 text-xs"
                       value={mySnippetDraft.tagsInput}
                       onChange={(e) =>
                         setMySnippetDraft((prev) =>
@@ -5404,9 +5404,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="block font-semibold text-slate-700">תוכן הבלוק</label>
+                    <label className="block font-semibold text-textLight">תוכן הבלוק</label>
                     <textarea
-                      className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                      className="w-full border border-borderDark rounded px-2 py-1 text-xs"
                       rows={5}
                       value={mySnippetDraft.body}
                       onChange={(e) =>
@@ -5421,10 +5421,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                       }
                     />
                   </div>
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-borderDark">
                     <button
                       type="button"
-                      className="px-3 py-1.5 rounded border border-slate-300 text-[11px] text-slate-700 hover:bg-slate-100"
+                      className="px-3 py-1.5 rounded border border-borderDark text-[11px] text-textLight hover:bg-slate-100"
                       onClick={() => setMySnippetDraft(null)}
                     >
                       ביטול
@@ -5445,13 +5445,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
 
       {currentUser.role === 'ADMIN' && bestPracticeDraft && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-panel rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
             <div className="px-4 py-2 border-b flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800">Save Best Practice</h3>
+              <h3 className="text-sm font-semibold text-textLight">Save Best Practice</h3>
               <button
                 type="button"
                 onClick={handleCancelBestPracticeDraft}
-                className="text-slate-500 hover:text-slate-700"
+                className="text-textMuted hover:text-textLight"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -5466,8 +5466,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       )}
 
       <div className="flex justify-between pt-4">
-        <button onClick={onBack} className="flex items-center text-gray-600 px-4 py-2 hover:bg-gray-100 rounded"><ChevronLeft className="mr-2 w-4 h-4" /> Back</button>
-        <button onClick={onNext} className="flex items-center bg-lpBlue text-white px-6 py-2 rounded hover:bg-blue-900 transition">Next Step <ChevronRight className="ml-2 w-4 h-4" /></button>
+        <button onClick={onBack} className="flex items-center text-textMuted px-4 py-2 hover:bg-navySecondary rounded"><ChevronLeft className="mr-2 w-4 h-4" /> Back</button>
+        <button onClick={onNext} className="flex items-center bg-navy text-white px-6 py-2 rounded hover:bg-navySecondary transition">Next Step <ChevronRight className="ml-2 w-4 h-4" /></button>
       </div>
     </div>
     </>
@@ -5572,17 +5572,17 @@ const FinanceRequestModal = ({
 
   return (
      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
-        <div className="bg-white p-6 rounded-lg shadow-xl w-96 animate-scale-in">
-           <h3 className="font-bold text-lg mb-4 text-gray-800">{isLawyer ? 'פתח תיק אישי' : 'Open New Finance Case'}</h3>
+        <div className="bg-panel p-6 rounded-lg shadow-xl w-96 animate-scale-in">
+           <h3 className="font-bold text-lg mb-4 text-textLight">{isLawyer ? 'פתח תיק אישי' : 'Open New Finance Case'}</h3>
            <div className="space-y-3">
               <div>
-                 <label className="block text-xs font-bold text-gray-500">Internal Case # (Odakanit)</label>
+                 <label className="block text-xs font-bold text-textMuted">Internal Case # (Odakanit)</label>
                  <input className="w-full border p-2 rounded" value={odakanitNo} onChange={e => setOdakanitNo(e.target.value)} placeholder="e.g. 55492" />
               </div>
               {!isLawyer && (
                 <>
               <div>
-                 <label className="block text-xs font-bold text-gray-500">Assign Lawyer</label>
+                 <label className="block text-xs font-bold text-textMuted">Assign Lawyer</label>
                  <select className="w-full border p-2 rounded" value={lawyerId} onChange={e => setLawyerId(e.target.value)}>
                     <option value="">-- Select --</option>
                     {USERS.filter(u => u.role === 'LAWYER').map(u => (
@@ -5591,13 +5591,13 @@ const FinanceRequestModal = ({
                  </select>
               </div>
               <div>
-                 <label className="block text-xs font-bold text-gray-500">Instructions</label>
+                 <label className="block text-xs font-bold text-textMuted">Instructions</label>
                 <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
                   <textarea className="w-full border p-2 rounded" rows={3} value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Notes for lawyer..."/>
                 </GrammarlyEditorPlugin>
               </div>
               <div>
-                 <label className="block text-xs font-bold text-gray-500">Attach Expenses File</label>
+                 <label className="block text-xs font-bold text-textMuted">Attach Expenses File</label>
                  <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} className="text-xs"/>
               </div>
                   <div className="border rounded-lg p-3 bg-amber-50">
@@ -5615,9 +5615,9 @@ const FinanceRequestModal = ({
                           const suggestions = favoriteProviders.filter(f => f.category === row.category || f.category === 'OTHER');
                           const convertedRow = convertDraftRowsToWorksheetRows([row], currentUser)[0];
                           return (
-                            <div key={row.id} className="border border-amber-100 bg-white rounded-lg p-2 space-y-2">
+                            <div key={row.id} className="border border-amber-100 bg-panel rounded-lg p-2 space-y-2">
                               <div>
-                                 <label className="block text-[10px] font-bold text-gray-500">Expense Details</label>
+                                 <label className="block text-[10px] font-bold text-textMuted">Expense Details</label>
                                  <select value={row.category} onChange={(e) => updateWorksheetRow(row.id, 'category', e.target.value as ExpenseRowCategory)} className="w-full border rounded text-xs p-2">
                                     {EXPENSE_DETAIL_OPTIONS.map(opt => (
                                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -5626,13 +5626,13 @@ const FinanceRequestModal = ({
                               </div>
                               {row.category === 'OTHER' && (
                                 <div>
-                                   <label className="block text-[10px] font-bold text-gray-500">Custom Label</label>
+                                   <label className="block text-[10px] font-bold text-textMuted">Custom Label</label>
                                    <input className="w-full border rounded text-xs p-2" placeholder="Describe expense" value={row.customLabel || ''} onChange={(e) => updateWorksheetRow(row.id, 'customLabel', e.target.value)} />
                                 </div>
                               )}
                               {isExpenseRow && (
                                 <div>
-                                   <label className="block text-[10px] font-bold text-gray-500">Service Provider</label>
+                                   <label className="block text-[10px] font-bold text-textMuted">Service Provider</label>
                                    <input list={`provider-${row.id}`} className="w-full border rounded text-xs p-2" placeholder="Provider name" value={row.serviceProvider} onChange={(e) => updateWorksheetRow(row.id, 'serviceProvider', e.target.value)} />
                                    <datalist id={`provider-${row.id}`}>
                                       {suggestions.map(fav => (
@@ -5648,7 +5648,7 @@ const FinanceRequestModal = ({
                                 </div>
                               )}
                               <div>
-                                 <label className="block text-[10px] font-bold text-gray-500">Cost (₪)</label>
+                                 <label className="block text-[10px] font-bold text-textMuted">Cost (₪)</label>
                                  <input type="number" min="0" className="w-full border rounded text-xs p-2" placeholder="₪" value={row.amount} onChange={e => updateWorksheetRow(row.id, 'amount', e.target.value)} />
                               </div>
                               <div className="text-right">
@@ -5660,22 +5660,22 @@ const FinanceRequestModal = ({
                      </div>
                      <div className="text-right text-xs font-bold text-amber-800 mt-2">Total balance preview: ₪{worksheetTotals.totalBalance.toLocaleString()}</div>
                   </div>
-                  <div className="border rounded-lg p-3 bg-white">
+                  <div className="border rounded-lg p-3 bg-panel">
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold text-gray-700">Tax Invoices (PDF / Word)</label>
-                      <span className="text-[11px] text-gray-500">{invoiceFiles.length}/{MAX_INVOICES}</span>
+                      <label className="block text-xs font-bold text-textLight">Tax Invoices (PDF / Word)</label>
+                      <span className="text-[11px] text-textMuted">{invoiceFiles.length}/{MAX_INVOICES}</span>
                     </div>
-                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50">
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-borderDark border-dashed rounded-lg cursor-pointer bg-panel hover:bg-navySecondary">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                        <p className="text-xs text-gray-500">צרפו חשבוניות מס (עד 4 קבצים)</p>
+                        <p className="text-xs text-textMuted">צרפו חשבוניות מס (עד 4 קבצים)</p>
                       </div>
                       <input type="file" className="hidden" multiple accept=".pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" onChange={handleInvoiceUploadFinance} />
                     </label>
                     <div className="mt-2 space-y-2 max-h-32 overflow-auto">
                       {invoiceFiles.map(file => (
-                        <div key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded border text-xs">
-                          <span className="flex items-center gap-2 text-gray-700"><FileText className="w-3 h-3 text-blue-500"/>{file.name}</span>
+                        <div key={file.id} className="flex items-center justify-between bg-navySecondary p-2 rounded border text-xs">
+                          <span className="flex items-center gap-2 text-textLight"><FileText className="w-3 h-3 text-blue-500"/>{file.name}</span>
                           <button type="button" onClick={() => removeFinanceInvoice(file.id)} className="text-red-400 hover:text-red-600"><X className="w-3 h-3"/></button>
                         </div>
                       ))}
@@ -5684,9 +5684,9 @@ const FinanceRequestModal = ({
                   </div>
                 </>
               )}
-              {isLawyer && <p className="text-xs text-gray-500">המספר יעזור לסנכרן מול בעודכנית. אין צורך בשדות נוספים.</p>}
+              {isLawyer && <p className="text-xs text-textMuted">המספר יעזור לסנכרן מול בעודכנית. אין צורך בשדות נוספים.</p>}
               <button onClick={handleSubmit} className="w-full bg-indigo-600 text-white py-2 rounded font-bold mt-2 hover:bg-indigo-700">{isLawyer ? 'Create Personal Folder' : 'Create Folder'}</button>
-              <button onClick={onClose} className="w-full text-gray-500 text-sm hover:underline mt-1">Cancel</button>
+              <button onClick={onClose} className="w-full text-textMuted text-sm hover:underline mt-1">Cancel</button>
            </div>
         </div>
      </div>
@@ -5957,9 +5957,9 @@ const Dashboard = ({
   const expensesSent = expenseReports.filter((r: ReportData) => r.status === 'SENT');
   const totalSentBalance = expensesSent.reduce((acc: number, report: ReportData) => acc + getExpensesNumericTotal(report), 0);
   const getStatusBadgeClasses = (status: ReportStatus) => {
-    if (status === 'SENT') return 'bg-green-100 text-green-700 border-green-200';
-    if (status === 'READY_TO_SEND') return 'bg-red-100 text-red-700 border-red-200';
-    return 'bg-gray-100 text-gray-600 border-gray-200';
+    if (status === 'SENT') return 'bg-gold/20 text-goldLight border-gold';
+    if (status === 'READY_TO_SEND') return 'bg-danger/30 text-red-300 border-danger';
+    return 'bg-navySecondary text-textMuted border-borderDark';
   };
 
   const formatStatusLabel = (status: ReportStatus) => {
@@ -6088,7 +6088,7 @@ const Dashboard = ({
   }, [expandedCaseKey, groupedCaseReports]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 relative">
+    <div className="min-h-screen bg-bgDark p-6 relative">
       {showUserGuide && <UserGuideModal onClose={() => setShowUserGuide(false)} />}
       
       {showFinanceModal && (
@@ -6102,18 +6102,18 @@ const Dashboard = ({
       )}
       {showFavoritesModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
+          <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-textLight flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-500" /> ניהול ספקים מועדפים
               </h3>
-              <button onClick={() => setShowFavoritesModal(false)} className="text-gray-500 hover:text-gray-800">
+              <button onClick={() => setShowFavoritesModal(false)} className="text-textMuted hover:text-textLight">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="grid md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">קטגוריה</label>
+                <label className="block text-xs font-bold text-textMuted mb-1">קטגוריה</label>
                 <select value={favoriteDraft.category} onChange={(e) => setFavoriteDraft({ ...favoriteDraft, category: e.target.value as ExpenseRowCategory })} className="w-full border rounded text-sm p-2">
                   {EXPENSE_DETAIL_OPTIONS.filter(opt => opt.type === 'EXPENSE').map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -6121,11 +6121,11 @@ const Dashboard = ({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">שם לתצוגה</label>
+                <label className="block text-xs font-bold text-textMuted mb-1">שם לתצוגה</label>
                 <input className="w-full border rounded text-sm p-2" value={favoriteDraft.label} onChange={(e) => setFavoriteDraft({ ...favoriteDraft, label: e.target.value })} placeholder="לדוגמה: מומחה ניתוחים" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">שם ספק</label>
+                <label className="block text-xs font-bold text-textMuted mb-1">שם ספק</label>
                   <input className="w-full border rounded text-sm p-2" value={favoriteDraft.provider} onChange={(e) => setFavoriteDraft({ ...favoriteDraft, provider: e.target.value })} placeholder='ד"ר יואב גרוסמן' />
               </div>
             </div>
@@ -6137,8 +6137,8 @@ const Dashboard = ({
               {currentFavorites.map(fav => (
                 <div key={fav.id} className="p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-gray-800">{fav.label}</p>
-                    <p className="text-xs text-gray-500">{fav.serviceProvider}</p>
+                    <p className="text-sm font-bold text-textLight">{fav.label}</p>
+                    <p className="text-xs text-textMuted">{fav.serviceProvider}</p>
                   </div>
                   <button onClick={() => handleRemoveFavorite(fav.id)} className="text-xs text-red-500 hover:underline">הסר</button>
                 </div>
@@ -6153,11 +6153,11 @@ const Dashboard = ({
         <div className="flex justify-between items-center mb-8">
            <div>
               <h1 className="text-3xl font-serif font-bold text-lpBlue">Lior Perry Law Office</h1>
-              <p className="text-gray-600">Welcome back, <span className="font-bold">{user.name}</span> ({user.role})</p>
+              <p className="text-textMuted">Welcome back, <span className="font-bold">{user.name}</span> ({user.role})</p>
            </div>
            <div className="flex items-center gap-3 flex-wrap justify-end">
               {canToggleRecycle && (
-                <button onClick={() => setShowRecycleBin((prev: boolean) => !prev)} className={`flex items-center px-4 py-2 rounded shadow text-sm font-bold ${showRecycleBin ? 'bg-gray-300 text-gray-800' : 'bg-gray-200 text-gray-700'} hover:bg-gray-300`}>
+                <button onClick={() => setShowRecycleBin((prev: boolean) => !prev)} className={`flex items-center px-4 py-2 rounded shadow text-sm font-bold ${showRecycleBin ? 'bg-gray-300 text-textLight' : 'bg-borderDark text-textLight'} hover:bg-borderDark`}>
                    <Trash2 className="w-4 h-4 mr-2"/> {showRecycleBin ? 'Back to Reports' : `Recycle Bin (${recycleReports.length})`}
                 </button>
               )}
@@ -6179,10 +6179,10 @@ const Dashboard = ({
                    {notifications.length > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1">{notifications.length}</span>}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 shadow-xl rounded-lg z-50">
+                  <div className="absolute right-0 mt-2 w-80 bg-panel border border-borderDark shadow-xl rounded-lg z-50">
                     <div className="flex items-center justify-between px-3 py-2 border-b">
-                      <span className="text-sm font-bold text-gray-700">Smart Notifications</span>
-                      <label className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="text-sm font-bold text-textLight">Smart Notifications</span>
+                      <label className="text-xs text-textMuted flex items-center gap-1">
                         <input type="checkbox" checked={dailySummaryOptIn} onChange={e => setDailySummaryOptIn(e.target.checked)} />
                         Daily summary
                       </label>
@@ -6191,7 +6191,7 @@ const Dashboard = ({
                       {notifications.length === 0 && <div className="p-4 text-xs text-gray-400 text-center">No notifications yet.</div>}
                       {notifications.map((note: NotificationEntry) => (
                         <div key={note.id} className="p-3 text-sm">
-                          <p className="font-medium text-gray-800">{note.message}</p>
+                          <p className="font-medium text-textLight">{note.message}</p>
                           <p className="text-[10px] text-gray-400">{new Date(note.createdAt).toLocaleString()}</p>
                         </div>
                       ))}
@@ -6211,7 +6211,7 @@ const Dashboard = ({
                     resetAllAppData();
                     window.location.reload();
                   }}
-                  className="flex items-center text-xs text-gray-600 bg-gray-100 px-3 py-2 rounded hover:bg-gray-200 border border-gray-300"
+                  className="flex items-center text-xs text-textMuted bg-navySecondary px-3 py-2 rounded hover:bg-borderDark border border-borderDark"
                 >
                   Reset All Data (Dev)
                 </button>
@@ -6226,11 +6226,11 @@ const Dashboard = ({
         )}
 
         {showExpensesSummary && (
-          <div className="mb-8 bg-white border border-amber-200 rounded-2xl shadow p-6 space-y-4">
+          <div className="mb-8 bg-panel border border-amber-200 rounded-2xl shadow p-6 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h3 className="text-lg font-bold text-amber-700 flex items-center gap-2"><Receipt className="w-5 h-5"/> Expenses Overview</h3>
-                <p className="text-sm text-gray-500">Tracking all reports that include expense tables.</p>
+                <p className="text-sm text-textMuted">Tracking all reports that include expense tables.</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <button onClick={() => setShowFavoritesModal(true)} className="text-xs text-amber-700 underline hover:text-amber-900">
@@ -6273,8 +6273,8 @@ const Dashboard = ({
                   {expenseReports.map((report: ReportData) => (
                     <tr key={`expense-${report.id}`} className="hover:bg-amber-50 transition">
                       <td className="p-2">
-                        <div className="font-semibold text-gray-800">{report.insuredName || 'Unnamed Case'}</div>
-                        <div className="text-xs text-gray-500">Lawyer: {report.ownerName}</div>
+                        <div className="font-semibold text-textLight">{report.insuredName || 'Unnamed Case'}</div>
+                        <div className="text-xs text-textMuted">Lawyer: {report.ownerName}</div>
                       </td>
                       <td className="p-2">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-sm border ${getStatusBadgeClasses(report.status)}`}>
@@ -6297,11 +6297,11 @@ const Dashboard = ({
         {!isStaff && lawyerTaskSections.length > 0 && (
           <div className="space-y-6 mb-8">
             {lawyerTaskSections.map((section) => (
-              <div key={section.id} className="bg-white border rounded-2xl shadow-sm">
+              <div key={section.id} className="bg-panel border rounded-2xl shadow-sm">
                 <div className="flex flex-wrap justify-between items-center gap-3 px-4 py-3 border-b">
                        <div>
-                    <h3 className="font-bold text-gray-800">{section.title}</h3>
-                    <p className="text-sm text-gray-500">{section.subtitle}</p>
+                    <h3 className="font-bold text-textLight">{section.title}</h3>
+                    <p className="text-sm text-textMuted">{section.subtitle}</p>
                           </div>
                        </div>
                 {section.items.length === 0 ? (
@@ -6317,41 +6317,41 @@ const Dashboard = ({
                         const hasActiveDraft = sentItem.isLatest && sentItem.parent.status !== 'SENT';
                         return (
                           <div key={`${sentItem.parent.id}-${sentItem.entry.id}`} className={`border ${section.tone} rounded-xl p-4`}>
-                            <div className="grid md:grid-cols-4 gap-4 text-sm text-gray-600">
+                            <div className="grid md:grid-cols-4 gap-4 text-sm text-textMuted">
                               <div>
                                 <p className="text-xs uppercase text-gray-400">מספר בעודכנית</p>
-                                <p className="font-bold text-gray-900">{sentItem.parent.odakanitNo || '—'}</p>
+                                <p className="font-bold text-textLight">{sentItem.parent.odakanitNo || '—'}</p>
                               </div>
                               <div>
                                 <p className="text-xs uppercase text-gray-400">שם המבוטח</p>
-                                <p className="font-bold text-gray-900">{sentItem.parent.insuredName || '—'}</p>
+                                <p className="font-bold text-textLight">{sentItem.parent.insuredName || '—'}</p>
                               </div>
                               <div>
                                 <p className="text-xs uppercase text-gray-400">{sentItem.parent.plaintiffTitle}</p>
-                                <p className="font-bold text-gray-900">{sentItem.parent.plaintiffName || '—'}</p>
+                                <p className="font-bold text-textLight">{sentItem.parent.plaintiffName || '—'}</p>
                               </div>
                               <div>
                                 <p className="text-xs uppercase text-gray-400">דוח #{sentItem.reportNumber}</p>
-                                <p className="font-bold text-gray-900">{sentDate}</p>
+                                <p className="font-bold text-textLight">{sentDate}</p>
                               </div>
                             </div>
-                            <div className="mt-2 text-sm text-gray-600 space-y-1">
-                              <p><span className="font-semibold text-gray-800">נושא:</span> {sentItem.entry.subject || '—'}</p>
+                            <div className="mt-2 text-sm text-textMuted space-y-1">
+                              <p><span className="font-semibold text-textLight">נושא:</span> {sentItem.entry.subject || '—'}</p>
                               {sentItem.entry.fileName && (
-                                <p className="text-xs text-gray-500">שם קובץ: {sentItem.entry.fileName}</p>
+                                <p className="text-xs text-textMuted">שם קובץ: {sentItem.entry.fileName}</p>
                               )}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2 justify-end">
                               {canStartFollowUp && onStartNextReport && (
                               <button
                                   onClick={() => onStartNextReport(sentItem.parent.id)}
-                                  className="px-4 py-2 rounded-full bg-lpBlue text-white text-sm font-semibold hover:bg-blue-900"
+                                  className="px-4 py-2 rounded-full bg-navy text-white text-sm font-semibold hover:bg-navySecondary"
                                 >
                                   דו"ח המשך
                                 </button>
                               )}
                               {hasActiveDraft && (
-                              <span className="text-xs text-gray-500 font-semibold px-3 py-1 rounded-full bg-gray-100">
+                              <span className="text-xs text-textMuted font-semibold px-3 py-1 rounded-full bg-navySecondary">
                                   דו"ח חדש בתהליך
                                 </span>
                               )}
@@ -6367,26 +6367,26 @@ const Dashboard = ({
                           : (reportItem.reportHistory?.length || 0) + 1;
                       return (
                         <div key={reportItem.id} className={`border ${section.tone} rounded-xl p-4`}>
-                          <div className="grid md:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div className="grid md:grid-cols-4 gap-4 text-sm text-textMuted">
                             <div>
                               <p className="text-xs uppercase text-gray-400">מספר בעודכנית</p>
-                              <p className="font-bold text-gray-900">{reportItem.odakanitNo || '—'}</p>
+                              <p className="font-bold text-textLight">{reportItem.odakanitNo || '—'}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase text-gray-400">שם התובע</p>
-                              <p className="font-bold text-gray-900">{reportItem.plaintiffName || '—'}</p>
+                              <p className="font-bold text-textLight">{reportItem.plaintiffName || '—'}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase text-gray-400">שם המבוטח</p>
-                              <p className="font-bold text-gray-900">{reportItem.insuredName || '—'}</p>
+                              <p className="font-bold text-textLight">{reportItem.insuredName || '—'}</p>
                             </div>
                             <div>
                               <p className="text-xs uppercase text-gray-400">מספר דיווח</p>
-                              <p className="font-bold text-gray-900">#{iteration}</p>
+                              <p className="font-bold text-textLight">#{iteration}</p>
                             </div>
                           </div>
                       {section.id === 'followup' && (
-                        <div className="mt-2 text-xs text-gray-500">
+                        <div className="mt-2 text-xs text-textMuted">
                           {(() => {
                             const lastHistoryEntry =
                               reportItem.reportHistory?.[reportItem.reportHistory.length - 1];
@@ -6413,7 +6413,7 @@ const Dashboard = ({
                             {section.action && (
                               <button
                                 onClick={() => section.action && section.action(reportItem)}
-                                className="px-4 py-2 rounded-full bg-lpBlue text-white text-sm font-semibold hover:bg-blue-900"
+                                className="px-4 py-2 rounded-full bg-navy text-white text-sm font-semibold hover:bg-navySecondary"
                               >
                                 {section.actionLabel}
                               </button>
@@ -6433,7 +6433,7 @@ const Dashboard = ({
         {isStaff && (
            <div className="mb-8">
               <div className="flex justify-between items-end mb-4">
-                  <h3 className="text-lg font-bold text-gray-800 flex items-center"><FolderOpen className="w-6 h-6 mr-2 text-indigo-600"/> Active Case Folders</h3>
+                  <h3 className="text-lg font-bold text-textLight flex items-center"><FolderOpen className="w-6 h-6 mr-2 text-indigo-600"/> Active Case Folders</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  {financeFolders.length === 0 && <p className="text-gray-400 italic col-span-3 text-center py-4">No active finance folders.</p>}
@@ -6449,19 +6449,19 @@ const Dashboard = ({
                         case 'SENT':
                           return { badge: 'bg-green-50 text-green-700', text: 'Completed', icon: <Check className="text-green-500 w-6 h-6" /> };
                         default:
-                          return { badge: 'bg-gray-50 text-gray-600', text: folder.status, icon: <Loader2 className="text-gray-400 w-5 h-5 animate-spin" /> };
+                          return { badge: 'bg-navySecondary text-textMuted', text: folder.status, icon: <Loader2 className="text-gray-400 w-5 h-5 animate-spin" /> };
                       }
                     })();
                     const assignedLawyer = USERS.find(u => u.id === folder.createdBy)?.name;
                     
                     return (
-                      <div key={folder.id} className="bg-white p-4 rounded-lg shadow border-t-4 relative border-indigo-100">
+                      <div key={folder.id} className="bg-panel p-4 rounded-lg shadow border-t-4 relative border-indigo-100">
                           <div className="flex justify-between items-start mb-2">
                              <h4 className="font-bold text-lg">Case #{folder.odakanitNo}</h4>
                             {statusInfo.icon}
                           </div>
-                          <div className="text-sm text-gray-600 mb-1 flex items-center"><UserCheck className="w-4 h-4 mr-1"/> Assigned to: {assignedLawyer}</div>
-                          <div className="text-xs text-gray-500 mb-4">{new Date(folder.reportDate).toLocaleDateString()}</div>
+                          <div className="text-sm text-textMuted mb-1 flex items-center"><UserCheck className="w-4 h-4 mr-1"/> Assigned to: {assignedLawyer}</div>
+                          <div className="text-xs text-textMuted mb-4">{new Date(folder.reportDate).toLocaleDateString()}</div>
                           
                           <div className="flex justify-end gap-2 mt-2">
                             {folder.status === 'SENT' ? (
@@ -6479,14 +6479,14 @@ const Dashboard = ({
 
         {/* General Reports List (Existing) */}
         {(isStaff || showExpensesOnly) && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-           <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap gap-3 items-center justify-between">
-              <h3 className="font-bold text-gray-700 flex items-center">
+        <div className="bg-panel rounded-xl shadow-sm border border-borderDark overflow-hidden">
+           <div className="p-4 border-b border-gray-100 bg-navySecondary/50 flex flex-wrap gap-3 items-center justify-between">
+              <h3 className="font-bold text-textLight flex items-center">
                 <History className="w-4 h-4 mr-2 text-gray-400"/> {showRecycleBin ? 'Recycle Bin' : 'All Reports'}
               </h3>
               <div className="flex items-center gap-3 flex-wrap justify-end">
               {showRecycleBin && recycleInfoText && (
-                <span className="text-xs text-gray-500">{recycleInfoText}</span>
+                <span className="text-xs text-textMuted">{recycleInfoText}</span>
                 )}
                 <div className="relative w-full sm:w-72">
                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -6494,7 +6494,7 @@ const Dashboard = ({
                     value={allReportsSearch}
                     onChange={(e) => setAllReportsSearch(e.target.value)}
                     placeholder="חיפוש לפי שם או מספר בעודכנית"
-                    className="w-full border border-gray-300 rounded-full pl-9 pr-10 py-1.5 text-sm focus:ring-2 focus:ring-blue-200 outline-none"
+                    className="w-full border border-borderDark rounded-full pl-9 pr-10 py-1.5 text-sm focus:ring-2 focus:ring-blue-200 outline-none"
                   />
                   {allReportsSearch && (
                     <button
@@ -6509,7 +6509,7 @@ const Dashboard = ({
            </div>
            {showExpensesOnly ? (
            <table className="w-full text-left">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-semibold">
+              <thead className="bg-navySecondary text-textMuted text-xs uppercase tracking-wider font-semibold">
                  <tr>
                     <th className="p-4">Insurer / Subject</th>
                     {isStaff && <th className="p-4">Lawyer</th>}
@@ -6532,10 +6532,10 @@ const Dashboard = ({
                     return (
                     <tr key={r.id} className={`transition cursor-default ${isReady ? 'bg-red-50' : isSent ? 'bg-green-50/50' : 'hover:bg-blue-50/30'}`}>
                        <td className="p-4">
-                          <div className="font-bold text-gray-800">{r.insurerName || 'Untitled'}</div>
-                          <div className="text-xs text-gray-500">{r.marketRef} {r.insuredName ? ` - ${r.insuredName}` : ''}</div>
+                          <div className="font-bold text-textLight">{r.insurerName || 'Untitled'}</div>
+                          <div className="text-xs text-textMuted">{r.marketRef} {r.insuredName ? ` - ${r.insuredName}` : ''}</div>
                        </td>
-                       {isStaff && <td className="p-4 text-sm text-gray-600 font-medium">{r.ownerName}</td>}
+                       {isStaff && <td className="p-4 text-sm text-textMuted font-medium">{r.ownerName}</td>}
                        <td className="p-4">
                           <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-sm border ${getStatusBadgeClasses(r.status)}`}>
                              {formatStatusLabel(r.status)}
@@ -6544,7 +6544,7 @@ const Dashboard = ({
                        <td className="p-4 text-right">
                           <div className="flex justify-end gap-2 flex-wrap">
                               <>
-                                <button onClick={() => onOpenWorksheet(r.id)} className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded flex items-center gap-1">
+                                <button onClick={() => onOpenWorksheet(r.id)} className="text-xs bg-navySecondary hover:bg-borderDark px-3 py-1.5 rounded flex items-center gap-1">
                                    <Table className="w-3 h-3" /> View Expenses
                                 </button>
                                 <button onClick={() => onRequestReminder(r)} className="text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded flex items-center gap-1">
@@ -6555,7 +6555,7 @@ const Dashboard = ({
                                 </button>
                               </>
                             {isSoftDeleteRole && !isAdmin && !showRecycleBin && (
-                              <button onClick={() => !isTemplateRow && onSoftDeleteReport(r.id)} disabled={isTemplateRow} className={`text-xs px-3 py-1.5 rounded flex items-center gap-1 ${isTemplateRow ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>
+                              <button onClick={() => !isTemplateRow && onSoftDeleteReport(r.id)} disabled={isTemplateRow} className={`text-xs px-3 py-1.5 rounded flex items-center gap-1 ${isTemplateRow ? 'bg-navySecondary text-gray-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}>
                                  <Trash2 className="w-3 h-3" /> Delete
                               </button>
                             )}
@@ -6599,27 +6599,27 @@ const Dashboard = ({
                          <div className="flex flex-wrap justify-between gap-3">
                            <div>
                              <p className="text-xs uppercase text-gray-400">מספר בעודכנית</p>
-                             <p className="text-xl font-bold text-gray-900">{group.odakanitNo || '—'}</p>
-                             <p className="text-xs text-gray-500">
+                             <p className="text-xl font-bold text-textLight">{group.odakanitNo || '—'}</p>
+                             <p className="text-xs text-textMuted">
                                שם התובע: <span className="font-semibold">{group.plaintiffName || '—'}</span> · שם המבוטח: <span className="font-semibold">{group.insuredName || '—'}</span>
                              </p>
                              <p className="text-xs text-gray-400">עודכן לאחרונה: {latestFormatted}</p>
                            </div>
                            <div className="text-right">
-                             <p className="text-xs text-gray-500">סה"כ דיווחים</p>
-                             <p className="text-2xl font-bold text-gray-900">{group.reports.length}</p>
+                             <p className="text-xs text-textMuted">סה"כ דיווחים</p>
+                             <p className="text-2xl font-bold text-textLight">{group.reports.length}</p>
                              <button
                                onClick={() => setExpandedCaseKey((prev) => (prev === group.key ? null : group.key))}
-                               className="mt-2 px-4 py-1.5 text-sm font-semibold rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+                               className="mt-2 px-4 py-1.5 text-sm font-semibold rounded-full border border-borderDark text-textLight hover:bg-navySecondary"
                              >
                                {expandedCaseKey === group.key ? 'הסתר דיווחים' : 'צפה בדיווחים'}
                              </button>
                            </div>
                          </div>
                          {expandedCaseKey === group.key && (
-                           <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+                           <div className="mt-4 bg-navySecondary border border-borderDark rounded-xl overflow-hidden">
                              <table className="w-full text-sm">
-                               <thead className="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+                               <thead className="bg-navySecondary text-textMuted text-xs uppercase tracking-wide">
                                  <tr>
                                    <th className="p-3 text-left">תאריך דיווח</th>
                                    <th className="p-3 text-left">שם התובע</th>
@@ -6634,7 +6634,7 @@ const Dashboard = ({
                                    const isSent = report.status === 'SENT';
                                    const isTemplateRow = Boolean(report.__templateKey);
                                    return (
-                                     <tr key={report.id} className={`bg-white ${isReady ? 'bg-red-50' : isSent ? 'bg-green-50/60' : ''}`}>
+                                     <tr key={report.id} className={`bg-panel ${isReady ? 'bg-red-50' : isSent ? 'bg-green-50/60' : ''}`}>
                                        <td className="p-3">{report.reportDate ? new Date(report.reportDate).toLocaleDateString('he-IL') : '—'}</td>
                                        <td className="p-3">{report.plaintiffName || '—'}</td>
                                        <td className="p-3">{report.insuredName || '—'}</td>
@@ -6653,7 +6653,7 @@ const Dashboard = ({
                                                onClick={() => !isTemplateRow && onSoftDeleteReport(report.id)}
                                                disabled={isTemplateRow}
                                                className={`text-xs px-3 py-1.5 rounded flex items-center gap-1 ${
-                                                 isTemplateRow ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                                 isTemplateRow ? 'bg-navySecondary text-gray-400 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100'
                                                }`}
                                              >
                                                <Trash2 className="w-3 h-3" /> Delete
@@ -6694,7 +6694,7 @@ const Dashboard = ({
         
         {!isStaff && (
           <div className="fixed bottom-8 right-8">
-              <button onClick={onNewReport} className="bg-lpBlue text-white p-4 rounded-full shadow-xl hover:bg-blue-900 transition transform hover:scale-110">
+              <button onClick={onNewReport} className="bg-navy text-white p-4 rounded-full shadow-xl hover:bg-navySecondary transition transform hover:scale-110">
                   <FilePlus2 className="w-6 h-6"/>
               </button>
           </div>
@@ -6744,41 +6744,41 @@ const LoginScreen = ({ onLogin }: { onLogin: (u: User) => void }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-[#08162c] via-[#0b1f3b] to-[#132d52]">
-      <div className="w-full max-w-sm bg-white/10 border border-white/15 rounded-[30px] p-10 text-center shadow-2xl backdrop-blur-lg">
-        <div className="mx-auto mb-6 h-20 w-20 rounded-full bg-gradient-to-br from-[#f8b733] via-[#f49e1b] to-[#f47b0a] flex items-center justify-center text-4xl font-bold text-[#16305b] shadow-lg">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-bgDark">
+      <div className="w-full max-w-sm bg-panel border border-borderDark rounded-2xl p-10 text-center shadow-2xl">
+        <div className="mx-auto mb-6 h-20 w-20 rounded-full bg-gold/20 border border-gold flex items-center justify-center text-4xl font-bold text-gold shadow-lg">
           LP
         </div>
-        <div className="text-sm tracking-[0.5em] text-[#f7b23a] uppercase mb-2">
+        <div className="text-sm tracking-[0.5em] text-gold uppercase mb-2">
           Lloyd&apos;s
         </div>
-        <div className="text-3xl font-serif text-white mb-1">REPORT</div>
-        <div className="text-xs text-blue-200 uppercase tracking-[0.4em] mb-8">
+        <div className="text-3xl font-serif text-textLight mb-1">REPORT</div>
+        <div className="text-xs text-textMuted uppercase tracking-[0.4em] mb-8">
           Builder System
         </div>
 
         <div className="space-y-4 text-left">
-          <label className="text-xs uppercase text-blue-200 tracking-[0.2em]">
+          <label className="text-xs uppercase text-textMuted tracking-[0.2em]">
             Username
           </label>
           <div className="relative">
-            <UserIcon className="w-4 h-4 text-blue-200 absolute left-3 top-1/2 -translate-y-1/2" />
+            <UserIcon className="w-4 h-4 text-gold absolute left-3 top-1/2 -translate-y-1/2" />
             <input
-              className="w-full bg-white/10 border border-white/20 rounded-full py-3 pl-10 pr-4 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-[#f7b23a]/60"
+              className="w-full bg-navy border border-borderDark rounded-full py-3 pl-10 pr-4 text-textLight placeholder-textMuted focus:outline-none focus:ring-2 focus:ring-gold/50"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
 
-          <label className="text-xs uppercase text-blue-200 tracking-[0.2em]">
+          <label className="text-xs uppercase text-textMuted tracking-[0.2em]">
             Password
           </label>
           <div className="relative">
-            <KeyRound className="w-4 h-4 text-blue-200 absolute left-3 top-1/2 -translate-y-1/2" />
+            <KeyRound className="w-4 h-4 text-gold absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="password"
-              className="w-full bg-white/10 border border-white/20 rounded-full py-3 pl-10 pr-4 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-[#f7b23a]/60"
+              className="w-full bg-navy border border-borderDark rounded-full py-3 pl-10 pr-4 text-textLight placeholder-textMuted focus:outline-none focus:ring-2 focus:ring-gold/50"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -6789,12 +6789,12 @@ const LoginScreen = ({ onLogin }: { onLogin: (u: User) => void }) => {
         <button
           onClick={handleLogin}
           disabled={isSubmitting}
-          className="mt-8 w-full bg-gradient-to-r from-[#0a6bff] to-[#1740e6] text-white py-3 rounded-full font-semibold tracking-wide flex items-center justify-center gap-2 hover:from-[#0955c6] hover:to-[#1430af] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-8 w-full bg-navy text-gold border border-gold py-3 rounded-full font-semibold tracking-wide flex items-center justify-center gap-2 hover:bg-navySecondary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Signing in…' : 'Sign In'} <ArrowRight className="w-4 h-4" />
         </button>
 
-        <div className="mt-6 text-[11px] text-blue-200 tracking-[0.3em] uppercase">
+        <div className="mt-6 text-[11px] text-textMuted tracking-[0.3em] uppercase">
           Lior Perry Law Office &amp; Notary © 2024
         </div>
       </div>
@@ -9260,18 +9260,18 @@ const AppInner = () => {
 
     if (!folder) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-          <div className="max-w-md rounded-2xl bg-white p-6 text-center text-sm text-gray-700 shadow-sm border border-gray-200">
-            <p className="mb-3 font-semibold text-gray-900">
+        <div className="min-h-screen flex items-center justify-center bg-bgDark px-4">
+          <div className="max-w-md rounded-2xl bg-panel p-6 text-center text-sm text-textLight shadow-sm border border-borderDark">
+            <p className="mb-3 font-semibold text-gold">
               Case folder not found
             </p>
-            <p className="mb-4 text-xs text-gray-500">
+            <p className="mb-4 text-xs text-textMuted">
               The requested case folder is no longer available. You can return to the dashboard and select another case.
             </p>
             <button
               type="button"
               onClick={handleBackToDashboard}
-              className="inline-flex items-center rounded-full bg-lpBlue px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+              className="inline-flex items-center rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-gold shadow-sm hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               Back to dashboard
             </button>
@@ -9773,15 +9773,15 @@ const AppInner = () => {
 
         {currentUser?.role === 'LAWYER' && showNewCaseModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-5 space-y-3" dir="rtl">
-              <h2 className="text-sm font-bold text-slate-900 text-right">פתיחת תיק לפי מספר עודכנית</h2>
-              <p className="text-xs text-slate-600 text-right">
+            <div className="bg-panel rounded-2xl shadow-xl max-w-sm w-full mx-4 p-5 space-y-3" dir="rtl">
+              <h2 className="text-sm font-bold text-textLight text-right">פתיחת תיק לפי מספר עודכנית</h2>
+              <p className="text-xs text-textMuted text-right">
                 הזן/י מספר תיק בעודכנית. אם זה תיק חדש – תיפתח תיקייה חדשה ותתחיל/י דו"ח חדש.
                 אם זה תיק קיים – נפתח עבורך את תיקיית התיק.
               </p>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900"
+                className="w-full border border-borderDark rounded px-3 py-1.5 text-sm text-textLight"
                 placeholder="לדוגמה: 1/123"
                 value={newCaseOdakanitInput}
                 onChange={(e) => setNewCaseOdakanitInput(e.target.value)}
@@ -9789,7 +9789,7 @@ const AppInner = () => {
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   type="button"
-                  className="px-3 py-1.5 rounded-md border border-slate-300 text-xs text-slate-700 bg-white hover:bg-slate-50"
+                  className="px-3 py-1.5 rounded-md border border-borderDark text-xs text-textLight bg-panel hover:bg-slate-50"
                   onClick={() => {
                     setShowNewCaseModal(false);
                     setNewCaseOdakanitInput('');
@@ -9799,7 +9799,7 @@ const AppInner = () => {
                 </button>
                 <button
                   type="button"
-                  className="px-3 py-1.5 rounded-md bg-lpBlue text-xs font-semibold text-white hover:bg-blue-900"
+                  className="px-3 py-1.5 rounded-md bg-navy text-xs font-semibold text-gold hover:bg-navySecondary"
                   onClick={() => {
                     const raw = newCaseOdakanitInput.trim();
                     if (!raw) {
@@ -9906,16 +9906,16 @@ const AppInner = () => {
 
    return (
       <>
-      <div className="min-h-screen bg-gray-50 pb-12">
+      <div className="min-h-screen bg-navySecondary pb-12">
          <div className="max-w-5xl mx-auto pt-6 px-4">
             {/* Stepper Header + Global Assistant */}
             <div className="flex justify-between items-center mb-8">
-               <div className="flex items-center bg-white p-2 rounded-full shadow-sm">
-                  <div className={`px-4 py-1 rounded-full ${view === 'STEP1' ? 'bg-lpBlue text-white font-bold' : 'text-gray-500'}`}>1. Setup</div>
+               <div className="flex items-center bg-panel p-2 rounded-full shadow-sm">
+                  <div className={`px-4 py-1 rounded-full ${view === 'STEP1' ? 'bg-navy text-white font-bold' : 'text-textMuted'}`}>1. Setup</div>
                   <ChevronRight className="w-4 h-4 text-gray-300 mx-2"/>
-                  <div className={`px-4 py-1 rounded-full ${view === 'STEP2' ? 'bg-lpBlue text-white font-bold' : 'text-gray-500'}`}>2. Draft</div>
+                  <div className={`px-4 py-1 rounded-full ${view === 'STEP2' ? 'bg-navy text-white font-bold' : 'text-textMuted'}`}>2. Draft</div>
                   <ChevronRight className="w-4 h-4 text-gray-300 mx-2"/>
-                  <div className={`px-4 py-1 rounded-full ${view === 'PREVIEW' ? 'bg-lpBlue text-white font-bold' : 'text-gray-500'}`}>3. Preview</div>
+                  <div className={`px-4 py-1 rounded-full ${view === 'PREVIEW' ? 'bg-navy text-white font-bold' : 'text-textMuted'}`}>3. Preview</div>
                </div>
                <button
                  type="button"
@@ -9984,7 +9984,7 @@ const AppInner = () => {
                     })() && (
                       <button
                         type="button"
-                        className="shrink-0 inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-900 border border-amber-300 hover:bg-amber-100"
+                        className="shrink-0 inline-flex items-center rounded-full bg-panel px-3 py-1.5 text-[11px] font-semibold text-amber-900 border border-amber-300 hover:bg-amber-100"
                         onClick={() => {
                           const reason = window.prompt(
                             'פתיחת דו״ח שנשלח לעריכה היא פעולה חריגה.\nאנא הזן/י סיבה קצרה לפתיחה זו (תתועד ביומן המערכת):',
@@ -10375,7 +10375,7 @@ const AppInner = () => {
                           saveCurrentReport();
                           setView('STEP2');
                         }}
-                        className="flex items-center text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200"
+                        className="flex items-center text-sm text-textMuted bg-navySecondary px-3 py-1.5 rounded-full hover:bg-borderDark"
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
                         {previewLabels.backToStep2}
@@ -10391,12 +10391,12 @@ const AppInner = () => {
                         {previewLabels.backToDashboard}
                       </button>
                     </div>
-                    <div className="flex justify-between items-center bg-white p-4 rounded shadow mb-4">
+                    <div className="flex justify-between items-center bg-panel p-4 rounded shadow mb-4">
                       <div>
                       <h2 className="text-xl font-bold text-lpBlue">
                         {previewLabels.title}
                       </h2>
-                        <p className="mt-1 text-xs text-gray-500">
+                        <p className="mt-1 text-xs text-textMuted">
                           Export options let you back up the current report data (JSON/CSV) in addition to the PDF.
                         </p>
                       </div>
@@ -10412,7 +10412,7 @@ const AppInner = () => {
                         </button>
                         <button
                           onClick={() => setIsPreviewVisible((prev) => !prev)}
-                          className="flex items-center bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                          className="flex items-center bg-borderDark text-textLight px-4 py-2 rounded hover:bg-borderDark"
                         >
                           {isPreviewVisible
                             ? previewLabels.toggleHide
@@ -10421,7 +10421,7 @@ const AppInner = () => {
                         <button
                           onClick={handleDownloadPdf}
                           disabled={isPdfGenerating}
-                          className="flex items-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 disabled:opacity-50"
+                          className="flex items-center bg-panel text-textLight border border-borderDark px-4 py-2 rounded hover:bg-navySecondary disabled:opacity-50"
                         >
                           {isPdfGenerating ? (
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -10433,7 +10433,7 @@ const AppInner = () => {
                         <button
                           onClick={() => setIsFileNameModalOpen(true)}
                           disabled={!canEditFileNameTitles}
-                          className="flex items-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 disabled:opacity-40"
+                          className="flex items-center bg-panel text-textLight border border-borderDark px-4 py-2 rounded hover:bg-navySecondary disabled:opacity-40"
                         >
                           {previewLabels.editFileNames}
                         </button>
@@ -10452,7 +10452,7 @@ const AppInner = () => {
                             a.click();
                             URL.revokeObjectURL(url);
                           }}
-                          className="flex items-center bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded hover:bg-gray-50 text-xs"
+                          className="flex items-center bg-panel text-textLight border border-borderDark px-3 py-2 rounded hover:bg-navySecondary text-xs"
                         >
                           JSON Export
                         </button>
@@ -10495,7 +10495,7 @@ const AppInner = () => {
                             a.click();
                             URL.revokeObjectURL(url);
                           }}
-                          className="flex items-center bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded hover:bg-gray-50 text-xs"
+                          className="flex items-center bg-panel text-textLight border border-borderDark px-3 py-2 rounded hover:bg-navySecondary text-xs"
                         >
                           CSV Export
                         </button>
@@ -10519,20 +10519,20 @@ const AppInner = () => {
                     </div>
 
                     {isPreviewVisible ? (
-                      <div className="bg-white rounded-2xl shadow p-4 space-y-4">
+                      <div className="bg-panel rounded-2xl shadow p-4 space-y-4">
                         <div className="flex items-center justify-end flex-wrap gap-3">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-textMuted">
                             {previewLabels.helperScroll}
                           </span>
                         </div>
-                        <div className="border rounded-2xl bg-gray-50 p-4 pr-6 max-h-[900px] overflow-auto shadow-inner">
+                        <div className="border rounded-2xl bg-navySecondary p-4 pr-6 max-h-[900px] overflow-auto shadow-inner">
                           <div className="scale-[0.85] origin-top flex justify-center overflow-visible">
                             <DocumentPreview data={currentReport} />
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center text-gray-500 border border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50">
+                      <div className="text-center text-textMuted border border-dashed border-borderDark rounded-2xl p-6 bg-navySecondary">
                         {previewLabels.collapsedHint}
                       </div>
                     )}
@@ -10540,7 +10540,7 @@ const AppInner = () => {
                     <div className="flex justify-start mt-4">
                       <button
                         onClick={() => setView('STEP2')}
-                        className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                        className="px-6 py-2 bg-borderDark text-textLight rounded hover:bg-borderDark"
                       >
                         {previewLabels.backToEditing}
                       </button>
@@ -10614,15 +10614,15 @@ const AppInner = () => {
 
       {noteModalReport && (
         <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><NotebookPen className="w-4 h-4"/> Add Note</h3>
-            <p className="text-sm text-gray-500">Case: {noteModalReport.insuredName || noteModalReport.odakanitNo || noteModalReport.id}</p>
+          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold text-textLight flex items-center gap-2"><NotebookPen className="w-4 h-4"/> Add Note</h3>
+            <p className="text-sm text-textMuted">Case: {noteModalReport.insuredName || noteModalReport.odakanitNo || noteModalReport.id}</p>
             <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
               <textarea className="w-full border rounded p-3 text-sm" rows={4} value={noteMessage} onChange={e => setNoteMessage(e.target.value)} placeholder="Write your note..." />
             </GrammarlyEditorPlugin>
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setNoteModalReport(null); setNoteMessage(''); }} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancel</button>
-              <button onClick={() => { if (noteModalReport && noteMessage.trim()) { addReportNote(noteModalReport.id, noteMessage.trim()); setNoteModalReport(null); setNoteMessage(''); } }} className="px-4 py-2 bg-lpBlue text-white rounded hover:bg-blue-900">Save</button>
+              <button onClick={() => { setNoteModalReport(null); setNoteMessage(''); }} className="px-4 py-2 text-textMuted hover:bg-navySecondary rounded">Cancel</button>
+              <button onClick={() => { if (noteModalReport && noteMessage.trim()) { addReportNote(noteModalReport.id, noteMessage.trim()); setNoteModalReport(null); setNoteMessage(''); } }} className="px-4 py-2 bg-navy text-white rounded hover:bg-navySecondary">Save</button>
             </div>
           </div>
         </div>
@@ -10630,21 +10630,21 @@ const AppInner = () => {
 
       {reminderModalReport && (
         <div className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Bell className="w-4 h-4"/> Send Reminder</h3>
-            <p className="text-sm text-gray-500">Case: {reminderModalReport.insuredName || reminderModalReport.odakanitNo || reminderModalReport.id}</p>
-            <label className="text-xs font-bold text-gray-500">Recipients</label>
+          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold text-textLight flex items-center gap-2"><Bell className="w-4 h-4"/> Send Reminder</h3>
+            <p className="text-sm text-textMuted">Case: {reminderModalReport.insuredName || reminderModalReport.odakanitNo || reminderModalReport.id}</p>
+            <label className="text-xs font-bold text-textMuted">Recipients</label>
             <select className="w-full border rounded p-2 text-sm" value={reminderTarget} onChange={e => setReminderTarget(e.target.value as any)}>
               <option value="LAWYER">Lawyer</option>
               <option value="SUB_ADMIN">Sub-Admin</option>
               <option value="BOTH">Both</option>
             </select>
-            <label className="text-xs font-bold text-gray-500">Message</label>
+            <label className="text-xs font-bold text-textMuted">Message</label>
             <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
               <textarea className="w-full border rounded p-3 text-sm" rows={4} value={reminderMessage} onChange={e => setReminderMessage(e.target.value)} placeholder="Reminder details..." />
             </GrammarlyEditorPlugin>
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setReminderModalReport(null); setReminderMessage(''); }} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancel</button>
+              <button onClick={() => { setReminderModalReport(null); setReminderMessage(''); }} className="px-4 py-2 text-textMuted hover:bg-navySecondary rounded">Cancel</button>
               <button onClick={() => {
                 if (reminderModalReport && reminderMessage.trim()) {
                    const recipients: string[] = [];
@@ -10669,21 +10669,21 @@ const AppInner = () => {
 
       {preSendGuard && preSendGuard.issues.length > 0 && (
         <div className="fixed inset-0 bg-black/40 z-[210] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4" dir="rtl">
+          <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4" dir="rtl">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-lg font-bold text-slate-900">רגע לפני שליחה</h3>
+              <h3 className="text-lg font-bold text-textLight">רגע לפני שליחה</h3>
               <button
                 type="button"
                 onClick={() => setPreSendGuard(null)}
-                className="p-1 rounded hover:bg-slate-100 text-slate-500"
+                className="p-1 rounded hover:bg-slate-100 text-textMuted"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-textMuted">
               זיהינו כמה נקודות שכדאי לבדוק לפני הפקת PDF או שליחת הדו״ח למבטחת. אפשר לתקן עכשיו או להמשיך בכל זאת.
             </p>
-            <ul className="space-y-2 text-sm text-slate-800">
+            <ul className="space-y-2 text-sm text-textLight">
               {preSendGuard.issues.map((issue) => (
                 <li
                   key={issue.id}
@@ -10703,7 +10703,7 @@ const AppInner = () => {
                     </button>
                     <button
                       type="button"
-                      className="text-[11px] text-slate-700 hover:text-slate-900 underline whitespace-nowrap"
+                      className="text-[11px] text-textLight hover:text-textLight underline whitespace-nowrap"
                       onClick={() => {
                         setPreSendGuard(null);
                         if (issue.kind === 'TRANSLATION_OUTDATED') {
@@ -10838,17 +10838,17 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-[220] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center px-5 py-3 border-b bg-gray-50">
+      <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex justify-between items-center px-5 py-3 border-b bg-navySecondary">
           <div>
-            <p className="text-xs text-gray-500 uppercase">Expense Worksheet</p>
-            <h2 className="text-lg font-bold text-gray-800">{report.insuredName || report.odakanitNo || 'Case'} · {report.ownerName}</h2>
+            <p className="text-xs text-textMuted uppercase">Expense Worksheet</p>
+            <h2 className="text-lg font-bold text-textLight">{report.insuredName || report.odakanitNo || 'Case'} · {report.ownerName}</h2>
           </div>
-          <button onClick={() => onClose(report.id)} className="text-gray-500 hover:text-gray-800">
+          <button onClick={() => onClose(report.id)} className="text-textMuted hover:text-textLight">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex border-b bg-white px-4 overflow-x-auto">
+        <div className="flex border-b bg-panel px-4 overflow-x-auto">
           {sessions.map(session => (
             <button
               key={session.reportId}
@@ -10870,7 +10870,7 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
             <button
               key={tab}
               onClick={() => setViewTab(tab as any)}
-              className={`px-3 py-1 rounded-full ${viewTab === tab ? 'bg-lpBlue text-white' : 'bg-gray-100 text-gray-500'}`}
+              className={`px-3 py-1 rounded-full ${viewTab === tab ? 'bg-navy text-white' : 'bg-navySecondary text-textMuted'}`}
             >
               {tab === 'table' ? 'Worksheet' : tab === 'history' ? 'History' : tab === 'notes' ? `Notes (${openNotes.length})` : 'Compare'}
             </button>
@@ -10879,10 +10879,10 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
         <div className="flex-1 overflow-auto p-5 space-y-4">
           {viewTab === 'table' && (
             <>
-              <div className="grid grid-cols-3 gap-4 text-center bg-gray-50 rounded-lg py-3">
+              <div className="grid grid-cols-3 gap-4 text-center bg-navySecondary rounded-lg py-3">
                 <div>
                   <p className="text-xs uppercase text-gray-400">Total Expenses</p>
-                  <p className="text-lg font-bold text-gray-800">₪{totals.totalExpenses.toLocaleString()}</p>
+                  <p className="text-lg font-bold text-textLight">₪{totals.totalExpenses.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase text-gray-400">Adjustments</p>
@@ -10915,17 +10915,17 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
               )}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-sm font-bold text-gray-600 mb-2">Service Expenses</h4>
+                  <h4 className="text-sm font-bold text-textMuted mb-2">Service Expenses</h4>
                   <div className="space-y-2">
                     {expenseRows.length === 0 && <p className="text-xs text-gray-400">No expenses recorded.</p>}
                     {expenseRows.map(row => {
                       const noteCount = worksheet.notes.filter(note => note.rowId === row.id && !note.resolved).length;
                       return (
-                        <div key={row.id} className="border rounded-lg p-3 bg-white shadow-sm">
+                        <div key={row.id} className="border rounded-lg p-3 bg-panel shadow-sm">
                           <div className="flex justify-between">
                             <div>
                               <p className="font-semibold text-sm">{row.label}</p>
-                              {row.serviceProvider && <p className="text-xs text-gray-500">{row.serviceProvider}</p>}
+                              {row.serviceProvider && <p className="text-xs text-textMuted">{row.serviceProvider}</p>}
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-lpBlue">₪{row.amount.toLocaleString()}</p>
@@ -10937,7 +10937,7 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
                           {activeRowId === row.id && (
                             <div className="mt-2 flex gap-2">
                               <input className="flex-1 border rounded text-xs p-2" value={rowNoteDraft} onChange={(e) => setRowNoteDraft(e.target.value)} placeholder="Add note..." />
-                              <button onClick={() => handleRowNote(row.id)} className="px-3 py-1 text-xs bg-lpBlue text-white rounded">Save</button>
+                              <button onClick={() => handleRowNote(row.id)} className="px-3 py-1 text-xs bg-navy text-white rounded">Save</button>
                             </div>
                           )}
                         </div>
@@ -10946,11 +10946,11 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-600 mb-2">Adjustments</h4>
+                  <h4 className="text-sm font-bold text-textMuted mb-2">Adjustments</h4>
                   <div className="space-y-2">
                     {adjustmentRows.length === 0 && <p className="text-xs text-gray-400">No adjustments yet.</p>}
                     {adjustmentRows.map(row => (
-                      <div key={row.id} className="border rounded-lg p-3 bg-gray-50">
+                      <div key={row.id} className="border rounded-lg p-3 bg-navySecondary">
                         <div className="flex justify-between">
                           <p className="font-semibold text-sm">{row.label}</p>
                           <p className="font-bold text-red-600">₪{row.amount.toLocaleString()}</p>
@@ -10960,11 +10960,11 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <label className="block text-xs font-bold text-gray-500 mb-1">General Note</label>
+              <div className="border rounded-lg p-3 bg-navySecondary">
+                <label className="block text-xs font-bold text-textMuted mb-1">General Note</label>
                 <div className="flex gap-2">
                   <input className="flex-1 border rounded text-xs p-2" value={rowNoteDraft} onChange={(e) => setRowNoteDraft(e.target.value)} placeholder="Add note for worksheet..." />
-                  <button onClick={() => handleRowNote(undefined)} className="px-3 py-1 text-xs bg-lpBlue text-white rounded">Save</button>
+                  <button onClick={() => handleRowNote(undefined)} className="px-3 py-1 text-xs bg-navy text-white rounded">Save</button>
                 </div>
               </div>
             </>
@@ -10973,10 +10973,10 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
             <div className="space-y-2">
               {worksheet.history.length === 0 && <p className="text-xs text-gray-400">No history recorded yet.</p>}
               {worksheet.history.map(entry => (
-                <div key={entry.id} className="border rounded-lg p-3 bg-white flex justify-between">
+                <div key={entry.id} className="border rounded-lg p-3 bg-panel flex justify-between">
                   <div>
                     <p className="text-sm font-semibold">{entry.action}</p>
-                    {entry.details && <p className="text-xs text-gray-500">{entry.details}</p>}
+                    {entry.details && <p className="text-xs text-textMuted">{entry.details}</p>}
                   </div>
                   <div className="text-right text-[10px] text-gray-400">
                     <p>{entry.userName}</p>
@@ -10990,11 +10990,11 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
             <div className="space-y-2">
               {worksheet.notes.length === 0 && <p className="text-xs text-gray-400">No notes yet.</p>}
               {worksheet.notes.map(note => (
-                <div key={note.id} className={`border rounded-lg p-3 ${note.resolved ? 'bg-green-50' : 'bg-white'}`}>
+                <div key={note.id} className={`border rounded-lg p-3 ${note.resolved ? 'bg-green-50' : 'bg-panel'}`}>
                   <div className="flex justify-between">
                     <div>
                       <p className="text-sm font-semibold">{note.authorName}</p>
-                      <p className="text-xs text-gray-500">{note.message}</p>
+                      <p className="text-xs text-textMuted">{note.message}</p>
                     </div>
                     <div className="text-right text-[10px] text-gray-400">
                       <p>{new Date(note.createdAt).toLocaleString()}</p>
@@ -11012,14 +11012,14 @@ const WorksheetModal: React.FC<WorksheetModalProps> = ({
               {previousReport?.expenseWorksheet ? (
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="border rounded-lg p-3">
-                    <h4 className="text-sm font-bold text-gray-600 mb-2">Previous Report</h4>
+                    <h4 className="text-sm font-bold text-textMuted mb-2">Previous Report</h4>
                     <p className="text-xs text-gray-400 mb-2">{new Date(previousReport.reportDate).toLocaleDateString()}</p>
-                    <p className="text-lg font-bold text-gray-800">₪{previousReport.expenseWorksheet.totals.totalBalance.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-textLight">₪{previousReport.expenseWorksheet.totals.totalBalance.toLocaleString()}</p>
                   </div>
                   <div className="border rounded-lg p-3">
-                    <h4 className="text-sm font-bold text-gray-600 mb-2">Current Report</h4>
+                    <h4 className="text-sm font-bold text-textMuted mb-2">Current Report</h4>
                     <p className="text-xs text-gray-400 mb-2">{new Date(report.reportDate).toLocaleDateString()}</p>
-                    <p className="text-lg font-bold text-gray-800">₪{totals.totalBalance.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-textLight">₪{totals.totalBalance.toLocaleString()}</p>
                   </div>
                 </div>
               ) : (

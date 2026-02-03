@@ -50,12 +50,12 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const getToastClasses = (type: ToastType) => {
     if (type === 'success') {
-      return 'border-green-500 text-green-900';
+      return 'border-l-gold text-goldLight';
     }
     if (type === 'error') {
-      return 'border-red-500 text-red-900';
+      return 'border-l-danger text-red-300';
     }
-    return 'border-blue-500 text-blue-900';
+    return 'border-l-gold text-textLight';
   };
 
   return (
@@ -68,7 +68,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto max-w-xs bg-white rounded-lg shadow-lg px-3 py-2 border-l-4 text-xs flex items-center gap-2 ${getToastClasses(
+            className={`pointer-events-auto max-w-xs bg-panel border border-borderDark rounded-lg shadow-lg px-3 py-2 border-l-4 text-xs flex items-center gap-2 text-textLight ${getToastClasses(
               toast.type,
             )}`}
           >
@@ -76,7 +76,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             <button
               type="button"
               onClick={() => removeToast(toast.id)}
-              className="ml-1 p-1 rounded hover:bg-slate-100 text-slate-500"
+              className="ml-1 p-1 rounded hover:bg-navySecondary text-textMuted"
             >
               <X className="w-3 h-3" />
             </button>

@@ -70,22 +70,22 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
   }, [folder.sentReports]);
 
   return (
-    <div className="min-h-screen bg-gray-100 px-0 pb-8">
+    <div className="min-h-screen bg-bgDark px-0 pb-8">
       <div className="mx-auto max-w-4xl px-4 pt-4">
         <button
           type="button"
           onClick={onBack}
-          className="mb-4 inline-flex items-center rounded-full bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+          className="mb-4 inline-flex items-center rounded-full bg-panel border border-borderDark px-3 py-1.5 text-xs font-medium text-textLight shadow-sm hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
         >
           ← חזרה לדשבורד
         </button>
 
-        <header className="mb-4 rounded-2xl bg-white px-5 py-4 shadow-sm border border-gray-200 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <header className="mb-4 rounded-2xl bg-panel px-5 py-4 shadow-sm border border-borderDark flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl font-serif font-bold text-lpBlue">
+            <h1 className="text-xl font-serif font-bold text-navy">
               תיק עודכנית – {folder.odakanitNo}
             </h1>
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 text-xs text-textMuted">
               תצוגה מרכזית של כל הדיווחים והמידע בתיק זה.
             </p>
             {isClosed && (
@@ -119,7 +119,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                   <button
                     type="button"
                     onClick={onDeleteCase}
-                    className="inline-flex items-center rounded-full bg-white px-3 py-1.5 font-semibold text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    className="inline-flex items-center rounded-full bg-panel px-3 py-1.5 font-semibold text-textLight border border-borderDark hover:bg-navySecondary"
                   >
                     מחיקה מוחלטת
                   </button>
@@ -130,54 +130,54 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
         </header>
 
         <section className="mb-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-200">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <div className="rounded-2xl bg-panel p-4 shadow-sm border border-borderDark">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-textMuted">
               פרטי תיק
             </h2>
-            <dl className="space-y-1 text-xs text-gray-700">
+            <dl className="space-y-1 text-xs text-textLight">
               <div>
-                <dt className="font-semibold text-gray-600">מבוטח</dt>
+                <dt className="font-semibold text-textMuted">מבוטח</dt>
                 <dd>{folder.insuredName || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">תובע</dt>
+                <dt className="font-semibold text-textMuted">תובע</dt>
                 <dd>{folder.plaintiffName || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">מבטחת</dt>
+                <dt className="font-semibold text-textMuted">מבטחת</dt>
                 <dd>{folder.insurerName || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">UMR / מספר שוק</dt>
+                <dt className="font-semibold text-textMuted">UMR / מספר שוק</dt>
                 <dd>{folder.marketRef || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">Line Slip</dt>
+                <dt className="font-semibold text-textMuted">Line Slip</dt>
                 <dd>{folder.lineSlipNo || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">מספר תעודה</dt>
+                <dt className="font-semibold text-textMuted">מספר תעודה</dt>
                 <dd>{folder.certificateRef || '—'}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-gray-600">מספר דיווחים בתיק</dt>
+                <dt className="font-semibold text-textMuted">מספר דיווחים בתיק</dt>
                 <dd>{folder.reportIds.length}</dd>
               </div>
               {isClosed && (
                 <div>
-                  <dt className="font-semibold text-gray-600">סטטוס תיק</dt>
+                  <dt className="font-semibold text-textMuted">סטטוס תיק</dt>
                   <dd className="text-amber-700">סגור</dd>
                 </div>
               )}
             </dl>
           </div>
 
-          <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-200">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <div className="rounded-2xl bg-panel p-4 shadow-sm border border-borderDark">
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-textMuted">
               תבנית כותרת (RE)
             </h2>
             <textarea
-              className="w-full rounded-lg border border-gray-300 p-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-lpBlue focus:outline-none focus:ring-1 focus:ring-lpBlue"
+              className="w-full rounded-lg border border-borderDark p-2 text-xs text-textLight placeholder:text-textMuted focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
               rows={4}
               value={draftRe}
               onChange={(e) => setDraftRe(e.target.value)}
@@ -188,7 +188,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
               <button
                 type="button"
                 onClick={onCreateReportInCase}
-                className="inline-flex items-center rounded-full bg-lpBlue px-4 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+                className="inline-flex items-center rounded-full bg-navy px-4 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
               >
                 פתחי טיוטה חדשה בתיק זה
               </button>
@@ -196,13 +196,13 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
           </div>
         </section>
 
-        <section className="mb-4 rounded-2xl bg-white p-4 shadow-sm border border-gray-200">
+        <section className="mb-4 rounded-2xl bg-panel p-4 shadow-sm border border-borderDark">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">
+              <h2 className="text-sm font-semibold text-textLight">
                 דיווחים שנשלחו בתיק זה
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-textMuted">
                 היסטוריה של דיווחים שמצבם סומן כ‑SENT בתיק זה (קריאה בלבד).
               </p>
             </div>
@@ -224,7 +224,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                       <button
                         type="button"
                         onClick={onCreateReportInCase}
-                        className="inline-flex items-center rounded-full bg-lpBlue px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+                        className="inline-flex items-center rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
                       >
                         יצירת דיווח חדש בתיק זה
                       </button>
@@ -234,7 +234,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                     <button
                       type="button"
                       onClick={onCreateReportInCase}
-                      className="inline-flex items-center rounded-full bg-lpBlue px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+                      className="inline-flex items-center rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
                     >
                       {activeDraft ? 'יצירת דיווח חדש (חריג)' : 'יצירת דיווח חדש בתיק זה'}
                     </button>
@@ -244,8 +244,8 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-xs text-left text-gray-700">
-              <thead className="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
+            <table className="min-w-full text-xs text-left text-textLight">
+              <thead className="bg-navySecondary text-[11px] uppercase tracking-wide text-textMuted">
                 <tr>
                   <th className="px-3 py-2">מס' דיווח</th>
                   <th className="px-3 py-2">סוג</th>
@@ -259,7 +259,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-3 py-4 text-center text-gray-400"
+                      className="px-3 py-4 text-center text-textMuted"
                     >
                       No sent reports recorded for this case yet.
                     </td>
@@ -289,7 +289,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                             שליחה חוזרת
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-0.5 text-[10px] font-semibold text-gray-600 border border-gray-200">
+                          <span className="inline-flex items-center rounded-full bg-navySecondary px-2 py-0.5 text-[10px] font-semibold text-textMuted border border-borderDark">
                             דיווח רגיל
                           </span>
                         )}
@@ -300,7 +300,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenReport(entry.reportId)}
-                          className="inline-flex items-center rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-lpBlue ring-1 ring-lpBlue hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+                          className="inline-flex items-center rounded-full bg-panel px-3 py-1 text-[11px] font-semibold text-navy ring-1 ring-navy hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
                           aria-label={`פתחי דו\"ח ${entry.reportId}`}
                         >
                           פתחי
