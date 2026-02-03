@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&family=Heebo:wght@600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-100 text-slate-900 dark:bg-gray-900 dark:text-slate-100 transition-colors duration-300 font-sans;
+  }
+}
+
+.font-heebo {
+  font-family: 'Heebo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+}
+
+@media print {
+  @page { margin: 0; size: A4; }
+  body { 
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important; 
+    background-color: white !important;
+  }
+  /* Hide everything specifically marked or generic UI elements */
+  .no-print, button, nav, header, .toast-container, .chat-widget { display: none !important; }
+  
+  /* Ensure the preview container takes full width/height */
+  #root { display: block; }
+  .print-container { 
+      width: 100% !important; 
+      height: auto !important; 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      margin: 0 !important; 
+      padding: 0 !important; 
+      box-shadow: none !important;
+      border: none !important;
+      transform: none !important;
+  }
+  .page-break { page-break-before: always; }
+}

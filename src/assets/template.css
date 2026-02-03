@@ -1,0 +1,292 @@
+/* בסיס כללי לדף A4 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Times New Roman", serif;
+  font-size: 12pt;
+  color: #000;
+}
+
+.pdf-page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 25mm 25mm 35mm 25mm; /* top/right/bottom/left */
+  box-sizing: border-box;
+}
+
+/* HEADER */
+
+.pdf-header {
+  position: absolute;
+  top: 15mm;
+  left: 25mm;
+  right: 25mm;
+  height: 25mm;
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 22mm;
+  width: auto;
+}
+
+/* DATE (top right) */
+
+.pdf-date {
+  position: absolute;
+  top: 25mm;
+  right: 25mm;
+  font-size: 11pt;
+}
+
+/* MAIN CONTENT WRAPPER */
+
+.pdf-main {
+  margin-top: 55mm; /* space under logo/date */
+  margin-bottom: 40mm; /* leave room for signature + footer */
+}
+
+/* RECIPIENT BLOCK */
+
+.pdf-recipient {
+  margin-bottom: 12pt;
+  line-height: 1.4;
+}
+
+.pdf-greeting {
+  margin: 12pt 0;
+}
+
+/* RE BLOCK */
+
+.pdf-re-meta {
+  display: flex;
+  margin: 10pt 0 18pt 0;
+  font-size: 11.5pt;
+}
+
+.re-label {
+  font-weight: bold;
+  margin-right: 6pt;
+}
+
+.re-content {
+  font-weight: bold;
+}
+
+/* TITLES & TEXT */
+
+.section-title {
+  font-size: 12pt;
+  font-weight: bold;
+  color: #004a92; /* כחול כהה לכותרות */
+  margin-bottom: 4pt;
+}
+
+.pdf-prev-reports {
+  margin-top: 10pt;
+  margin-bottom: 12pt;
+}
+
+.pdf-prev-reports p {
+  margin: 2pt 0;
+}
+
+/* TIMELINE SECTION */
+
+.pdf-timeline {
+  margin: 16pt 0 18pt 0;
+  text-align: left;
+}
+
+.timeline-image {
+  max-width: 150mm;
+  height: auto;
+}
+
+/* MAIN SECTIONS (Update, Strategy, וכו') */
+
+.pdf-sections {
+  margin-top: 12pt;
+  line-height: 1.7; /* יותר ריווח בין שורות בגוף הדוח */
+}
+
+.pdf-sections h2,
+.pdf-sections h3 {
+  font-size: 12pt;
+  font-weight: bold;
+  color: #004a92;
+  margin-top: 14pt;
+  margin-bottom: 4pt;
+}
+
+.pdf-sections p {
+  /* ריווח גדול וברור יותר בין פסקאות בגוף הדו\"ח */
+  margin: 8pt 0;
+}
+
+/* רשימות ממוספרות – שהמספר והטקסט יהיו על אותה שורה, גם כשהטקסט נשבר */
+.pdf-sections ol {
+  margin: 0 0 8pt 18pt; /* הזחה עדינה מהשוליים */
+  padding: 0;
+  list-style-position: outside;
+}
+
+.pdf-sections ol li {
+  margin: 3pt 0;
+  line-height: 1.7;
+}
+
+.pdf-sections ol li span {
+  display: inline; /* מונע קפיצה של הטקסט לשורה חדשה בנפרד מהמספר */
+}
+
+/* EXPENSES TABLE */
+
+.expenses-table-wrapper {
+  margin-top: 16pt;
+}
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4pt;
+  font-size: 11pt;
+}
+
+.expenses-table th,
+.expenses-table td {
+  border: 0.5pt solid #c3d4ea;
+  padding: 5pt 10pt;
+}
+
+.expenses-table thead th {
+  background-color: #f2f6fb;
+  font-weight: bold;
+  font-size: 12pt;
+}
+
+.expenses-table .amount-cell {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.expenses-table tbody tr:nth-of-type(odd):not(.summary-row):not(.total-balance-row) {
+  background-color: #f9fbff;
+}
+
+.expenses-table .summary-row {
+  background-color: #f8fafc;
+  font-weight: bold;
+}
+
+.expenses-table .total-balance-row {
+  background-color: #fff7e6;
+  font-weight: bold;
+}
+
+.expenses-payment-note {
+  margin-top: 10pt;
+  padding: 8pt 10pt;
+  font-size: 10pt;
+  color: #44546a;
+  border: 0.5pt solid #c3d4ea;
+  background-color: #f7f9fc;
+  line-height: 1.5;
+}
+
+/* APPENDIX – INVOICES */
+
+.appendix-item {
+  page-break-before: always;
+  break-before: page;
+  margin-top: 8pt;
+}
+
+.appendix-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.appendix-caption {
+  margin-top: 4pt;
+  font-size: 9.5pt;
+  color: #666;
+  text-align: center;
+}
+
+.appendix-pdf {
+  width: 100%;
+  height: 240mm;
+  display: block;
+  margin: 0 auto;
+}
+
+/* SIGNATURE */
+
+.pdf-signature-block {
+  position: absolute;
+  left: 25mm;
+  bottom: 40mm;
+}
+
+.signature-text {
+  margin: 0 0 4pt 0;
+}
+
+.signature-image {
+  height: 22mm;
+  width: auto;
+}
+
+/* FOOTER */
+
+.pdf-footer {
+  position: absolute;
+  left: 25mm;
+  right: 25mm;
+  bottom: 10mm;
+  font-size: 9pt;
+  color: #666;
+  box-sizing: border-box;
+}
+
+.footer-lawyers {
+  display: flex;
+  justify-content: space-between;
+  border-top: 0.5pt solid #e2e2e2;
+  padding-top: 4pt;
+  margin-bottom: 3pt;
+}
+
+.footer-lawyers span {
+  white-space: nowrap;
+}
+
+.footer-contact {
+  text-align: center;
+  line-height: 1.4;
+}
+
+.footer-contact .sep {
+  margin: 0 4px;
+  color: #c5c5c5;
+}
+
+/* באנר תחתון כתמונה */
+
+.footer-banner {
+  margin-top: 3pt;
+  text-align: center;
+}
+
+.footer-banner-image {
+  max-width: 180mm;
+  height: auto;
+  opacity: 0.95;
+}

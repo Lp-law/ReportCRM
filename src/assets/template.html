@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Report</title>
+    <link rel="stylesheet" href="template.css" />
+  </head>
+  <body>
+    <div class="pdf-page">
+      <!-- HEADER -->
+      <header class="pdf-header">
+        <img
+          src="{{LOGO_TOP_SRC}}"
+          alt="Lior Perry Law Office"
+          class="header-logo"
+        />
+      </header>
+
+      <!-- DATE (top right) -->
+      <div class="pdf-date">
+        {{REPORT_DATE}}
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <main class="pdf-main">
+        <!-- RECIPIENT BLOCK -->
+        <section class="pdf-recipient">
+          {{RECIPIENT_BLOCK_HTML}}
+        </section>
+
+        <!-- GREETING -->
+        <section class="pdf-greeting">
+          {{GREETING_LINE}}
+        </section>
+
+        <!-- RE / POLICY META BLOCK -->
+        <section class="pdf-re-meta">
+          <div class="re-label">Re:</div>
+          <div class="re-content">
+            {{RE_BLOCK_HTML}}
+          </div>
+        </section>
+
+        <!-- PREVIOUS REPORTS -->
+        <section class="pdf-prev-reports">
+          <h2 class="section-title">Previous Reports:</h2>
+          {{PREVIOUS_REPORTS_HTML}}
+        </section>
+
+        <!-- TIMELINE (החץ עם השלבים) -->
+        <section class="pdf-timeline">
+          <img
+            src="{{TIMELINE_SRC}}"
+            alt="Case timeline"
+            class="timeline-image"
+          />
+        </section>
+
+        <!-- MAIN SECTIONS (Update / Strategy / וכו') -->
+        <section class="pdf-sections">
+          {{MAIN_SECTIONS_HTML}}
+        </section>
+      </main>
+
+      <!-- SIGNATURE + FOOTER -->
+      <div class="pdf-signature-block">
+        <p class="signature-text">Yours sincerely,</p>
+        <img
+          src="{{SIGNATURE_SRC}}"
+          alt="Signature"
+          class="signature-image"
+        />
+      </div>
+
+      <footer class="pdf-footer">
+        <!-- שורת עורכי הדין -->
+        <div class="footer-lawyers">
+          <span>Adv. May Harari</span>
+          <span>Adv. Vlada Boltach</span>
+          <span>Adv. Orly Day</span>
+          <span>Adv. Hava Kabilo</span>
+          <span>Adv. Ori Marom</span>
+          <span>Adv. Lior Perry</span>
+        </div>
+
+        <!-- שורת הכתובת והטלפונים -->
+        <div class="footer-contact">
+          <span>HaTamar 3, Even Yehuda 4050003</span>
+          <span class="sep">|</span>
+          <span>רחוב התמר 3, אבן יהודה 4050003</span>
+          <span class="sep">|</span>
+          <span>www.liorperry.law</span>
+          <span class="sep">|</span>
+          <span>טל. 077-571-2999</span>
+          <span class="sep">|</span>
+          <span>פקס. 077-470-4677</span>
+          <span class="sep">|</span>
+          <span>Office@lp-law.co.il</span>
+        </div>
+
+        <!-- אם תרצה להשתמש גם בבאנר התחתון כתמונה מלאה -->
+        <div class="footer-banner">
+          <img
+            src="{{LOGO_BOTTOM_SRC}}"
+            alt="Footer banner"
+            class="footer-banner-image"
+          />
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

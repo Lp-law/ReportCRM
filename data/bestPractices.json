@@ -1,0 +1,18 @@
+[
+  {
+    "id": "bp-Insurance Coverage-1767197525872-6af4h5",
+    "sectionKey": "Insurance Coverage",
+    "title": "נראה כי ייתכן שיש כיסוי ביטוחי",
+    "body": "נראה כי ייתכן שיש כיסוי ביטוחי לטיפולים שביצע המבוטח בהקשר זה, אך יש לבדוק את כל הפרטים הנדרשים.",
+    "label": "BEST_PRACTICE",
+    "tags": [],
+    "isEnabled": true,
+    "createdByUserId": "u1",
+    "createdAt": "2025-12-31T16:12:05.872Z",
+    "updatedAt": "2025-12-31T16:12:05.872Z",
+    "usageCount": 0,
+    "lastUsedAt": null,
+    "behavior": "INSERTABLE",
+    "orderIndex": 0
+  }
+]

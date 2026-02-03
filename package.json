@@ -1,0 +1,52 @@
+{
+  "name": "lior-perry-report-builder",
+  "version": "1.0.0",
+  "description": "Legal Report Builder with Gemini AI and Hebrew-English Translation",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "node server.js",
+    "client": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@grammarly/editor-sdk-react": "^2.5.5",
+    "@napi-rs/canvas": "^0.1.82",
+    "cors": "^2.8.5",
+    "decimal.js-light": "^2.5.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "handlebars": "^4.7.8",
+    "lucide-react": "^0.344.0",
+    "mammoth": "^1.6.0",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.13",
+    "openai": "^4.73.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.4.394",
+    "puppeteer": "^24.31.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tesseract.js": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.38",
+    "supertest": "^7.0.0",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0",
+    "vitest": "^1.6.0"
+  },
+  "overrides": {}
+}

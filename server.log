@@ -1,0 +1,17 @@
+node:internal/modules/esm/resolve:274
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\Users\lior\OneDrive\שולחן העבודה\Report CRM\node_modules\pdfjs-dist\legacy\build\pdf.js' imported from C:\Users\lior\OneDrive\שולחן העבודה\Report CRM\server.js
+    at finalizeResolution (node:internal/modules/esm/resolve:274:11)
+    at moduleResolve (node:internal/modules/esm/resolve:864:10)
+    at defaultResolve (node:internal/modules/esm/resolve:990:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:737:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:714:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:293:38)
+    at #link (node:internal/modules/esm/module_job:208:49) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///C:/Users/lior/OneDrive/%D7%A9%D7%95%D7%9C%D7%97%D7%9F%20%D7%94%D7%A2%D7%91%D7%95%D7%93%D7%94/Report%20CRM/node_modules/pdfjs-dist/legacy/build/pdf.js'
+}
+
+Node.js v24.11.1

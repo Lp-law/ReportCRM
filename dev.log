@@ -1,0 +1,45 @@
+
+> lior-perry-report-builder@1.0.0 dev
+> concurrently "npm run server" "npm run client"
+
+(node:27192) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1] 
+[1] > lior-perry-report-builder@1.0.0 client
+[1] > vite
+[1] 
+[0] 
+[0] > lior-perry-report-builder@1.0.0 server
+[0] > node server.js
+[0] 
+[1] Port 5173 is in use, trying another one...
+[1] 
+[1]   VITE v5.4.21  ready in 435 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5174/
+[1]   ➜  Network: use --host to expose
+[0] node:events:486
+[0]       throw er; // Unhandled 'error' event
+[0]       ^
+[0] 
+[0] Error: listen EADDRINUSE: address already in use :::3000
+[0]     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+[0]     at listenInCluster (node:net:1997:12)
+[0]     at Server.listen (node:net:2102:7)
+[0]     at app.listen (C:\Users\lior\OneDrive\שולחן העבודה\Report CRM\node_modules\express\lib\application.js:635:24)
+[0]     at file:///C:/Users/lior/OneDrive/%D7%A9%D7%95%D7%9C%D7%97%D7%9F%20%D7%94%D7%A2%D7%91%D7%95%D7%93%D7%94/Report%20CRM/server.js:291:5
+[0]     at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+[0]     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:671:26)
+[0]     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+[0] Emitted 'error' event on Server instance at:
+[0]     at emitErrorNT (node:net:1976:8)
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+[0]   code: 'EADDRINUSE',
+[0]   errno: -4091,
+[0]   syscall: 'listen',
+[0]   address: '::',
+[0]   port: 3000
+[0] }
+[0] 
+[0] Node.js v24.11.1
+[0] npm run server exited with code 1

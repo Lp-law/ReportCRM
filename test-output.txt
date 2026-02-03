@@ -1,0 +1,23 @@
+
+> lior-perry-report-builder@1.0.0 test
+> vitest run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/lior/OneDrive/╫⌐╫ץ╫£╫ק╫ƒ ╫פ╫ó╫ס╫ץ╫ף╫פ/Report CRM[39m
+
+ [32mΓ£ף[39m tests/financialExpensesCalculator.spec.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32mΓ£ף[39m tests/financialExpensesValidation.spec.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32mΓ£ף[39m src/features/admin/__tests__/adminQueues.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mΓ£ף[39m src/features/admin/__tests__/adminPriorityAnalytics.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ף[39m src/features/admin/__tests__/adminPriority.test.ts [2m ([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ף[39m tests/tone-risk-api.spec.ts [2m ([22m[2m4 tests[22m[2m)[22m[33m 4074[2mms[22m[39m
+[90mstdout[2m | tests/pdf/report-pdf.spec.ts[2m > [22m[2mReport PDF generation[2m > [22m[2mappends policy PDF as Appendix A when policyFile is present and attachPolicyAsAppendix is true[22m[39m
+[PolicyAppendix] Merged base report, Appendix A intro, and policy PDF { odakanitNo: [32m'ODK-12345'[39m, reportId: [32m'test-report-1'[39m }
+
+ [32mΓ£ף[39m tests/pdf/report-pdf.spec.ts [2m ([22m[2m5 tests[22m[2m)[22m[33m 11131[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m31 passed[39m[22m[90m (31)[39m
+[2m   Start at [22m 13:51:36
+[2m   Duration [22m 12.65s[2m (transform 390ms, setup 0ms, collect 2.42s, tests 15.22s, environment 1ms, prepare 2.20s)[22m
+

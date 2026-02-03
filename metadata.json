@@ -1,0 +1,7 @@
+{
+  "name": "Lior Perry Lloyd's Report Builder",
+  "description": "A professional legal report generator for Lior Perry Law Office. Automates Hebrew-to-English reporting, PDF generation, and insurer updates.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
