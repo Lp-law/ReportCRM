@@ -222,9 +222,10 @@ const POLICY_OCR_MAX_PAGES = Number(process.env.POLICY_OCR_MAX_PAGES || 2);
 const AZURE_OCR_ENDPOINT = process.env.AZURE_OCR_ENDPOINT;
 const AZURE_OCR_KEY = process.env.AZURE_OCR_KEY;
 const USE_AZURE_OCR = Boolean(AZURE_OCR_ENDPOINT && AZURE_OCR_KEY);
+// Document Intelligence is intentionally disabled at this stage.
 const AZURE_DOCINT_ENDPOINT = process.env.AZURE_DOCINT_ENDPOINT;
 const AZURE_DOCINT_KEY = process.env.AZURE_DOCINT_KEY;
-const USE_DOC_INTELLIGENCE = Boolean(AZURE_DOCINT_ENDPOINT && AZURE_DOCINT_KEY);
+const USE_DOC_INTELLIGENCE = false;
 
 const DEFAULT_MEDICAL_ANALYSIS = {
   caseType: '',
@@ -3090,7 +3091,7 @@ app.post('/api/logout', (req, res) => {
     res.cookie(SESSION_COOKIE_NAME, '', {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NodE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production',
       expires: new Date(0),
       path: '/',
     });
