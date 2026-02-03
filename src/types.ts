@@ -856,6 +856,10 @@ export interface HebrewStyleIssue {
 export interface HebrewStyleReviewResult {
   runAt: string;
   issues: HebrewStyleIssue[];
+  /** When false, AI/server could not complete the review; UI should show friendly message and allow continued work. */
+  success?: boolean;
+  /** Internal reason for failure (e.g. AI_UNAVAILABLE, TIMEOUT); for logging only, not shown in UI. */
+  reason?: string;
 }
 
 export interface BestPracticeSnippet {

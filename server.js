@@ -3489,12 +3489,15 @@ severity:
       })
       .filter(Boolean);
 
-    return res.json({ runAt, issues: normalizedIssues });
+    return res.json({ success: true, runAt, issues: normalizedIssues });
   } catch (error) {
     console.error('Hebrew style review error:', error);
-    return res
-      .status(500)
-      .json({ runAt: new Date().toISOString(), issues: [] });
+    const runAt = new Date().toISOString();
+    let reason = 'AI_UNAVAILABLE';
+    const msg = error && typeof error.message === 'string' ? error.message : String(error);
+    if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
+    else if (/JSON|parse|invalid response|empty/i.test(msg)) reason = 'INVALID_RESPONSE';
+    return res.status(200).json({ success: false, reason, runAt, issues: [] });
   }
 });
 

@@ -451,24 +451,25 @@ export async function reviewHebrewStyle(
   content: Record<string, string>,
   _userRole?: string,
 ): Promise<HebrewStyleReviewResult> {
-  try {
-    const response = await fetch('/api/review-hebrew-style', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ content }),
-    });
-    if (!response.ok) throw new Error('Hebrew style review failed');
-    const data = await response.json();
-    const issues = Array.isArray(data.issues) ? data.issues : [];
-    const runAt =
-      typeof data.runAt === 'string' ? data.runAt : new Date().toISOString();
-    return { runAt, issues };
-  } catch (error) {
-    console.error('Hebrew style review error:', error);
-    // זרוק את השגיאה כדי שה־UI יציג למשתמש שהבדיקה נכשלה (ולא "אין הערות")
-    throw (error instanceof Error ? error : new Error('Hebrew style review error'));
+  const response = await fetch('/api/review-hebrew-style', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ content }),
+  });
+  const data = await response.json().catch(() => ({}));
+  const issues = Array.isArray(data.issues) ? data.issues : [];
+  const runAt =
+    typeof data.runAt === 'string' ? data.runAt : new Date().toISOString();
+
+  if (!response.ok) {
+    console.error('Hebrew style review failed', response.status, data);
+    return { runAt, issues, success: false, reason: data.reason || 'REQUEST_FAILED' };
   }
+  if (data.success === false) {
+    return { runAt, issues, success: false, reason: data.reason };
+  }
+  return { runAt, issues, success: true };
 }

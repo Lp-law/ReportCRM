@@ -3370,6 +3370,15 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       const issues = result.issues || [];
       setHebrewStyleIssues(issues);
       setHebrewStyleLastRunAt(result.runAt || new Date().toISOString());
+
+      if (result.success === false) {
+        setShowToast({
+          msg: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
+          type: 'info',
+        });
+        return;
+      }
+
       if (!issues.length) {
         setShowToast({ msg: 'לא נמצאו הערות ניסוח מקצועי בעברית.', type: 'success' });
       } else {
@@ -3380,7 +3389,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       }
     } catch (err) {
       console.error('Hebrew style review failed', err);
-      setShowToast({ msg: 'בדיקת הניסוח נכשלה. נסו שוב מאוחר יותר.', type: 'error' });
+      setShowToast({
+        msg: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
+        type: 'info',
+      });
     } finally {
       setIsHebrewStyleRunning(false);
     }
