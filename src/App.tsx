@@ -6823,9 +6823,8 @@ type CaseTemplate = {
 };
 
 const AppInner = () => {
-  // מאפסים התחברות אוטומטית כדי למנוע מצב שבו משתמש "יתקע" עם אובייקט לא תקין שגורם למסך לבן.
-  // המשתמשים יתחברו מחדש בכל ריענון, מה שעדיף על חוסר גישה למסך הכניסה.
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authCheckDone, setAuthCheckDone] = useState(false);
   const [view, setView] = useState<'DASHBOARD' | 'STEP1' | 'STEP2' | 'PREVIEW' | 'CASE_FOLDER'>(() => loadStoredView());
    
   // Report State
@@ -6875,6 +6874,21 @@ const AppInner = () => {
          return {};
       }
   });
+
+  // Rehydrate auth from server session on load (cookie). Prevents redirect to Login on refresh when session is valid.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/me', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.user) setCurrentUser(data.user);
+      })
+      .catch(() => { /* not authenticated */ })
+      .finally(() => {
+        if (!cancelled) setAuthCheckDone(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // Persist notifications so that messages from Iris נשמרות גם אחרי החלפת משתמש בדפדפן
   useEffect(() => {
@@ -9249,7 +9263,17 @@ const AppInner = () => {
     }
   };
 
-  // Navigation Logic
+  // Navigation Logic: wait for session check before showing login or app
+  if (!authCheckDone) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bgDark">
+        <div className="text-textMuted text-sm flex items-center gap-2">
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden />
+          <span>טוען...</span>
+        </div>
+      </div>
+    );
+  }
   if (!currentUser) return <LoginScreen onLogin={handleUserLogin} />;
 
   if (view === 'CASE_FOLDER' && currentCaseOdakanitNo) {
