@@ -9,7 +9,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "node server.js",
     "client": "vite",
-    "build": "vite build",
+    "build": "npx vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
