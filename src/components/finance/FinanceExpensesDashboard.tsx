@@ -220,8 +220,8 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
     const linkedReport =
       latestReportBySheetId.get(selectedSheetRelations.sheet.id) || null;
     return (
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <FinanceExpenseSheetEditor
+<div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6">
+          <FinanceExpenseSheetEditor
           user={user}
           sheetWithRelations={selectedSheetRelations}
           onSheetUpdated={handleSheetUpdated}
@@ -234,7 +234,7 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">טבלאות הוצאות</h1>

@@ -71,7 +71,7 @@ export const CaseFolderView: React.FC<CaseFolderViewProps> = ({
 
   return (
     <div className="min-h-screen bg-bgDark px-0 pb-8">
-      <div className="mx-auto max-w-4xl px-4 pt-4">
+      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 pt-4">
         <button
           type="button"
           onClick={onBack}

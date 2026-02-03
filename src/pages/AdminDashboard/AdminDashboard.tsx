@@ -294,7 +294,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   return (
     <div className="min-h-screen bg-navySecondary" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-textLight">{adminHe.title}</h1>
@@ -369,7 +369,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <h2 className="text-sm font-semibold text-textLight mb-2">
                 סיכום לפי עורכת דין
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 text-xs">
                 {lawyerCardsStats.map((card) => {
                   const isActive = selectedLawyer?.id === card.lawyer.id;
                   return (

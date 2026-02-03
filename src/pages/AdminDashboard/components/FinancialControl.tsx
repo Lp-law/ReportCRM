@@ -259,7 +259,7 @@ const FinancialControl: React.FC<FinancialControlProps> = ({ user, reports, onOp
 
       {/* KPI cards */}
       {kpis && (
-        <section className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <section className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 text-xs">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
             <p className="text-slate-500 mb-1">זמן ממוצע מטיוטה למוכן</p>
             <p className="text-sm font-semibold text-slate-900">

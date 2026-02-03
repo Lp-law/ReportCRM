@@ -788,7 +788,7 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
 
   return (
     <div className="min-h-screen bg-navySecondary px-0 pb-6 text-[15px]" dir="rtl" lang="he">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12">
         <header className="sticky top-0 z-20 mb-4 flex flex-col gap-3 border-b border-borderDark bg-panel/80 pb-3 pt-2 backdrop-blur-sm md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gold font-heebo">

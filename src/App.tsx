@@ -6148,7 +6148,7 @@ const Dashboard = ({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
            <div>
@@ -9931,7 +9931,7 @@ const AppInner = () => {
    return (
       <>
       <div className="min-h-screen bg-navySecondary pb-12">
-         <div className="max-w-5xl mx-auto pt-6 px-4">
+         <div className="w-full pt-6 px-6 md:px-8 lg:px-10 xl:px-12">
             {/* Stepper Header + Global Assistant */}
             <div className="flex justify-between items-center mb-8">
                <div className="flex items-center bg-panel p-2 rounded-full shadow-sm">
