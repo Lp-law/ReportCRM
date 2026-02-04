@@ -624,7 +624,7 @@ const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
   try {
     const contentType = DOCINT_CONTENT_TYPE(mimeType);
     const endpoint = `${normalizeAzureEndpoint(AZURE_DOCINT_ENDPOINT)}/formrecognizer/documentModels/prebuilt-read:analyze?api-version=2023-07-31`;
-    console.log(`[getDocumentText] docint_called=true content_type=${contentType} buffer_bytes=${buffer?.length || 0}`);
+    console.log(`[getDocumentText] DOCINT_REQUEST_SENT ts=${new Date().toISOString()} content_type=${contentType} buffer_bytes=${buffer?.length || 0}`);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -645,6 +645,7 @@ const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
     if (!operationLocation) {
       throw new Error('Document Intelligence missing operation-location');
     }
+    console.log(`[getDocumentText] DOCINT_POLLING_STARTED ts=${new Date().toISOString()} operation_location=${operationLocation.slice(0, 80)}...`);
     const startedAt = Date.now();
     for (let attempt = 0; attempt < 45; attempt++) {
       if (Date.now() - startedAt > DOCINT_MAX_WAIT_MS) {
@@ -657,6 +658,7 @@ const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
       });
       const json = await statusResponse.json();
       if (json.status === 'succeeded') {
+        console.log(`[getDocumentText] DOCINT_POLLING_COMPLETED ts=${new Date().toISOString()} status=succeeded attempt=${attempt + 1}`);
         const paragraphs = json.analyzeResult?.content || '';
         if (paragraphs) return paragraphs.trim();
         const documents = json.analyzeResult?.documents || [];
@@ -675,7 +677,7 @@ const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
       }
       if (json.status === 'failed') {
         const errMsg = json.error?.message || JSON.stringify(json.error || {});
-        console.log(`[getDocumentText] docint_failed status=failed error=${(errMsg + '').slice(0, 80)}`);
+        console.log(`[getDocumentText] DOCINT_POLLING_COMPLETED ts=${new Date().toISOString()} status=failed error=${(errMsg + '').slice(0, 80)}`);
         throw new Error(`Document Intelligence failed: ${errMsg}`);
       }
     }
@@ -1014,9 +1016,10 @@ const createTextCompletionWithDiagnostics = async (
   }
   const startMs = Date.now();
   try {
+    console.log(`[${endpoint}] OPENAI_REQUEST_SENT ts=${new Date().toISOString()}`);
     const result = await createTextCompletion(opts);
     const durationMs = Date.now() - startMs;
-    console.log(`[${endpoint}] success=true duration_ms=${durationMs}`);
+    console.log(`[${endpoint}] OPENAI_RESPONSE_RECEIVED ts=${new Date().toISOString()} duration_ms=${durationMs}`);
     return result;
   } catch (err) {
     const durationMs = Date.now() - startMs;
@@ -1031,7 +1034,7 @@ const createTextCompletionWithDiagnostics = async (
       reason = 'TIMEOUT';
     }
     console.log(
-      `[${endpoint}] success=false reason=${reason} status=${status ?? 'n/a'} duration_ms=${durationMs}`,
+      `[${endpoint}] OPENAI_RESPONSE_FAILED ts=${new Date().toISOString()} reason=${reason} status=${status ?? 'n/a'} duration_ms=${durationMs}`,
     );
     throw Object.assign(err, { reason });
   }

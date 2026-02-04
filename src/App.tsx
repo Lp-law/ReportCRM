@@ -543,6 +543,63 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'lp_notifications',
 };
 
+const FINANCIAL_STORE_KEY = 'financial_expenses_store_v1';
+
+/** Collects all user data for backup and triggers download */
+const downloadFullBackup = (reports: ReportData[], currentReport: ReportData | null, caseFolders: Record<string, CaseFolder>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const mergedReports = [...reports];
+    if (currentReport) {
+      const idx = mergedReports.findIndex((r) => r.id === currentReport.id);
+      const merged = idx >= 0 ? { ...mergedReports[idx], ...currentReport } : currentReport;
+      if (idx >= 0) mergedReports[idx] = merged;
+      else mergedReports.push(merged);
+    }
+    const backup: Record<string, unknown> = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      reports: mergedReports,
+      caseFolders,
+      notifications: (() => {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+          return raw ? JSON.parse(raw) : [];
+        } catch { return []; }
+      })(),
+      financialStore: (() => {
+        try {
+          const raw = localStorage.getItem(FINANCIAL_STORE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch { return {}; }
+      })(),
+      caseTemplates: (() => {
+        try {
+          const raw = localStorage.getItem('caseTemplates');
+          return raw ? JSON.parse(raw) : [];
+        } catch { return []; }
+      })(),
+      favoriteProviders: (() => {
+        try {
+          const raw = localStorage.getItem('favoriteProviders');
+          return raw ? JSON.parse(raw) : {};
+        } catch { return {}; }
+      })(),
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-crm-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Backup download failed', error);
+  }
+};
+
 // Canonical Expenses section used when a financial expenses table from Iris is linked to the report
 const CANONICAL_EXPENSES_SECTION = 'Expenses breakdown';
 
@@ -6895,6 +6952,8 @@ const AppInner = () => {
   // Report State
   const [reports, setReports] = useState<ReportData[]>(() => loadStoredReports());
   const [currentReport, setCurrentReport] = useState<ReportData | null>(null);
+  const reportsRef = useRef<ReportData[]>(reports);
+  const currentReportRef = useRef<ReportData | null>(currentReport);
   // Admin-only override to allow temporary edits on a specific locked (SENT) report.
   const [canEditLockedReportForId, setCanEditLockedReportForId] = useState<string | null>(null);
 
@@ -7041,6 +7100,40 @@ const AppInner = () => {
     }
     return canonical;
   });
+  const caseFoldersRef = useRef<Record<string, CaseFolder>>(caseFolders);
+
+  useEffect(() => {
+    reportsRef.current = reports;
+    currentReportRef.current = currentReport;
+    caseFoldersRef.current = caseFolders;
+  }, [reports, currentReport, caseFolders]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !currentUser) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const rep = reportsRef.current;
+      const cur = currentReportRef.current;
+      const cf = caseFoldersRef.current;
+      if (rep && cur) {
+        const mergedReports = [...rep];
+        const idx = mergedReports.findIndex((r) => r.id === cur.id);
+        const merged = idx >= 0 ? { ...mergedReports[idx], ...cur } : cur;
+        if (idx >= 0) mergedReports[idx] = merged;
+        else mergedReports.push(merged);
+        try {
+          localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(mergedReports));
+        } catch (err) {
+          console.error('beforeunload save failed', err);
+        }
+      }
+      if (rep?.length || cur) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentUser]);
 
   useEffect(() => {
     if (view !== 'PREVIEW') {
@@ -9288,7 +9381,26 @@ const AppInner = () => {
      }
    };
 
-  const handleLogout = () => {
+  const [showLogoutBackupModal, setShowLogoutBackupModal] = useState(false);
+  const [logoutBackupDone, setLogoutBackupDone] = useState(false);
+
+  const handleLogoutClick = () => {
+    const hasData = reports.length > 0 || currentReport;
+    if (!hasData) {
+      performLogout();
+      return;
+    }
+    setLogoutBackupDone(false);
+    setShowLogoutBackupModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutBackupModal(false);
+    setLogoutBackupDone(false);
+    performLogout();
+  };
+
+  const performLogout = () => {
     // Clear user/session-related React state
     setCurrentUser(null);
     setCurrentReport(null);
@@ -9782,7 +9894,7 @@ const AppInner = () => {
             reopenHebrewDueToExternalFeedback(id)
           }
           canTranslate={canTranslate}
-          onLogout={handleLogout}
+          onLogout={handleLogoutClick}
           onOpenAssistant={() => setIsAssistantOpen(true)}
           onOpenCaseFolder={(odakanitNo: string) => {
             const key = normalizeOdakanitNo(odakanitNo);
@@ -9809,7 +9921,7 @@ const AppInner = () => {
         reports={reports}
         onNewReport={handleNewReportFromDashboard}
         onSelectReport={handleSelectReportFromDashboard}
-        onLogout={handleLogout}
+        onLogout={handleLogoutClick}
         onUpdateReport={(id: string, data: any) => {
           updateReportById(id, (report) => ({ ...report, ...data }));
         }}
@@ -10752,6 +10864,51 @@ const AppInner = () => {
                 }
               }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Send</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showLogoutBackupModal && (
+        <div className="fixed inset-0 bg-black/50 z-[250] flex items-center justify-center p-4" dir="rtl">
+          <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gold">גיבוי לפני התנתקות</h3>
+            <p className="text-sm text-textLight">
+              לפני ההתנתקות יש לבצע גיבוי למידע. הורד את קובץ הגיבוי ולאחר מכן אשר התנתקות.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  downloadFullBackup(reports, currentReport, caseFolders);
+                  setLogoutBackupDone(true);
+                }}
+                className="px-4 py-2 rounded-lg bg-navy text-gold text-sm font-semibold hover:bg-navySecondary"
+              >
+                הורד גיבוי
+              </button>
+              <button
+                type="button"
+                onClick={handleLogoutConfirm}
+                disabled={!logoutBackupDone}
+                title={logoutBackupDone ? '' : 'יש להוריד גיבוי לפני התנתקות'}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                התנתק
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLogoutBackupModal(false);
+                  setLogoutBackupDone(false);
+                }}
+                className="px-4 py-2 rounded-lg border border-borderDark text-textLight text-sm hover:bg-navySecondary"
+              >
+                ביטול
+              </button>
+            </div>
+            {logoutBackupDone && (
+              <p className="text-xs text-green-600">הגיבוי הורד. ניתן להתנתק כעת.</p>
+            )}
           </div>
         </div>
       )}
