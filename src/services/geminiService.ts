@@ -211,10 +211,16 @@ export const analyzeMedicalComplaint = async (
   return { analysis, claimSummary, success: true };
 };
 
+export interface DentalOpinionResponse {
+  success: boolean;
+  text: string;
+  reason?: string;
+}
+
 export const analyzeDentalOpinion = async (
   fileBase64: string,
   mimeType: string,
-): Promise<string> => {
+): Promise<DentalOpinionResponse> => {
   const response = await fetch('/api/analyze-dental-opinion', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -222,15 +228,16 @@ export const analyzeDentalOpinion = async (
   });
   const data = await response.json().catch(() => ({}));
   const result = typeof data.result === 'string' ? data.result : '';
+  const reason = typeof data.reason === 'string' ? data.reason : undefined;
 
   if (!response.ok) {
     console.error('Dental opinion analysis failed', response.status, data);
-    return '';
+    return { success: false, text: '', reason: reason || 'REQUEST_FAILED' };
   }
   if (data.success === false) {
-    return '';
+    return { success: false, text: '', reason: reason || 'AI_UNAVAILABLE' };
   }
-  return result;
+  return { success: true, text: result };
 };
 
 export const extractExpensesTable = async (fileBase64: string, mimeType: string) => {

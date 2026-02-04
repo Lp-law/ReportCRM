@@ -60,6 +60,11 @@ import buildReportFileName, {
   buildReportSubject,
 } from './utils/reportFileName';
 import { translateLegalText, extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
+
+const DOC_ANALYSIS_OCR_FAILED_MSG =
+  'לא ניתן לנתח את המסמך כי לא הצלחנו לקרוא ממנו טקסט (OCR). נסה/י קובץ ברור יותר או הוסף/י סיכום ידנית.';
+const DOC_ANALYSIS_GENERIC_FAIL_MSG =
+  'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.';
 import { diffWords, type DiffToken } from './utils/wordDiff';
 import { logError } from './utils/logging';
 import { GRAMMARLY_CLIENT_ID } from './config/grammarly';
@@ -3071,16 +3076,18 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       // medicalComplaint behaviour. Early-return so the legacy flow stays as-is.
       if (isDentalMode) {
         try {
-          const summaryText = (await analyzeDentalOpinion(
+          const dentalResponse = await analyzeDentalOpinion(
             base64,
             file.type || 'application/octet-stream',
-          )).trim();
+          );
+          const summaryText = dentalResponse.text?.trim() ?? '';
 
-          if (!summaryText) {
-            setShowToast({
-              msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-              type: 'info',
-            });
+          if (!dentalResponse.success || !summaryText) {
+            const msg =
+              dentalResponse.reason === 'INVALID_DOCUMENT'
+                ? DOC_ANALYSIS_OCR_FAILED_MSG
+                : DOC_ANALYSIS_GENERIC_FAIL_MSG;
+            setShowToast({ msg, type: 'info' });
           } else {
             const normalizedText = summaryText;
             const sectionKey = medicalTarget.section || CLAIM_SECTION_KEY;
@@ -3113,10 +3120,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           }
         } catch (error) {
           console.error('Dental opinion analysis failed', error);
-          setShowToast({
-            msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-            type: 'info',
-          });
+          setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
         } finally {
           setIsAiProcessing(false);
           setMedicalProcessingTarget(null);
@@ -3162,10 +3166,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       );
 
       if (response.success === false) {
-        setShowToast({
-          msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-          type: 'info',
-        });
+        const msg =
+          response.reason === 'INVALID_DOCUMENT'
+            ? DOC_ANALYSIS_OCR_FAILED_MSG
+            : DOC_ANALYSIS_GENERIC_FAIL_MSG;
+        setShowToast({ msg, type: 'info' });
         return;
       }
 
@@ -3178,10 +3183,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             section: medicalTarget.section,
           });
         if (!summaryText) {
-          setShowToast({
-            msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-            type: 'info',
-          });
+          setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
         } else {
           const sectionKey = medicalTarget.section || CLAIM_SECTION_KEY;
           const existingValue = data.content[sectionKey] || '';
@@ -3219,17 +3221,11 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           });
         }
       } else {
-        setShowToast({
-          msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-          type: 'info',
-        });
+        setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
       }
     } catch (error) {
       console.error(error);
-      setShowToast({
-        msg: 'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.',
-        type: 'info',
-      });
+      setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
     } finally {
       setIsAiProcessing(false);
       setMedicalProcessingTarget(null);

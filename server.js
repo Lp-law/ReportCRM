@@ -506,7 +506,12 @@ const extractTextWithOcr = async (buffer, maxPages = POLICY_OCR_MAX_PAGES) => {
 
     return collectedText.trim();
   } catch (error) {
-    console.error('OCR extraction failed:', error);
+    const shortMsg = (error?.message || String(error)).slice(0, 100);
+    const isTimeout = /timeout|ETIMEDOUT|timed out/i.test(shortMsg);
+    const isMemory = /memory|allocation|heap/i.test(shortMsg);
+    console.log(
+      `[getDocumentText] tesseract_ocr_failed error=${shortMsg} timeout=${isTimeout} memory=${isMemory}`,
+    );
     return '';
   }
 };
@@ -541,7 +546,7 @@ const extractTextWithAzureOcr = async (buffer) => {
   try {
     const endpoint = `${normalizeAzureEndpoint(AZURE_OCR_ENDPOINT)}/vision/v3.2/read/analyze`;
     const fileUrl = `data:application/octet-stream;base64,${buffer.toString('base64')}`;
-    console.log('[AZURE OCR] language forced to EN');
+    console.log('[getDocumentText] azure_ocr_called=true');
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -556,6 +561,8 @@ const extractTextWithAzureOcr = async (buffer) => {
     });
     if (!response.ok) {
       const text = await response.text();
+      const shortErr = (text || '').slice(0, 120).replace(/\s+/g, ' ');
+      console.log(`[getDocumentText] azure_ocr_called=true status=${response.status} error=${shortErr}`);
       throw new Error(`Azure OCR submission failed: ${response.status} ${text}`);
     }
     const operationLocation = response.headers.get('operation-location');
@@ -586,7 +593,8 @@ const extractTextWithAzureOcr = async (buffer) => {
     }
     throw new Error('Azure OCR timed out');
   } catch (error) {
-    console.error('Azure OCR error:', error);
+    const shortMsg = (error?.message || String(error)).slice(0, 100);
+    console.log(`[getDocumentText] azure_ocr_called=true status=error error=${shortMsg}`);
     return '';
   }
 };
@@ -823,6 +831,7 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
   const { ocrPages = POLICY_OCR_MAX_PAGES, forceOcr = false } = options;
   if (!base64 || !mimeType) return null;
   const buffer = Buffer.from(base64, 'base64');
+  let extractPath = 'none';
   try {
     const lowerMime = (mimeType || '').toLowerCase();
     if (lowerMime.includes('pdf')) {
@@ -830,42 +839,67 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
       try {
         const pdfData = await pdfParse(buffer);
         parsedText = pdfData.text?.trim() || '';
+        extractPath = parsedText && parsedText.length >= 200 ? 'pdf-parse' : 'pdf-parse-short';
       } catch (parseError) {
-        console.warn('pdf-parse failed, falling back to PDF.js extraction.', parseError);
+        console.warn('[getDocumentText] pdf-parse failed, falling back to PDF.js', parseError?.message?.slice(0, 80));
       }
       if (!parsedText || parsedText.length < 200) {
         parsedText = await extractTextWithPdfJs(buffer);
+        if (parsedText) extractPath = parsedText.length >= 200 ? 'pdfjs' : 'pdfjs-short';
       }
       if ((!parsedText || parsedText.length < 200) && USE_DOC_INTELLIGENCE) {
         parsedText = await submitDocumentIntelligenceJob(buffer);
+        if (parsedText) extractPath = 'docint';
       }
       if ((!parsedText || parsedText.length < 200) && USE_AZURE_OCR) {
         parsedText = await extractTextWithAzureOcr(buffer);
+        if (parsedText) extractPath = 'azure_ocr';
       }
       if ((!parsedText || parsedText.length < 200) && (ENABLE_POLICY_OCR || forceOcr)) {
         parsedText = await extractTextWithOcr(buffer, ocrPages);
+        if (parsedText) extractPath = 'tesseract';
+      }
+      const textLength = (parsedText || '').length;
+      console.log(`[getDocumentText] mime=pdf path=${extractPath} textLength=${textLength}`);
+      if (textLength === 0) {
+        console.log('[getDocumentText] reason=INVALID_DOCUMENT (no text extracted from PDF)');
       }
       return parsedText || null;
     }
     if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       const docxData = await mammoth.extractRawText({ buffer });
-      return docxData.value?.trim() || null;
+      const docxText = docxData.value?.trim() || null;
+      const len = (docxText || '').length;
+      console.log(`[getDocumentText] mime=docx path=mammoth textLength=${len}`);
+      if (len === 0) console.log('[getDocumentText] reason=INVALID_DOCUMENT (docx empty)');
+      return docxText;
     }
     if (mimeType.startsWith('text/')) {
-      return buffer.toString('utf8');
+      const txt = buffer.toString('utf8');
+      console.log(`[getDocumentText] mime=text path=direct textLength=${txt.length}`);
+      return txt;
     }
     if (mimeType === 'application/json') {
-      return buffer.toString('utf8');
+      const txt = buffer.toString('utf8');
+      console.log(`[getDocumentText] mime=json path=direct textLength=${txt.length}`);
+      return txt;
     }
     if (mimeType.startsWith('image/')) {
+      let imgText = null;
       try {
         if (USE_DOC_INTELLIGENCE) {
-          const docText = await submitDocumentIntelligenceJob(buffer);
-          if (docText) return docText;
+          imgText = await submitDocumentIntelligenceJob(buffer);
+          if (imgText) {
+            console.log(`[getDocumentText] mime=image path=docint textLength=${imgText.length}`);
+            return imgText;
+          }
         }
         if (USE_AZURE_OCR) {
-          const azureText = await extractTextWithAzureOcr(buffer);
-          if (azureText) return azureText;
+          imgText = await extractTextWithAzureOcr(buffer);
+          if (imgText) {
+            console.log(`[getDocumentText] mime=image path=azure_ocr textLength=${imgText.length}`);
+            return imgText;
+          }
         }
         const {
           data: { text },
@@ -873,9 +907,13 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
           tessedit_char_whitelist:
             'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzאבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789-./:() ',
         });
-        if (text?.trim()) return text.trim();
+        if (text?.trim()) {
+          console.log(`[getDocumentText] mime=image path=tesseract_eng_heb textLength=${text.trim().length}`);
+          return text.trim();
+        }
       } catch (primaryError) {
-        console.error('Image OCR (eng+heb) failed, retrying with ENG only:', primaryError);
+        const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
+        console.log(`[getDocumentText] mime=image tesseract_eng_heb_failed error=${shortMsg}`);
         try {
           const {
             data: { text },
@@ -883,16 +921,24 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
             tessedit_char_whitelist:
               'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./:() ',
           });
-          if (text?.trim()) return text.trim();
+          if (text?.trim()) {
+            console.log(`[getDocumentText] mime=image path=tesseract_eng textLength=${text.trim().length}`);
+            return text.trim();
+          }
         } catch (secondaryError) {
-          console.error('Image OCR fallback failed:', secondaryError);
+          const shortMsg2 = (secondaryError?.message || String(secondaryError)).slice(0, 80);
+          console.log(`[getDocumentText] mime=image tesseract_eng_failed error=${shortMsg2}`);
         }
       }
+      console.log('[getDocumentText] mime=image path=none textLength=0 reason=INVALID_DOCUMENT');
+      return null;
     }
   } catch (error) {
-    console.error('Document parsing failed:', error);
+    const shortMsg = (error?.message || String(error)).slice(0, 100);
+    console.error('[getDocumentText] document parsing failed', shortMsg);
     return null;
   }
+  console.log(`[getDocumentText] mime=${mimeType} path=unsupported reason=INVALID_DOCUMENT`);
   return null;
 };
 
@@ -908,6 +954,42 @@ const createTextCompletion = async ({ systemPrompt, userPrompt, temperature = 0.
     ],
   });
   return flattenCompletionText(completion);
+};
+
+/** Wrapper that adds diagnostic logs and maps errors to reason codes (no sensitive data). */
+const createTextCompletionWithDiagnostics = async (
+  opts,
+  { endpoint = 'openai' } = {},
+) => {
+  const hasClient = Boolean(openai);
+  console.log(`[${endpoint}] openai_client_exists=${hasClient}`);
+  if (!hasClient) {
+    console.log(`[${endpoint}] reason=AI_UNAVAILABLE (no API key)`);
+    throw Object.assign(new Error('OpenAI client is not configured.'), { reason: 'AI_UNAVAILABLE' });
+  }
+  const startMs = Date.now();
+  try {
+    const result = await createTextCompletion(opts);
+    const durationMs = Date.now() - startMs;
+    console.log(`[${endpoint}] success=true duration_ms=${durationMs}`);
+    return result;
+  } catch (err) {
+    const durationMs = Date.now() - startMs;
+    const status = err?.status ?? err?.response?.status ?? err?.code;
+    let reason = 'AI_UNAVAILABLE';
+    const msg = err && typeof err.message === 'string' ? err.message : String(err);
+    if (status === 401 || /invalid.*api.*key|unauthorized/i.test(msg)) {
+      reason = 'UNAUTHORIZED';
+    } else if (status === 429 || /rate.*limit/i.test(msg)) {
+      reason = 'RATE_LIMIT';
+    } else if (/timeout|ETIMEDOUT|timed out/i.test(msg)) {
+      reason = 'TIMEOUT';
+    }
+    console.log(
+      `[${endpoint}] success=false reason=${reason} status=${status ?? 'n/a'} duration_ms=${durationMs}`,
+    );
+    throw Object.assign(err, { reason });
+  }
 };
 
 const REPORT_TEMPLATE_PATH = path.join(__dirname, 'templates', 'report-modern.html');
@@ -2228,8 +2310,9 @@ app.post('/api/refine-text', async (req, res) => {
 
   try {
     if (effectiveMode === 'SAFE_POLISH') {
-      const refined = await createTextCompletion({
-        systemPrompt: [
+      const refined = await createTextCompletionWithDiagnostics(
+        {
+          systemPrompt: [
           'You are rewriting an existing Hebrew legal text.',
           '',
           'Your task is to improve the wording only:',
@@ -2253,15 +2336,18 @@ app.post('/api/refine-text', async (req, res) => {
         ].join('\n'),
         userPrompt: text,
         temperature: 0.35,
-      });
+        },
+        { endpoint: 'refine-text' },
+      );
       return res.json({ refined, mode: effectiveMode });
     }
 
     // REWRITE mode – aggressive wording changes with strict fact protection.
     const { protectedText, map } = protectHebrewFacts(text);
 
-    const refinedProtected = await createTextCompletion({
-      systemPrompt: [
+    const refinedProtected = await createTextCompletionWithDiagnostics(
+      {
+        systemPrompt: [
         'You are rewriting an existing Hebrew legal text.',
         '',
         'Your task is to significantly improve the wording while keeping all facts identical:',
@@ -2283,7 +2369,9 @@ app.post('/api/refine-text', async (req, res) => {
       ].join('\n'),
       userPrompt: protectedText,
       temperature: 0.65,
-    });
+      },
+      { endpoint: 'refine-text' },
+    );
 
     const { restoredText, missingPlaceholders } = restoreHebrewFacts(
       refinedProtected,
@@ -2309,8 +2397,9 @@ app.post('/api/refine-text', async (req, res) => {
 
     return res.json({ refined: restoredText, mode: effectiveMode });
   } catch (error) {
-    console.error('Refinement error', error);
-    res.status(500).json({ error: 'Failed to refine text' });
+    const reason = error?.reason || 'AI_UNAVAILABLE';
+    console.error('Refinement error', { reason, message: error?.message });
+    res.status(500).json({ error: 'Failed to refine text', reason });
   }
 });
 
@@ -2586,6 +2675,9 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
     return res.status(400).json({ error: 'Missing file or mimeType' });
   }
 
+  const uploadSizeBytes = Math.round((fileBase64?.length || 0) * 0.75);
+  console.log(`[analyze-dental-opinion] upload_received size_bytes=${uploadSizeBytes} mime=${mimeType}`);
+
   try {
     // Expose a stable prompt version header for debugging / verification
     res.set('X-Dental-Prompt-Version', 'dental-v-final');
@@ -2594,6 +2686,7 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
 
     const documentText = await getDocumentText(fileBase64, mimeType);
     if (!documentText) {
+      console.log('[analyze-dental-opinion] getDocumentText textLength=0 reason=INVALID_DOCUMENT');
       return res.status(200).json({
         success: false,
         reason: 'INVALID_DOCUMENT',
@@ -2929,9 +3022,13 @@ app.post('/api/analyze-medical-complaint', async (req, res) => {
   if (!fileBase64 || !mimeType) {
     return res.status(400).json({ error: 'Missing file or mimeType' });
   }
+  const uploadSizeBytes = Math.round((fileBase64?.length || 0) * 0.75);
+  console.log(`[analyze-medical-complaint] upload_received size_bytes=${uploadSizeBytes} mime=${mimeType}`);
+
   try {
     const documentText = await getDocumentText(fileBase64, mimeType);
     if (!documentText) {
+      console.log('[analyze-medical-complaint] getDocumentText textLength=0 reason=INVALID_DOCUMENT');
       return res.status(200).json({
         success: false,
         reason: 'INVALID_DOCUMENT',
@@ -3434,11 +3531,10 @@ severity:
 
     const userPrompt = userPromptLines.join('\n\n');
 
-    const responseText = await createTextCompletion({
-      systemPrompt,
-      userPrompt,
-      temperature: 0.0,
-    });
+    const responseText = await createTextCompletionWithDiagnostics(
+      { systemPrompt, userPrompt, temperature: 0.0 },
+      { endpoint: 'review-hebrew-style' },
+    );
 
     const fallback = { runAt: new Date().toISOString(), issues: [] };
     const parsed = parseJsonSafely(responseText, fallback);
@@ -3513,10 +3609,15 @@ severity:
   } catch (error) {
     console.error('Hebrew style review error:', error);
     const runAt = new Date().toISOString();
-    let reason = 'AI_UNAVAILABLE';
+    let reason = error?.reason || 'AI_UNAVAILABLE';
     const msg = error && typeof error.message === 'string' ? error.message : String(error);
-    if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
-    else if (/JSON|parse|invalid response|empty/i.test(msg)) reason = 'INVALID_RESPONSE';
+    const status = error?.status ?? error?.response?.status;
+    if (reason === 'AI_UNAVAILABLE') {
+      if (status === 401 || /invalid.*api.*key|unauthorized/i.test(msg)) reason = 'UNAUTHORIZED';
+      else if (status === 429 || /rate.*limit/i.test(msg)) reason = 'RATE_LIMIT';
+      else if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
+      else if (/JSON|parse|invalid response|empty/i.test(msg)) reason = 'INVALID_RESPONSE';
+    }
     return res.status(200).json({ success: false, reason, runAt, issues: [] });
   }
 });
