@@ -6,7 +6,7 @@ import logoBottom from "../assets/branding/logo-bottom.png";
 import signature from "../assets/branding/signature.png";
 
 import type { ReportData, InvoiceFile } from "../types";
-import { listFinancialExpenseSheets, getFinancialExpenseSheetWithRelations } from "../services/financialExpensesData";
+import { getFinancialExpenseSheetWithRelations, getOfficialSheetIdForCase } from "../services/financialExpensesData";
 import { renderExpensesTableHtml } from "../utils/expensesTableText";
 import { financialExpensesClient } from "../services/financialExpensesClient";
 import { normalizeOdakanitNo } from "../utils/normalizeOdakanitNo";
@@ -89,25 +89,21 @@ function buildMainSections(report: ReportData): string {
   pushSection("Coverage Analysis", s.coverageAnalysis);
   pushSection("Next Steps", s.nextSteps);
 
-  // Expenses – rendered as a structured table when possible
+  // Expenses – use report's linked sheet if set, else official sheet for case (source of truth)
   const caseId = (report as any).odakanitNo as string | undefined;
   if (caseId) {
     const normalizedCase = normalizeOdakanitNo(caseId);
-    const allSheets = listFinancialExpenseSheets();
-    const candidate = allSheets
-      .filter((sheet) => normalizeOdakanitNo(sheet.caseId) === normalizedCase)
-      .sort((a, b) => {
-        const at = new Date(a.updatedAt || a.createdAt).getTime();
-        const bt = new Date(b.updatedAt || b.createdAt).getTime();
-        return bt - at;
-      })[0];
+    const linkedSheetId = (report as any).expensesSheetId as string | undefined;
+    const linkedExists = linkedSheetId && getFinancialExpenseSheetWithRelations(linkedSheetId);
+    const sheetId = linkedExists ? linkedSheetId : getOfficialSheetIdForCase(caseId);
 
-    if (candidate) {
+    if (sheetId) {
+      const relations = getFinancialExpenseSheetWithRelations(sheetId);
       const snapshot = financialExpensesClient.buildCumulativeExpensesSnapshot(
-        candidate.id,
+        sheetId,
         new Date().toISOString(),
       );
-      if (snapshot) {
+      if (snapshot && relations) {
         const { effectiveSheet, allLines, opts } = snapshot;
         const { html } = renderExpensesTableHtml(effectiveSheet, allLines, opts);
         if (html) {

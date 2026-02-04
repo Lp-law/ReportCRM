@@ -11,6 +11,7 @@ interface Props {
   onLogout: () => void;
   onNotifyLawyer?: (options: { caseId: string; sheetId: string; lawyerId?: string }) => void;
   onMarkReportPaid?: (reportId: string) => void;
+  onSheetDeleted?: (sheetId: string) => void;
   onOpenAssistant?: () => void;
   caseFolders?: Record<string, import('../../types').CaseFolder>;
 }
@@ -32,10 +33,12 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
   onLogout,
   onNotifyLawyer,
   onMarkReportPaid,
+  onSheetDeleted,
   onOpenAssistant,
   caseFolders,
 }) => {
   const [sheets, setSheets] = useState<FinancialExpenseSheet[]>([]);
+  const [deleteConfirmSheet, setDeleteConfirmSheet] = useState<{ sheet: FinancialExpenseSheet; reason: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [insurerFilter, setInsurerFilter] = useState('');
@@ -440,18 +443,40 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                             שולם
                           </button>
                         )}
-                        <button
-                          type="button"
-                          className="px-2 py-1 text-sm rounded border border-red-400 text-red-600 hover:bg-red-50"
-                          onClick={async () => {
-                            const confirmed = window.confirm('למחוק את טבלת ההוצאות הזו? לא ניתן לבטל.');
-                            if (!confirmed) return;
-                            await financialExpensesClient.deleteSheet(sheet.id);
-                            await loadSheets();
-                          }}
-                        >
-                          🗑
-                        </button>
+                        {(() => {
+                          const isLinkedToReport = reports.some((r) => r.expensesSheetId === sheet.id);
+                          const linkedReportForDelete = reports.find((r) => r.expensesSheetId === sheet.id);
+                          const isLinkedToPaidReport = Boolean(linkedReportForDelete?.isPaid);
+                          const canDeleteNormally = !isLinkedToReport || !isLinkedToPaidReport;
+                          const canDeleteAsAdmin = isLinkedToPaidReport && user.role === 'ADMIN';
+                          const showDelete = canDeleteNormally || canDeleteAsAdmin;
+
+                          if (!showDelete) return null;
+
+                          const handleDeleteClick = () => {
+                            if (canDeleteAsAdmin) {
+                              setDeleteConfirmSheet({ sheet, reason: '' });
+                            } else {
+                              const ok = window.confirm('למחוק את טבלת ההוצאות הזו? לא ניתן לבטל.');
+                              if (!ok) return;
+                              void (async () => {
+                                await financialExpensesClient.deleteSheet(sheet.id);
+                                onSheetDeleted?.(sheet.id);
+                                await loadSheets();
+                              })();
+                            }
+                          };
+
+                          return (
+                            <button
+                              type="button"
+                              className="px-2 py-1 text-sm rounded border border-red-400 text-red-600 hover:bg-red-50"
+                              onClick={handleDeleteClick}
+                            >
+                              🗑
+                            </button>
+                          );
+                        })()}
                       </div>
                     </td>
                   </tr>
@@ -460,6 +485,54 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
           </tbody>
         </table>
       </div>
+
+      {deleteConfirmSheet && (
+        <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4" dir="rtl">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">מחיקת גיליון משויך לדיווח ששולם</h3>
+            <p className="text-sm text-gray-700 mb-4">חובה להזין סיבת המחיקה (תיעוד).</p>
+            <input
+              type="text"
+              className="w-full border rounded px-3 py-2 text-sm mb-4"
+              placeholder="סיבת המחיקה"
+              value={deleteConfirmSheet.reason}
+              onChange={(e) =>
+                setDeleteConfirmSheet((prev) => (prev ? { ...prev, reason: e.target.value } : null))
+              }
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded border border-gray-300 text-gray-700"
+                onClick={() => setDeleteConfirmSheet(null)}
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded bg-red-600 text-white disabled:opacity-50"
+                disabled={!deleteConfirmSheet.reason.trim()}
+                onClick={() => {
+                  if (!deleteConfirmSheet.reason.trim()) return;
+                  financialExpensesClient.recordSheetDeletionByAdmin(
+                    user,
+                    deleteConfirmSheet.sheet.id,
+                    deleteConfirmSheet.reason.trim(),
+                  );
+                  void (async () => {
+                    await financialExpensesClient.deleteSheet(deleteConfirmSheet.sheet.id);
+                    onSheetDeleted?.(deleteConfirmSheet.sheet.id);
+                    setDeleteConfirmSheet(null);
+                    await loadSheets();
+                  })();
+                }}
+              >
+                מחק עם תיעוד
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

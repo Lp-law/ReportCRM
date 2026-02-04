@@ -254,6 +254,11 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   const [paymentEvents, setPaymentEvents] = useState<FinancialPaymentEvent[]>([]);
   const [historicalExpenseLines, setHistoricalExpenseLines] = useState<LineDraft[]>([]);
   const [cumulativeTotals, setCumulativeTotals] = useState<SheetTotals | null>(null);
+  const [adminEditReason, setAdminEditReason] = useState('');
+
+  const isLockedByPaid = linkedReportForLawyer?.isPaid === true;
+  const isReadOnly = isLockedByPaid && user.role !== 'ADMIN';
+  const isAdminEditingPaid = isLockedByPaid && user.role === 'ADMIN';
 
   const paidToDate = useMemo(() => {
     return financialExpensesClient.getPaidToDateForSheet(sheet);
@@ -474,10 +479,12 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   }, [lines]);
 
   const handleMetaChange = (patch: Partial<FinancialExpenseSheet>) => {
+    if (isReadOnly) return;
     setSheet((prev) => ({ ...prev, ...patch }));
   };
 
   const handleLineChange = (index: number, patch: Partial<LineDraft>) => {
+    if (isReadOnly) return;
     setLines((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], ...patch, sheetId: sheet.id };
@@ -486,6 +493,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   };
 
   const handleAddLine = () => {
+    if (isReadOnly) return;
     const newLine: LineDraft = {
       id: `tmp-${Date.now()}`,
       sheetId: sheet.id,
@@ -510,6 +518,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   };
 
   const handleDeleteLine = (index: number) => {
+    if (isReadOnly) return;
     const target = lines[index];
     if (!target) return;
     setLines((prev) => prev.filter((_, i) => i !== index));
@@ -520,6 +529,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   };
 
   const uploadFiles = async (fileList: FileList | File[]) => {
+    if (isReadOnly) return;
     const files = Array.from(fileList);
     if (!files.length) return;
 
@@ -564,6 +574,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   };
 
   const handleLinkAttachment = async (line: LineDraft, attachmentId: string | null) => {
+    if (isReadOnly) return;
     const targetAttachmentId = attachmentId || '';
     try {
       const updated = await financialExpensesClient.linkAttachmentToLineItem(
@@ -608,8 +619,20 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   };
 
   const handleSaveDraft = async () => {
+    if (isReadOnly) return;
+
+    if (isAdminEditingPaid) {
+      const reason = adminEditReason.trim();
+      if (!reason) {
+        setSaveMessage('נדרשת סיבת השינוי (חובה כאשר עורכים הוצאה שסומנה כשולמה).');
+        return;
+      }
+      financialExpensesClient.recordAdminEditAfterPaid(user, sheet.id, reason);
+    }
+
     const requiresConfirm =
       (user.role === 'SUB_ADMIN' || user.role === 'ADMIN') &&
+      !isAdminEditingPaid &&
       (sheet.status === 'READY_FOR_REPORT' ||
         sheet.status === 'ATTACHED_TO_REPORT' ||
         sheet.status === 'ARCHIVED');
@@ -900,6 +923,25 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   return (
     <div className="flex flex-col gap-4">
+      {isLockedByPaid && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {isReadOnly ? (
+            <strong>ההוצאה סומנה כשולמה – מצב קריאה בלבד.</strong>
+          ) : (
+            <div>
+              <strong>עריכת הוצאה שסומנה כשולמה (ADMIN).</strong>
+              <p className="mt-2 text-amber-800">חובה להזין סיבת השינוי לפני שמירה.</p>
+              <input
+                type="text"
+                className="mt-2 w-full max-w-md border border-amber-300 rounded px-3 py-1.5 text-sm"
+                placeholder="סיבת השינוי (חובה)"
+                value={adminEditReason}
+                onChange={(e) => setAdminEditReason(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">
@@ -951,19 +993,21 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
           >
             תצוגה מקדימה
           </button>
-          <button
-            type="button"
-            className="px-4 py-1.5 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-            onClick={handleMarkReadyAndNotify}
-            disabled={saving}
-          >
-            סיימתי – שלח לעו״ד
-          </button>
+          {!isReadOnly && (
+            <button
+              type="button"
+              className="px-4 py-1.5 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+              onClick={handleMarkReadyAndNotify}
+              disabled={saving}
+            >
+              סיימתי – שלח לעו״ד
+            </button>
+          )}
           <button
             type="button"
             className="px-4 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             onClick={handleSaveDraft}
-            disabled={saving}
+            disabled={saving || isReadOnly}
           >
             {saving ? 'שומר…' : 'שמור טיוטה'}
           </button>
@@ -1016,9 +1060,10 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             מבטחת
           </label>
           <input
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             value={sheet.insurerName || ''}
             onChange={(e) => handleMetaChange({ insurerName: e.target.value })}
+            disabled={isReadOnly}
           />
         </div>
         <div>
@@ -1026,9 +1071,10 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             תקופה / תיאור
           </label>
           <input
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             value={sheet.periodLabel || ''}
             onChange={(e) => handleMetaChange({ periodLabel: e.target.value })}
+            disabled={isReadOnly}
           />
         </div>
         <div>
@@ -1037,13 +1083,14 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
           </label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
             value={sheet.deductibleAmount ?? 0}
             onChange={(e) => {
               const value = Number(e.target.value);
               const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
               handleMetaChange({ deductibleAmount: safe });
             }}
+            disabled={isReadOnly}
           />
         </div>
         <div>
@@ -1063,6 +1110,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             type="checkbox"
             checked={sheet.infoOnly}
             onChange={(e) => handleMetaChange({ infoOnly: e.target.checked })}
+            disabled={isReadOnly}
           />
           <label htmlFor="infoOnly" className="text-sm text-gray-800">
             דיווח לידיעה בלבד (ללא בקשה לתשלום)
@@ -1528,8 +1576,9 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                   <td className="px-2 py-1 border-b text-center">
                     <button
                       type="button"
-                      className="text-xs text-red-600 hover:underline"
+                      className="text-xs text-red-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
                       onClick={() => handleDeleteLine(index)}
+                      disabled={isReadOnly}
                     >
                       מחק
                     </button>
@@ -1552,8 +1601,9 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
         <div className="p-2">
           <button
             type="button"
-            className="px-3 py-1 text-xs rounded border border-dashed border-gray-400 text-gray-700 hover:bg-gray-50"
+            className="px-3 py-1 text-xs rounded border border-dashed border-gray-400 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddLine}
+            disabled={isReadOnly}
           >
             הוסף שורה
           </button>

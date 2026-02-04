@@ -5826,6 +5826,7 @@ const Dashboard = ({
   onDeleteReport,
   onFinanceTaskCreate,
   onNotifyLawyerFromFinance,
+  onSheetDeleted,
   caseTemplates = [],
   onStartTemplate,
   onStartNextReport,
@@ -5878,6 +5879,7 @@ const Dashboard = ({
         onLogout={onLogout}
         onNotifyLawyer={onNotifyLawyerFromFinance}
         onMarkReportPaid={handleMarkReportPaidFromFinance}
+        onSheetDeleted={onSheetDeleted}
         onOpenAssistant={() => onOpenAssistant && onOpenAssistant()}
         caseFolders={caseFolders}
       />
@@ -9928,6 +9930,15 @@ const AppInner = () => {
         onDeleteReport={(id: string) => setReports((prev) => prev.filter((r) => r.id !== id))}
         onFinanceTaskCreate={handleFinanceTaskCreate}
         onNotifyLawyerFromFinance={handleNotifyLawyerFromFinance}
+        onSheetDeleted={(sheetId) => {
+          setReports((prev) =>
+            prev.map((r) =>
+              r.expensesSheetId === sheetId
+                ? { ...r, expensesSheetId: undefined, expensesHtml: undefined, expensesSnapshotAt: undefined }
+                : r
+            )
+          );
+        }}
         caseTemplates={caseTemplates}
         onStartTemplate={startReportFromTemplate}
         onStartNextReport={startNextReport}

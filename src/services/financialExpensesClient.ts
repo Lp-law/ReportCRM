@@ -19,7 +19,10 @@ import {
   deleteFinancialExpenseLineItem,
   getFinancialExpenseSheetWithRelations,
   getInsurerRulesetById,
+  getOfficialSheetIdForCase,
   listFinancialExpenseSheets,
+  recordAdminEditAfterPaid,
+  recordSheetDeletionByAdmin as recordSheetDeletionByAdminData,
   listFinancialPaymentEventsForCase,
   linkAttachmentToLineItem,
   queryFinancialSheetsForLidor,
@@ -86,18 +89,9 @@ export const financialExpensesClient = {
   },
 
   async getLatestSheetForCase(caseId: string): Promise<SheetWithRelations | null> {
-    const all = listFinancialExpenseSheets();
-    const normalized = normalizeOdakanitNo(caseId);
-    const matching = all
-      .filter((s) => normalizeOdakanitNo(s.caseId) === normalized)
-      .sort((a, b) => {
-        const at = new Date(a.updatedAt || a.createdAt).getTime();
-        const bt = new Date(b.updatedAt || b.createdAt).getTime();
-        return bt - at;
-      });
-    const latest = matching[0];
-    if (!latest) return null;
-    return getFinancialExpenseSheetWithRelations(latest.id);
+    const officialId = getOfficialSheetIdForCase(caseId);
+    if (officialId) return getFinancialExpenseSheetWithRelations(officialId);
+    return null;
   },
 
   /**
@@ -380,6 +374,14 @@ export const financialExpensesClient = {
       actorUserId: user.id,
       actorRole: user.role,
     });
+  },
+
+  recordAdminEditAfterPaid(user: User, sheetId: string, reason: string): void {
+    recordAdminEditAfterPaid(sheetId, user.id, user.role, reason);
+  },
+
+  recordSheetDeletionByAdmin(user: User, sheetId: string, reason: string): void {
+    recordSheetDeletionByAdminData(sheetId, user.id, user.role, reason);
   },
 
   async listSheetsForLidor(

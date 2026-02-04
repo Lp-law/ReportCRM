@@ -23,6 +23,9 @@ import { calculateSheetTotals } from '../utils/financialExpensesCalculator';
 
 const STORE_KEY = 'financial_expenses_store_v1';
 
+/** Maps normalized caseId → sheetId of the single official/active sheet per case (source of truth) */
+export type OfficialSheetIdByCaseId = Record<string, string>;
+
 interface FinancialExpensesStore {
   sheets: Record<string, FinancialExpenseSheet>;
   lineItems: Record<string, FinancialExpenseLineItem>;
@@ -31,6 +34,8 @@ interface FinancialExpensesStore {
   insurerRulesets: Record<string, InsurerRuleset>;
   exceptionAnnotations: Record<string, FinancialExceptionAnnotation>;
   payments: Record<string, FinancialPaymentEvent>;
+  /** One official sheet per case – used for PDF, reports, calculations */
+  officialSheetIdByCaseId?: OfficialSheetIdByCaseId;
 }
 
 const emptyStore = (): FinancialExpensesStore => ({
@@ -41,7 +46,29 @@ const emptyStore = (): FinancialExpensesStore => ({
   insurerRulesets: {},
   exceptionAnnotations: {},
   payments: {},
+  officialSheetIdByCaseId: {},
 });
+
+const migrateOfficialSheets = (store: FinancialExpensesStore): FinancialExpensesStore => {
+  let official = store.officialSheetIdByCaseId;
+  if (official && Object.keys(official).length > 0) return store;
+  official = {};
+  const sheets = Object.values(store.sheets);
+  const byCase = new Map<string, FinancialExpenseSheet>();
+  sheets.forEach((s) => {
+    const key = normalizeOdakanitNo(s.caseId);
+    if (!key) return;
+    const existing = byCase.get(key);
+    const sTime = new Date(s.updatedAt || s.createdAt).getTime();
+    if (!existing || new Date(existing.updatedAt || existing.createdAt).getTime() < sTime) {
+      byCase.set(key, s);
+    }
+  });
+  byCase.forEach((sheet, key) => {
+    official![key] = sheet.id;
+  });
+  return { ...store, officialSheetIdByCaseId: official };
+};
 
 const loadStore = (): FinancialExpensesStore => {
   if (typeof window === 'undefined') return emptyStore();
@@ -50,7 +77,7 @@ const loadStore = (): FinancialExpensesStore => {
     if (!raw) return emptyStore();
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return emptyStore();
-    return {
+    let store: FinancialExpensesStore = {
       sheets: parsed.sheets || {},
       lineItems: parsed.lineItems || {},
       attachments: parsed.attachments || {},
@@ -58,7 +85,14 @@ const loadStore = (): FinancialExpensesStore => {
       insurerRulesets: parsed.insurerRulesets || {},
       exceptionAnnotations: parsed.exceptionAnnotations || {},
       payments: parsed.payments || {},
+      officialSheetIdByCaseId: parsed.officialSheetIdByCaseId || {},
     } as FinancialExpensesStore;
+    store = migrateOfficialSheets(store);
+    const hadNoOfficial = !parsed.officialSheetIdByCaseId || Object.keys(parsed.officialSheetIdByCaseId || {}).length === 0;
+    if (hadNoOfficial && Object.keys(store.officialSheetIdByCaseId || {}).length > 0) {
+      saveStore(store);
+    }
+    return store;
   } catch (error) {
     console.error('Failed to load financial expenses store', error);
     return emptyStore();
@@ -264,6 +298,60 @@ export const listFinancialExpenseSheets = (): FinancialExpenseSheet[] => {
   });
 };
 
+/** Records ADMIN deletion of sheet linked to paid report – call before delete. */
+export const recordSheetDeletionByAdmin = (
+  sheetId: string,
+  actorUserId: string,
+  actorRole: string,
+  reason: string,
+): void => {
+  let store = loadStore();
+  if (!store.sheets[sheetId]) return;
+  store = appendAuditEvent(
+    store,
+    sheetId,
+    actorUserId,
+    actorRole,
+    'SHEET_DELETED_BY_ADMIN',
+    'SHEET',
+    sheetId,
+    { reason: reason.trim() },
+  );
+  saveStore(store);
+};
+
+/** Records ADMIN edit after paid – call before any mutation when ADMIN edits a paid-linked sheet */
+export const recordAdminEditAfterPaid = (
+  sheetId: string,
+  actorUserId: string,
+  actorRole: string,
+  reason: string,
+): void => {
+  let store = loadStore();
+  if (!store.sheets[sheetId]) return;
+  store = appendAuditEvent(
+    store,
+    sheetId,
+    actorUserId,
+    actorRole,
+    'ADMIN_EDIT_AFTER_PAID',
+    'SHEET',
+    sheetId,
+    { reason: reason.trim() },
+  );
+  saveStore(store);
+};
+
+/** Returns the single official sheet ID for a case (source of truth). Used for PDF, reports, calculations. */
+export const getOfficialSheetIdForCase = (caseId: string): string | null => {
+  const store = loadStore();
+  const norm = normalizeOdakanitNo(caseId);
+  if (!norm) return null;
+  const id = store.officialSheetIdByCaseId?.[norm];
+  if (!id || !store.sheets[id]) return null;
+  return id;
+};
+
 export const getFinancialExpenseSheetWithRelations = (
   sheetId: string,
 ): { sheet: FinancialExpenseSheet; lineItems: FinancialExpenseLineItem[]; attachments: FinancialExpenseAttachment[] } | null => {
@@ -395,6 +483,17 @@ export const createFinancialExpenseSheet = (
     },
   };
 
+  const normCase = normalizeOdakanitNo(input.caseId);
+  if (normCase) {
+    nextStore = {
+      ...nextStore,
+      officialSheetIdByCaseId: {
+        ...(nextStore.officialSheetIdByCaseId || {}),
+        [normCase]: id,
+      },
+    };
+  }
+
   nextStore = updateSheetVersion(nextStore, id);
   nextStore = appendAuditEvent(
     nextStore,
@@ -440,11 +539,29 @@ export const deleteFinancialExpenseSheet = (sheetId: string): FinancialExpensesS
     }
   });
 
+  let nextOfficial = { ...(store.officialSheetIdByCaseId || {}) };
+  const normCase = normalizeOdakanitNo(existing.caseId);
+  if (normCase && nextOfficial[normCase] === sheetId) {
+    const remaining = Object.values(nextSheets)
+      .filter((s) => normalizeOdakanitNo(s.caseId) === normCase)
+      .sort((a, b) => {
+        const at = new Date(a.updatedAt || a.createdAt).getTime();
+        const bt = new Date(b.updatedAt || b.createdAt).getTime();
+        return bt - at;
+      });
+    if (remaining.length > 0) {
+      nextOfficial[normCase] = remaining[0].id;
+    } else {
+      delete nextOfficial[normCase];
+    }
+  }
+
   store = {
     ...store,
     sheets: nextSheets,
     lineItems: nextLineItems,
     attachments: nextAttachments,
+    officialSheetIdByCaseId: nextOfficial,
   };
 
   saveStore(store);
