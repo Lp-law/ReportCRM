@@ -62,9 +62,11 @@ import buildReportFileName, {
 import { translateLegalText, extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
 
 const DOC_ANALYSIS_OCR_FAILED_MSG =
-  'לא ניתן לנתח את המסמך כי לא הצלחנו לקרוא ממנו טקסט (OCR). נסה/י קובץ ברור יותר או הוסף/י סיכום ידנית.';
+  'לא ניתן לקרוא טקסט מהמסמך.\nניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.\n\nאם יש באפשרותך, ניתן לבצע OCR ב־Adobe Acrobat ולהעלות את הקובץ מחדש.';
 const DOC_ANALYSIS_GENERIC_FAIL_MSG =
-  'לא ניתן לנתח את המסמך כרגע. ניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.';
+  'לא ניתן לנתח את המסמך כרגע.\nניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.';
+const DOC_ANALYSIS_LOW_CONFIDENCE_MSG =
+  'המסמך נראה כסריקה באיכות נמוכה.\nננסה לנתח אותו, אך ייתכן שהניתוח לא יצליח במלואו.';
 import { diffWords, type DiffToken } from './utils/wordDiff';
 import { logError } from './utils/logging';
 import { GRAMMARLY_CLIENT_ID } from './config/grammarly';
@@ -3174,6 +3176,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               msg: 'הקובץ נותח (דנטלי) והטקסט נוסף לסעיף בהצלחה.',
               type: 'success',
             });
+            if (dentalResponse.lowConfidenceDocument) {
+              setTimeout(() => setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
+            }
           }
         } catch (error) {
           console.error('Dental opinion analysis failed', error);
@@ -3264,6 +3269,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           }
           updateData(payload);
           setShowToast({ msg: 'הקובץ נותח והטקסט נוסף לסעיף בהצלחה.', type: 'success' });
+          if (response.lowConfidenceDocument) {
+            setTimeout(() => setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
+          }
         }
       } else if (analysis) {
         applyMedicalAnalysisToSections(analysis);
@@ -3276,6 +3284,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               type: file.type,
             },
           });
+        }
+        if (response.lowConfidenceDocument) {
+          setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' });
         }
       } else {
         setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });

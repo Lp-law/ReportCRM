@@ -989,6 +989,91 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
   return null;
 };
 
+/** Pre-OCR diagnosis + smart single-pass OCR for document analysis (claim/dental only).
+ * - If text exists (pdf-parse/pdfjs): use it, no OCR.
+ * - If no text: run Azure Document Intelligence once only. No retry, no fallback.
+ * Returns { text, lowConfidenceDocument } – lowConfidenceDocument when OCR was attempted (no initial text).
+ */
+const getDocumentTextForAnalysis = async (base64, mimeType) => {
+  if (!base64 || !mimeType) return { text: null, lowConfidenceDocument: false };
+  const buffer = Buffer.from(base64, 'base64');
+  const fileSize = buffer.length;
+  try {
+    const lowerMime = (mimeType || '').toLowerCase();
+    if (lowerMime.includes('pdf')) {
+      let textLength = 0;
+      let pageCount = 0;
+      let parsedText = '';
+      try {
+        const pdfData = await pdfParse(buffer);
+        parsedText = pdfData.text?.trim() || '';
+        pageCount = pdfData.numpages || 0;
+        textLength = parsedText.length;
+      } catch (parseError) {
+        console.warn('[getDocumentTextForAnalysis] pdf-parse failed, trying PDF.js', parseError?.message?.slice(0, 80));
+      }
+      if (!parsedText) {
+        parsedText = await extractTextWithPdfJs(buffer);
+        if (parsedText) {
+          textLength = parsedText.length;
+          try {
+            const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+            const pdf = await loadingTask.promise;
+            pageCount = pdf.numPages;
+          } catch (_) { /* ignore */ }
+        }
+      }
+      console.log(`[getDocumentTextForAnalysis] pre_ocr textLength=${textLength} pageCount=${pageCount} fileSize=${fileSize}`);
+      if (textLength > 0) {
+        return { text: parsedText, lowConfidenceDocument: false };
+      }
+      const lowConfidenceDocument = true;
+      if (!USE_DOC_INTELLIGENCE) {
+        console.log('[getDocumentTextForAnalysis] reason=INVALID_DOCUMENT (no text, DocInt not configured)');
+        return { text: null, lowConfidenceDocument };
+      }
+      const ocrText = await submitDocumentIntelligenceJob(buffer, mimeType);
+      if (ocrText && ocrText.trim().length > 0) {
+        console.log(`[getDocumentTextForAnalysis] docint_success textLength=${ocrText.length}`);
+        return { text: ocrText.trim(), lowConfidenceDocument };
+      }
+      console.log('[getDocumentTextForAnalysis] reason=INVALID_DOCUMENT (DocInt returned no text)');
+      return { text: null, lowConfidenceDocument };
+    }
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const docxData = await mammoth.extractRawText({ buffer });
+      const docxText = docxData.value?.trim() || null;
+      console.log(`[getDocumentTextForAnalysis] mime=docx path=mammoth textLength=${(docxText || '').length}`);
+      return { text: docxText, lowConfidenceDocument: false };
+    }
+    if (mimeType.startsWith('text/') || mimeType === 'application/json') {
+      const txt = buffer.toString('utf8');
+      console.log(`[getDocumentTextForAnalysis] mime=${lowerMime.includes('json') ? 'json' : 'text'} path=direct textLength=${txt.length}`);
+      return { text: txt || null, lowConfidenceDocument: false };
+    }
+    if (mimeType.startsWith('image/')) {
+      const lowConfidenceDocument = true;
+      if (!USE_DOC_INTELLIGENCE) {
+        console.log('[getDocumentTextForAnalysis] mime=image reason=INVALID_DOCUMENT (DocInt not configured)');
+        return { text: null, lowConfidenceDocument };
+      }
+      const imgText = await submitDocumentIntelligenceJob(buffer, mimeType);
+      if (imgText && imgText.trim().length > 0) {
+        console.log(`[getDocumentTextForAnalysis] mime=image path=docint textLength=${imgText.length}`);
+        return { text: imgText.trim(), lowConfidenceDocument };
+      }
+      console.log('[getDocumentTextForAnalysis] mime=image reason=INVALID_DOCUMENT (DocInt returned no text)');
+      return { text: null, lowConfidenceDocument };
+    }
+  } catch (error) {
+    const shortMsg = (error?.message || String(error)).slice(0, 100);
+    console.error('[getDocumentTextForAnalysis] document parsing failed', shortMsg);
+    return { text: null, lowConfidenceDocument: true };
+  }
+  console.log(`[getDocumentTextForAnalysis] mime=${mimeType} path=unsupported reason=INVALID_DOCUMENT`);
+  return { text: null, lowConfidenceDocument: false };
+};
+
 const createTextCompletion = async ({ systemPrompt, userPrompt, temperature = 0.2, responseFormat }) => {
   const client = ensureOpenAI();
   const completion = await client.chat.completions.create({
@@ -2732,9 +2817,9 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
 
     const startedAt = Date.now();
 
-    const documentText = await getDocumentText(fileBase64, mimeType);
+    const { text: documentText, lowConfidenceDocument } = await getDocumentTextForAnalysis(fileBase64, mimeType);
     if (!documentText) {
-      console.log('[analyze-dental-opinion] getDocumentText textLength=0 reason=INVALID_DOCUMENT');
+      console.log('[analyze-dental-opinion] getDocumentTextForAnalysis textLength=0 reason=INVALID_DOCUMENT');
       return res.status(200).json({
         success: false,
         reason: 'INVALID_DOCUMENT',
@@ -3041,13 +3126,12 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
       durationMs,
     });
 
-    res.json({ success: true, result });
+    res.json({ success: true, result, lowConfidenceDocument: !!lowConfidenceDocument });
   } catch (error) {
     console.error('Dental opinion analysis failed:', error);
     let reason = 'AI_UNAVAILABLE';
     const msg = error && typeof error.message === 'string' ? error.message : String(error);
     if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
-    else if (/OCR|extract|document/i.test(msg)) reason = 'OCR_FAILED';
     return res.status(200).json({ success: false, reason, result: '' });
   }
 });
@@ -3074,9 +3158,9 @@ app.post('/api/analyze-medical-complaint', async (req, res) => {
   console.log(`[analyze-medical-complaint] upload_received size_bytes=${uploadSizeBytes} mime=${mimeType}`);
 
   try {
-    const documentText = await getDocumentText(fileBase64, mimeType);
+    const { text: documentText, lowConfidenceDocument } = await getDocumentTextForAnalysis(fileBase64, mimeType);
     if (!documentText) {
-      console.log('[analyze-medical-complaint] getDocumentText textLength=0 reason=INVALID_DOCUMENT');
+      console.log('[analyze-medical-complaint] getDocumentTextForAnalysis textLength=0 reason=INVALID_DOCUMENT');
       return res.status(200).json({
         success: false,
         reason: 'INVALID_DOCUMENT',
@@ -3160,13 +3244,12 @@ Always write in Hebrew.
       }
     }
 
-    res.json({ success: true, analysis, claimSummary });
+    res.json({ success: true, analysis, claimSummary, lowConfidenceDocument: !!lowConfidenceDocument });
   } catch (error) {
     console.error('Medical complaint analysis failed:', error);
     let reason = 'AI_UNAVAILABLE';
     const msg = error && typeof error.message === 'string' ? error.message : String(error);
     if (/timeout|ETIMEDOUT|timed out/i.test(msg)) reason = 'TIMEOUT';
-    else if (/OCR|extract|document/i.test(msg)) reason = 'OCR_FAILED';
     return res.status(200).json({
       success: false,
       reason,

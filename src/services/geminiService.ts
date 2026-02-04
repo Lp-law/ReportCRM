@@ -158,8 +158,10 @@ export interface MedicalAnalysisResponse {
   claimSummary?: string;
   /** When false, analysis could not be completed; UI should show friendly message and allow continued work. */
   success?: boolean;
-  /** Internal reason for failure (e.g. OCR_FAILED, AI_UNAVAILABLE); for logging only. */
+  /** Internal reason for failure (e.g. INVALID_DOCUMENT, AI_UNAVAILABLE); for logging only. */
   reason?: string;
+  /** Document had no initial text and required OCR (low-quality scan); show info message. */
+  lowConfidenceDocument?: boolean;
 }
 
 type ExpertCountMode = 'SINGLE' | 'MULTIPLE';
@@ -208,13 +210,15 @@ export const analyzeMedicalComplaint = async (
   if (data.success === false) {
     return { analysis: null, claimSummary: '', success: false, reason: data.reason };
   }
-  return { analysis, claimSummary, success: true };
+  return { analysis, claimSummary, success: true, lowConfidenceDocument: !!data.lowConfidenceDocument };
 };
 
 export interface DentalOpinionResponse {
   success: boolean;
   text: string;
   reason?: string;
+  /** Document had no initial text and required OCR (low-quality scan); show info message. */
+  lowConfidenceDocument?: boolean;
 }
 
 export const analyzeDentalOpinion = async (
@@ -237,7 +241,7 @@ export const analyzeDentalOpinion = async (
   if (data.success === false) {
     return { success: false, text: '', reason: reason || 'AI_UNAVAILABLE' };
   }
-  return { success: true, text: result };
+  return { success: true, text: result, lowConfidenceDocument: !!data.lowConfidenceDocument };
 };
 
 export const extractExpensesTable = async (fileBase64: string, mimeType: string) => {
