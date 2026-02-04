@@ -16,6 +16,11 @@ import { financialExpensesClient, type SheetWithRelations } from '../../services
 import { renderExpensesTableHtml } from '../../utils/expensesTableText';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { normalizeOdakanitNo } from '../../utils/normalizeOdakanitNo';
+import {
+  getFinancialExpenseStatusLabelHe,
+  getFinancialExpenseStatusLabelHeRaw,
+} from '../../utils/financialExpenseStatusLabels';
+import { getOfficialSheetIdForCase } from '../../services/financialExpensesData';
 
 interface PaymentEventsPanelProps {
   user: User;
@@ -214,13 +219,6 @@ interface Props {
 
 type LineDraft = FinancialExpenseLineItem;
 
-const statusHe: Record<FinancialExpenseSheet['status'], string> = {
-  DRAFT: 'טיוטה',
-  READY_FOR_REPORT: 'מוכן לדיווח',
-  ATTACHED_TO_REPORT: 'שובץ בדיווח',
-  ARCHIVED: 'ארכיון',
-};
-
 const FinanceExpenseSheetEditor: React.FC<Props> = ({
   user,
   sheetWithRelations,
@@ -255,6 +253,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   const [historicalExpenseLines, setHistoricalExpenseLines] = useState<LineDraft[]>([]);
   const [cumulativeTotals, setCumulativeTotals] = useState<SheetTotals | null>(null);
   const [adminEditReason, setAdminEditReason] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
 
   const isLockedByPaid = linkedReportForLawyer?.isPaid === true;
   const isReadOnly = isLockedByPaid && user.role !== 'ADMIN';
@@ -276,6 +275,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
     setSheet(sheetWithRelations.sheet);
     setLines(sheetWithRelations.lineItems);
     setAttachments(sheetWithRelations.attachments);
+    setIsDirty(false);
 
     const loadPaymentsAndHistory = async () => {
       try {
@@ -480,11 +480,13 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   const handleMetaChange = (patch: Partial<FinancialExpenseSheet>) => {
     if (isReadOnly) return;
+    setIsDirty(true);
     setSheet((prev) => ({ ...prev, ...patch }));
   };
 
   const handleLineChange = (index: number, patch: Partial<LineDraft>) => {
     if (isReadOnly) return;
+    setIsDirty(true);
     setLines((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], ...patch, sheetId: sheet.id };
@@ -494,6 +496,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   const handleAddLine = () => {
     if (isReadOnly) return;
+    setIsDirty(true);
     const newLine: LineDraft = {
       id: `tmp-${Date.now()}`,
       sheetId: sheet.id,
@@ -519,6 +522,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   const handleDeleteLine = (index: number) => {
     if (isReadOnly) return;
+    setIsDirty(true);
     const target = lines[index];
     if (!target) return;
     setLines((prev) => prev.filter((_, i) => i !== index));
@@ -549,6 +553,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
         sizeBytes: file.size,
       });
       if (created) {
+        setIsDirty(true);
         setAttachments((prev) => [...prev, created]);
       }
     }
@@ -575,6 +580,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   const handleLinkAttachment = async (line: LineDraft, attachmentId: string | null) => {
     if (isReadOnly) return;
+    setIsDirty(true);
     const targetAttachmentId = attachmentId || '';
     try {
       const updated = await financialExpensesClient.linkAttachmentToLineItem(
@@ -713,11 +719,37 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
         ({ sheet: nextSheet || sheet, lineItems: persistedLines, attachments: [] } as SheetWithRelations);
 
       onSheetUpdated(refreshed);
+      setIsDirty(false);
       setSaveMessage('הטיוטה נשמרה בהצלחה.');
     } finally {
       setSaving(false);
     }
   };
+
+  const handleBackClick = () => {
+    if (isDirty) {
+      const ok = window.confirm('יש שינויים שלא נשמרו. לצאת בלי לשמור?');
+      if (!ok) return;
+    }
+    onBack();
+  };
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  const isOfficialSheet =
+    getOfficialSheetIdForCase(sheet.caseId) === sheet.id;
+  const statusLabelHe = getFinancialExpenseStatusLabelHe(
+    sheet,
+    linkedReportForLawyer,
+  );
 
   const handleMarkReadyAndNotify = async () => {
     setSaving(true);
@@ -884,33 +916,6 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
     URL.revokeObjectURL(url);
   };
 
-  const lawyerStatusHe = useMemo(() => {
-    if (!linkedReportForLawyer) {
-      if (sheet.status === 'READY_FOR_REPORT') {
-        return 'מוכן לשליחה לעו״ד (טרם נשלח מהמערכת).';
-      }
-      if (sheet.status === 'ATTACHED_TO_REPORT' || sheet.status === 'ARCHIVED') {
-        return 'הטבלה שובצה כבר בדיווח קודם לעו״ד.';
-      }
-      return 'טרם נשלח לעו״ד.';
-    }
-
-    switch (linkedReportForLawyer.status) {
-      case 'TASK_ASSIGNED':
-        return 'הדיווח הכספי נמצא כעת אצל העו״ד לטיפול.';
-      case 'WAITING_FOR_INVOICES':
-        return 'העו״ד ממתינה לחשבוניות / אישורים חיצוניים.';
-      case 'PENDING_REVIEW':
-        return 'הדו"ח ממתין לסקירה / אישור.';
-      case 'READY_TO_SEND':
-        return 'הדו"ח מוכן לשליחה לחברת הביטוח.';
-      case 'SENT':
-        return 'הדו"ח נשלח לחברת הביטוח.';
-      default:
-        return 'קיימת טיוטה פתוחה אצל העו״ד.';
-    }
-  }, [linkedReportForLawyer, sheet.status]);
-
   const candidateLawyers = useMemo(() => {
     if (!linkedReportForLawyer) return [];
     return [
@@ -926,7 +931,12 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       {isLockedByPaid && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {isReadOnly ? (
-            <strong>ההוצאה סומנה כשולמה – מצב קריאה בלבד.</strong>
+            <div>
+              <strong>הדיווח סומן כשולם ולכן הגיליון נעול לעריכה.</strong>
+              <p className="mt-1 text-amber-800">
+                רק ADMIN יכול לתקן עם הערה.
+              </p>
+            </div>
           ) : (
             <div>
               <strong>עריכת הוצאה שסומנה כשולמה (ADMIN).</strong>
@@ -944,15 +954,20 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       )}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             טבלת הוצאות לתיק: <span className="font-mono">{sheet.caseId}</span>
+            {isOfficialSheet ? (
+              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                רשמי
+              </span>
+            ) : (
+              <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                היסטורי
+              </span>
+            )}
           </h2>
-          <p className="text-sm text-gray-600">
-            סטטוס: <span>{statusHe[sheet.status]}</span>
-          </p>
-          <p className="mt-1 text-xs text-gray-600">
-            סטטוס אצל העו"ד:{' '}
-            <span className="font-medium text-gray-800">{lawyerStatusHe}</span>
+          <p className="text-sm text-gray-600 mt-1">
+            סטטוס: <span className="font-medium">{statusLabelHe}</span>
           </p>
         </div>
         <div className="flex gap-3 flex-wrap justify-end items-center">
@@ -982,7 +997,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
           <button
             type="button"
             className="px-3 py-1 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
-            onClick={onBack}
+            onClick={handleBackClick}
           >
             חזרה לרשימה
           </button>
@@ -1009,15 +1024,21 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             onClick={handleSaveDraft}
             disabled={saving || isReadOnly}
           >
-            {saving ? 'שומר…' : 'שמור טיוטה'}
+            {saving
+              ? 'שומר…'
+              : isDirty
+              ? 'שמור טיוטה (יש שינויים)'
+              : 'נשמר ✓'}
           </button>
-          <button
-            type="button"
-            className="px-3 py-1.5 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
-            onClick={handleExportJson}
-          >
-            יצוא JSON
-          </button>
+          {user.role === 'ADMIN' && (
+            <button
+              type="button"
+              className="px-3 py-1.5 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={handleExportJson}
+            >
+              יצוא JSON
+            </button>
+          )}
           <button
             type="button"
             className="px-3 py-1.5 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -1142,7 +1163,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             </div>
           </div>
           <div>
-            <div className="text-gray-600">סכום להזמנה בדיווח זה לפני INFO_ONLY</div>
+            <div className="text-gray-600">סכום להזמנה בדיווח זה (לפני סעיפים לידיעה בלבד)</div>
             <div className="font-semibold">
               {totals.amountBeforeInfoOnly.toLocaleString('he-IL')} ₪
             </div>
@@ -1155,7 +1176,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
           </div>
           {totals.infoOnlyApplied && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-              INFO_ONLY – לידיעה בלבד (ללא בקשה לתשלום)
+              לידיעה בלבד (ללא בקשה לתשלום)
             </span>
           )}
         </div>
@@ -1643,7 +1664,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                   גיליון #{h.versionIndex || 1}
                 </span>
                 <span className="text-slate-600">
-                  סטטוס: {statusHe[h.status] || h.status}
+                  סטטוס: {getFinancialExpenseStatusLabelHeRaw(h.status)}
                 </span>
                 <span className="text-slate-500">
                   עודכן:{' '}

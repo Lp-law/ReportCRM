@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { FinancialExpenseSheet, ReportData, User } from '../../types';
 import { financialExpensesClient } from '../../services/financialExpensesClient';
+import { getOfficialSheetIdForCase } from '../../services/financialExpensesData';
 import { calculateSheetTotals, type SheetTotals } from '../../utils/financialExpensesCalculator';
+import {
+  getFinancialExpenseStatusLabelHe,
+  FINANCIAL_STATUS_OPTIONS,
+} from '../../utils/financialExpenseStatusLabels';
 import FinanceExpenseSheetEditor from './FinanceExpenseSheetEditor';
 import { normalizeOdakanitNo } from '../../utils/normalizeOdakanitNo';
 
@@ -17,15 +22,6 @@ interface Props {
 }
 
 type StatusFilter = 'ALL' | FinancialExpenseSheet['status'];
-
-const statusHe: Record<FinancialExpenseSheet['status'], string> = {
-  DRAFT: 'טיוטה',
-  // כאשר איריס סיימה להכין טבלת הוצאות ושלחה אותה לעו״ד – הגיליון במצב READY_FOR_REPORT
-  // נציג זאת כ״נשלח לעו״ד״ כדי לשקף שהכדור עבר לעורכת הדין.
-  READY_FOR_REPORT: 'נשלח לעו״ד',
-  ATTACHED_TO_REPORT: 'שובץ בדיווח',
-  ARCHIVED: 'ארכיון',
-};
 
 const FinanceExpensesDashboard: React.FC<Props> = ({
   user,
@@ -81,13 +77,22 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
   }, [reports]);
 
   const filteredSheets = useMemo(() => {
-    return sheets.filter((sheet) => {
+    const filtered = sheets.filter((sheet) => {
       if (statusFilter !== 'ALL' && sheet.status !== statusFilter) return false;
       const insurerTerm = insurerFilter.trim().toLowerCase();
       if (insurerTerm && !(sheet.insurerName || '').toLowerCase().includes(insurerTerm)) {
         return false;
       }
       return true;
+    });
+    // מיון: גיליון רשמי קודם, אחריו לפי זמן
+    return [...filtered].sort((a, b) => {
+      const officialA = getOfficialSheetIdForCase(a.caseId) === a.id ? 1 : 0;
+      const officialB = getOfficialSheetIdForCase(b.caseId) === b.id ? 1 : 0;
+      if (officialB !== officialA) return officialB - officialA;
+      const ta = new Date(a.updatedAt || a.createdAt).getTime();
+      const tb = new Date(b.updatedAt || b.createdAt).getTime();
+      return tb - ta;
     });
   }, [sheets, statusFilter, insurerFilter]);
 
@@ -289,10 +294,11 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
             }
           >
             <option value="ALL">הכל</option>
-            <option value="DRAFT">טיוטה</option>
-            <option value="READY_FOR_REPORT">מוכן לדיווח</option>
-            <option value="ATTACHED_TO_REPORT">שובץ בדיווח</option>
-            <option value="ARCHIVED">ארכיון</option>
+            {FINANCIAL_STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>
@@ -357,18 +363,12 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                   return 'טיוטה אצל עו״ד';
                 })();
 
-                const irisStatusLabel = (() => {
-                  if (linkedReport) {
-                    if (linkedReport.status === 'SENT') {
-                      if (linkedReport.isPaid) {
-                        return 'שולם';
-                      }
-                      return 'נשלח לחברת הביטוח';
-                    }
-                    return lawyerStatusLabel;
-                  }
-                  return statusHe[sheet.status];
-                })();
+                const irisStatusLabel = getFinancialExpenseStatusLabelHe(
+                  sheet,
+                  linkedReport,
+                );
+                const isOfficialSheet =
+                  getOfficialSheetIdForCase(sheet.caseId) === sheet.id;
 
                 const caseStatusLabel = (() => {
                   const normalizedCase = normalizeOdakanitNo(sheet.caseId);
@@ -408,9 +408,20 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                       דיווח כספי #{sheet.versionIndex}
                     </td>
                     <td className="px-3 py-2 border-b">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-sm bg-gray-100 text-gray-700 border border-gray-200">
-                        {irisStatusLabel}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1">
+                        {isOfficialSheet ? (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            רשמי
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                            היסטורי
+                          </span>
+                        )}
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-sm bg-gray-100 text-gray-700 border border-gray-200">
+                          {irisStatusLabel}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 border-b text-gray-700">
                       {sheet.updatedAt
@@ -451,7 +462,13 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                           const canDeleteAsAdmin = isLinkedToPaidReport && user.role === 'ADMIN';
                           const showDelete = canDeleteNormally || canDeleteAsAdmin;
 
-                          if (!showDelete) return null;
+                          if (!showDelete) {
+                            return (
+                              <span className="text-xs text-gray-500 max-w-[180px]">
+                                לא ניתן למחוק גיליון שמשויך לדיווח ששולם.
+                              </span>
+                            );
+                          }
 
                           const handleDeleteClick = () => {
                             if (canDeleteAsAdmin) {
