@@ -103,6 +103,8 @@ npm ci && npx puppeteer browsers install chrome && npm run build
 | **OPENAI_MODEL** | `gpt-4o-mini` | רשות | ברירת מחדל בשרת. |
 | **DOC_CHAR_LIMIT** | לא להגדיר | רשות | ברירת מחדל 18000. |
 | **NODE_VERSION** | `20` או `18` | רשות | רק אם רוצים לקבע גרסת Node. |
+| **AZURE_DOCINT_ENDPOINT** | `https://xxx.cognitiveservices.azure.com/` | **חובה ל־OCR** | נדרש לניתוח מסמכים (כתב תביעה, חוות דעת) ב־Render. Tesseract לא רץ בענן. |
+| **AZURE_DOCINT_KEY** | מפתח Azure | **חובה ל־OCR** | **Secret.** חלופה: AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT / AZURE_DOCUMENT_INTELLIGENCE_KEY. |
 
 **סיכום בטיחות STAGING:**  
 - **חובה:** רק `OPENAI_API_KEY`.  

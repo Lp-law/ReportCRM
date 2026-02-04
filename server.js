@@ -222,10 +222,16 @@ const POLICY_OCR_MAX_PAGES = Number(process.env.POLICY_OCR_MAX_PAGES || 2);
 const AZURE_OCR_ENDPOINT = process.env.AZURE_OCR_ENDPOINT;
 const AZURE_OCR_KEY = process.env.AZURE_OCR_KEY;
 const USE_AZURE_OCR = Boolean(AZURE_OCR_ENDPOINT && AZURE_OCR_KEY);
-// Document Intelligence is intentionally disabled at this stage.
-const AZURE_DOCINT_ENDPOINT = process.env.AZURE_DOCINT_ENDPOINT;
-const AZURE_DOCINT_KEY = process.env.AZURE_DOCINT_KEY;
-const USE_DOC_INTELLIGENCE = false;
+
+// Document Intelligence: support both naming conventions (DOCINT vs DOCUMENT_INTELLIGENCE)
+const AZURE_DOCINT_ENDPOINT =
+  process.env.AZURE_DOCINT_ENDPOINT || process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
+const AZURE_DOCINT_KEY =
+  process.env.AZURE_DOCINT_KEY || process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY;
+const USE_DOC_INTELLIGENCE = Boolean(AZURE_DOCINT_ENDPOINT && AZURE_DOCINT_KEY);
+
+// On Render, use only Document Intelligence for OCR (no Tesseract, no Azure Vision with data URL)
+const IS_RENDER = process.env.RENDER === 'true';
 
 const DEFAULT_MEDICAL_ANALYSIS = {
   caseType: '',
@@ -599,29 +605,53 @@ const extractTextWithAzureOcr = async (buffer) => {
   }
 };
 
-const submitDocumentIntelligenceJob = async (buffer) => {
+// Maps common mime types to Document Intelligence supported Content-Type
+const DOCINT_CONTENT_TYPE = (mimeType) => {
+  const m = (mimeType || '').toLowerCase();
+  if (m.includes('pdf')) return 'application/pdf';
+  if (m.includes('jpeg') || m.includes('jpg')) return 'image/jpeg';
+  if (m.includes('png')) return 'image/png';
+  if (m.includes('tiff') || m.includes('tif')) return 'image/tiff';
+  if (m.includes('bmp')) return 'image/bmp';
+  return 'application/octet-stream';
+};
+
+const DOCINT_POLL_INTERVAL_MS = 1500;
+const DOCINT_MAX_WAIT_MS = 60000; // 60 seconds total timeout
+
+const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
   if (!USE_DOC_INTELLIGENCE) return '';
   try {
+    const contentType = DOCINT_CONTENT_TYPE(mimeType);
     const endpoint = `${normalizeAzureEndpoint(AZURE_DOCINT_ENDPOINT)}/formrecognizer/documentModels/prebuilt-read:analyze?api-version=2023-07-31`;
+    console.log(`[getDocumentText] docint_called=true content_type=${contentType} buffer_bytes=${buffer?.length || 0}`);
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/octet-stream',
+        'Content-Type': contentType,
         'Ocp-Apim-Subscription-Key': AZURE_DOCINT_KEY,
       },
       body: buffer,
     });
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(`DocInt submission failed: ${response.status} ${text}`);
+      const shortErr = (text || '').slice(0, 100);
+      console.log(`[getDocumentText] docint_submit_failed status=${response.status} error=${shortErr}`);
+      throw new Error(`DocInt submission failed: ${response.status}`);
     }
     const result = await response.json();
     const operationLocation = response.headers.get('operation-location') || result.operationLocation;
     if (!operationLocation) {
       throw new Error('Document Intelligence missing operation-location');
     }
-    for (let attempt = 0; attempt < 20; attempt++) {
-      await sleep(1500);
+    const startedAt = Date.now();
+    for (let attempt = 0; attempt < 45; attempt++) {
+      if (Date.now() - startedAt > DOCINT_MAX_WAIT_MS) {
+        console.log('[getDocumentText] docint_timed_out');
+        throw new Error('Document Intelligence timed out');
+      }
+      await sleep(DOCINT_POLL_INTERVAL_MS);
       const statusResponse = await fetch(operationLocation, {
         headers: { 'Ocp-Apim-Subscription-Key': AZURE_DOCINT_KEY },
       });
@@ -644,12 +674,16 @@ const submitDocumentIntelligenceJob = async (buffer) => {
         return lines.join('\n').trim();
       }
       if (json.status === 'failed') {
-        throw new Error(`Document Intelligence failed: ${JSON.stringify(json.error || {})}`);
+        const errMsg = json.error?.message || JSON.stringify(json.error || {});
+        console.log(`[getDocumentText] docint_failed status=failed error=${(errMsg + '').slice(0, 80)}`);
+        throw new Error(`Document Intelligence failed: ${errMsg}`);
       }
     }
+    console.log('[getDocumentText] docint_timed_out');
     throw new Error('Document Intelligence timed out');
   } catch (error) {
-    console.error('Document Intelligence error:', error);
+    const shortMsg = (error?.message || String(error)).slice(0, 80);
+    console.log(`[getDocumentText] docint_error error=${shortMsg}`);
     return '';
   }
 };
@@ -848,16 +882,19 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
         if (parsedText) extractPath = parsedText.length >= 200 ? 'pdfjs' : 'pdfjs-short';
       }
       if ((!parsedText || parsedText.length < 200) && USE_DOC_INTELLIGENCE) {
-        parsedText = await submitDocumentIntelligenceJob(buffer);
+        parsedText = await submitDocumentIntelligenceJob(buffer, mimeType);
         if (parsedText) extractPath = 'docint';
       }
-      if ((!parsedText || parsedText.length < 200) && USE_AZURE_OCR) {
-        parsedText = await extractTextWithAzureOcr(buffer);
-        if (parsedText) extractPath = 'azure_ocr';
-      }
-      if ((!parsedText || parsedText.length < 200) && (ENABLE_POLICY_OCR || forceOcr)) {
-        parsedText = await extractTextWithOcr(buffer, ocrPages);
-        if (parsedText) extractPath = 'tesseract';
+      // On Render: no Tesseract, no Azure Vision OCR (DocInt is the only cloud OCR)
+      if (!IS_RENDER) {
+        if ((!parsedText || parsedText.length < 200) && USE_AZURE_OCR) {
+          parsedText = await extractTextWithAzureOcr(buffer);
+          if (parsedText) extractPath = 'azure_ocr';
+        }
+        if ((!parsedText || parsedText.length < 200) && (ENABLE_POLICY_OCR || forceOcr)) {
+          parsedText = await extractTextWithOcr(buffer, ocrPages);
+          if (parsedText) extractPath = 'tesseract';
+        }
       }
       const textLength = (parsedText || '').length;
       console.log(`[getDocumentText] mime=pdf path=${extractPath} textLength=${textLength}`);
@@ -888,46 +925,54 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
       let imgText = null;
       try {
         if (USE_DOC_INTELLIGENCE) {
-          imgText = await submitDocumentIntelligenceJob(buffer);
+          imgText = await submitDocumentIntelligenceJob(buffer, mimeType);
           if (imgText) {
             console.log(`[getDocumentText] mime=image path=docint textLength=${imgText.length}`);
             return imgText;
           }
         }
-        if (USE_AZURE_OCR) {
-          imgText = await extractTextWithAzureOcr(buffer);
-          if (imgText) {
-            console.log(`[getDocumentText] mime=image path=azure_ocr textLength=${imgText.length}`);
-            return imgText;
+        // On Render: no Tesseract, no Azure Vision OCR
+        if (!IS_RENDER) {
+          if (USE_AZURE_OCR) {
+            imgText = await extractTextWithAzureOcr(buffer);
+            if (imgText) {
+              console.log(`[getDocumentText] mime=image path=azure_ocr textLength=${imgText.length}`);
+              return imgText;
+            }
           }
-        }
-        const {
-          data: { text },
-        } = await Tesseract.recognize(buffer, 'eng+heb', {
-          tessedit_char_whitelist:
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzאבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789-./:() ',
-        });
-        if (text?.trim()) {
-          console.log(`[getDocumentText] mime=image path=tesseract_eng_heb textLength=${text.trim().length}`);
-          return text.trim();
-        }
-      } catch (primaryError) {
-        const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
-        console.log(`[getDocumentText] mime=image tesseract_eng_heb_failed error=${shortMsg}`);
-        try {
           const {
             data: { text },
-          } = await Tesseract.recognize(buffer, 'eng', {
+          } = await Tesseract.recognize(buffer, 'eng+heb', {
             tessedit_char_whitelist:
-              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./:() ',
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzאבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789-./:() ',
           });
           if (text?.trim()) {
-            console.log(`[getDocumentText] mime=image path=tesseract_eng textLength=${text.trim().length}`);
+            console.log(`[getDocumentText] mime=image path=tesseract_eng_heb textLength=${text.trim().length}`);
             return text.trim();
           }
-        } catch (secondaryError) {
-          const shortMsg2 = (secondaryError?.message || String(secondaryError)).slice(0, 80);
-          console.log(`[getDocumentText] mime=image tesseract_eng_failed error=${shortMsg2}`);
+        }
+      } catch (primaryError) {
+        if (!IS_RENDER) {
+          const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
+          console.log(`[getDocumentText] mime=image tesseract_eng_heb_failed error=${shortMsg}`);
+          try {
+            const {
+              data: { text },
+            } = await Tesseract.recognize(buffer, 'eng', {
+              tessedit_char_whitelist:
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./:() ',
+            });
+            if (text?.trim()) {
+              console.log(`[getDocumentText] mime=image path=tesseract_eng textLength=${text.trim().length}`);
+              return text.trim();
+            }
+          } catch (secondaryError) {
+            const shortMsg2 = (secondaryError?.message || String(secondaryError)).slice(0, 80);
+            console.log(`[getDocumentText] mime=image tesseract_eng_failed error=${shortMsg2}`);
+          }
+        } else {
+          const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
+          console.log(`[getDocumentText] mime=image docint_or_primary_failed error=${shortMsg}`);
         }
       }
       console.log('[getDocumentText] mime=image path=none textLength=0 reason=INVALID_DOCUMENT');
@@ -4299,7 +4344,10 @@ export { app, renderReportPdf };
 const PORT = process.env.PORT || 3000;
 
 if (process.env.NODE_ENV !== 'test') {
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(
+      `[OCR] render=${IS_RENDER} docint=${USE_DOC_INTELLIGENCE} azure_ocr=${USE_AZURE_OCR} tesseract_on_render=false`,
+    );
+  });
 }
