@@ -9994,6 +9994,51 @@ const AppInner = () => {
         onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
+        {showLogoutBackupModal && (
+          <div className="fixed inset-0 bg-black/50 z-[250] flex items-center justify-center p-4" dir="rtl">
+            <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <h3 className="text-lg font-bold text-gold">גיבוי לפני התנתקות</h3>
+              <p className="text-sm text-textLight">
+                לפני ההתנתקות יש לבצע גיבוי למידע. הורד את קובץ הגיבוי ולאחר מכן אשר התנתקות.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    downloadFullBackup(reports, currentReport, caseFolders);
+                    setLogoutBackupDone(true);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-navy text-gold text-sm font-semibold hover:bg-navySecondary"
+                >
+                  הורד גיבוי
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogoutConfirm}
+                  disabled={!logoutBackupDone}
+                  title={logoutBackupDone ? '' : 'יש להוריד גיבוי לפני התנתקות'}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  התנתק
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLogoutBackupModal(false);
+                    setLogoutBackupDone(false);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-borderDark text-textLight text-sm hover:bg-navySecondary"
+                >
+                  ביטול
+                </button>
+              </div>
+              {logoutBackupDone && (
+                <p className="text-xs text-green-600">הגיבוי הורד. ניתן להתנתק כעת.</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {currentUser?.role === 'LAWYER' && showNewCaseModal && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40">
             <div className="bg-panel rounded-2xl shadow-xl max-w-sm w-full mx-4 p-5 space-y-3" dir="rtl">
