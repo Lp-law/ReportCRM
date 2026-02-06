@@ -223,6 +223,8 @@
         border-left: 3px solid var(--lp-gold);
         background: rgba(176, 141, 87, 0.1);
         font-size: 11pt;
+        break-inside: avoid;
+        page-break-inside: avoid;
       }
 
       .cover-re-label {
@@ -761,10 +763,12 @@
   padding-top: 3mm; /* breathing room when a section starts at top of a new page */
 }
 
-/* Signature should not disappear / be split */
+/* Signature: keep block together and avoid orphan at bottom of last page */
 .signature-block {
   break-inside: avoid;
   page-break-inside: avoid;
+  page-break-before: always;
+  padding-top: 4mm; /* top spacing when signature starts on its own page */
 }
 
 </style>

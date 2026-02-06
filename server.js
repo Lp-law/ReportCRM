@@ -2351,6 +2351,7 @@ const renderReportPdf = async (report) => {
     }
   }
 
+  console.log('[PDF] Launching Playwright Chromium');
   const launchArgs = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -2404,13 +2405,14 @@ const renderReportPdf = async (report) => {
       </div>
     `,
     margin: {
-      top: '30mm',
-      bottom: '20mm',
-      left: '15mm',
-      right: '15mm',
+      top: '22mm',
+      bottom: '16mm',
+      left: '14mm',
+      right: '14mm',
     },
   });
   await browser.close();
+  console.log('[PDF] PDF generated successfully');
   return pdfBuffer;
 };
 
