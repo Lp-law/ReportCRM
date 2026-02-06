@@ -7152,6 +7152,13 @@ const AppInner = () => {
           console.error('beforeunload save failed', err);
         }
       }
+      if (cf) {
+        try {
+          saveCaseFolders(cf);
+        } catch (err) {
+          console.error('beforeunload save caseFolders failed', err);
+        }
+      }
       if (rep?.length || cur) {
         e.preventDefault();
         e.returnValue = '';
@@ -7159,6 +7166,44 @@ const AppInner = () => {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !currentUser) return;
+    const persistToLocalStorage = () => {
+      const rep = reportsRef.current;
+      const cur = currentReportRef.current;
+      const cf = caseFoldersRef.current;
+      if (rep && cur) {
+        const mergedReports = [...rep];
+        const idx = mergedReports.findIndex((r) => r.id === cur.id);
+        const merged = idx >= 0 ? { ...mergedReports[idx], ...cur } : cur;
+        if (idx >= 0) mergedReports[idx] = merged;
+        else mergedReports.push(merged);
+        try {
+          localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(mergedReports));
+        } catch (err) {
+          console.error('visibility/pagehide save reports failed', err);
+        }
+      }
+      if (cf) {
+        try {
+          saveCaseFolders(cf);
+        } catch (err) {
+          console.error('visibility/pagehide save caseFolders failed', err);
+        }
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') persistToLocalStorage();
+    };
+    const handlePageHide = () => persistToLocalStorage();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
   }, [currentUser]);
 
   useEffect(() => {
