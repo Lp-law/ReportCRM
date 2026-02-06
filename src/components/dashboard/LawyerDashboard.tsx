@@ -991,9 +991,9 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                     const baseStripe =
                       index % 2 === 0 ? 'bg-panel' : 'bg-navySecondary';
                     const highlight = isHot
-                      ? 'border-l-4 border-red-400 bg-red-50/80'
+                      ? 'border-l-4 border-red-400 bg-red-50/80 text-gray-900'
                       : hasWork
-                        ? 'border-l-4 border-amber-300 bg-amber-50/70'
+                        ? 'border-l-4 border-amber-300 bg-amber-50/70 text-gray-900'
                         : 'border-l border-transparent';
                     return (
                       <tr
@@ -1243,7 +1243,7 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                           return (
                             <tr
                               key={r.id}
-                              className="cursor-pointer border-b border-borderDark hover:bg-emerald-50/60"
+                              className="cursor-pointer border-b border-borderDark hover:bg-emerald-50/60 hover:[&_.text-textLight]:text-gray-800 hover:[&_.text-textMuted]:text-gray-600"
                               onClick={() => {
                                 if (r.odakanitNo) {
                                   onOpenCaseFolder(r.odakanitNo);

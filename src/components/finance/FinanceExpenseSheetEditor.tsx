@@ -1398,8 +1398,8 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
               return (
                 <tr
                   key={line.id}
-                  className={`${hasIssue ? 'bg-red-50' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
-                    isNewExpense ? 'border-l-4 border-emerald-300 bg-emerald-50/60' : ''
+                  className={`${hasIssue ? 'bg-red-50 text-gray-900' : index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${
+                    isNewExpense ? 'border-l-4 border-emerald-300 bg-emerald-50/60 text-gray-900' : ''
                   }`}
                 >
                   <td className="px-2 py-1 border-b">

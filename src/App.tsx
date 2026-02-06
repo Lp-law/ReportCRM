@@ -6665,7 +6665,7 @@ const Dashboard = ({
                     const isSent = r.status === 'SENT';
                     const isTemplateRow = Boolean(r.__templateKey);
                     return (
-                    <tr key={r.id} className={`transition cursor-default ${isReady ? 'bg-red-50' : isSent ? 'bg-green-50/50' : 'hover:bg-blue-50/30'}`}>
+                    <tr key={r.id} className={`transition cursor-default ${isReady ? 'bg-red-50 [&_.text-textLight]:text-gray-800 [&_.text-textMuted]:text-gray-600' : isSent ? 'bg-green-50/50 [&_.text-textLight]:text-gray-800 [&_.text-textMuted]:text-gray-600' : 'hover:bg-blue-50/30'}`}>
                        <td className="p-4">
                           <div className="font-bold text-textLight">{r.insurerName || 'Untitled'}</div>
                           <div className="text-xs text-textMuted">{r.marketRef} {r.insuredName ? ` - ${r.insuredName}` : ''}</div>
@@ -6769,7 +6769,7 @@ const Dashboard = ({
                                    const isSent = report.status === 'SENT';
                                    const isTemplateRow = Boolean(report.__templateKey);
                                    return (
-                                     <tr key={report.id} className={`bg-panel ${isReady ? 'bg-red-50' : isSent ? 'bg-green-50/60' : ''}`}>
+                                     <tr key={report.id} className={`bg-panel ${isReady ? 'bg-red-50 text-gray-900' : isSent ? 'bg-green-50/60 text-gray-900' : ''}`}>
                                        <td className="p-3">{report.reportDate ? new Date(report.reportDate).toLocaleDateString('he-IL') : '—'}</td>
                                        <td className="p-3">{report.plaintiffName || '—'}</td>
                                        <td className="p-3">{report.insuredName || '—'}</td>
@@ -8405,7 +8405,8 @@ const AppInner = () => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('PDF download failed', error);
-      alert('הפקת ה-PDF נכשלה. נסה שוב.');
+      const msg = error instanceof Error ? error.message : 'הפקת ה-PDF נכשלה. נסה שוב.';
+      alert(msg);
     } finally {
       setIsPdfGenerating(false);
     }
@@ -8574,8 +8575,11 @@ const AppInner = () => {
       }
     } catch (error) {
       console.error('Email send failed', error);
+      const errMsg = error instanceof Error ? error.message : '';
       setShowToast({
-        msg: 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית (קובץ ה‑PDF ירד למחשב, יש לצרף אותו ידנית).',
+        msg: errMsg && errMsg.includes('פוליסה')
+          ? errMsg
+          : 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית (קובץ ה‑PDF ירד למחשב, יש לצרף אותו ידנית).',
         type: 'error',
       });
     } finally {
@@ -8812,8 +8816,11 @@ const AppInner = () => {
     );
     } catch (error) {
       console.error('Resend email failed', error);
+      const errMsg = error instanceof Error ? error.message : '';
       setShowToast({
-        msg: 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית.',
+        msg: errMsg && errMsg.includes('פוליסה')
+          ? errMsg
+          : 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית.',
         type: 'error',
       });
     } finally {
@@ -9413,7 +9420,16 @@ const AppInner = () => {
     performLogout();
   };
 
-  const performLogout = () => {
+  const performLogout = async () => {
+    try {
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (e) {
+      console.warn('Logout API call failed, clearing client state anyway', e);
+    }
     // Clear user/session-related React state
     setCurrentUser(null);
     setCurrentReport(null);

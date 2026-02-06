@@ -3995,6 +3995,15 @@ app.post('/api/render-report-pdf', async (req, res) => {
     return res.status(400).json({ error: 'Missing report payload' });
   }
 
+  if (report.attachPolicyAsAppendix === true) {
+    const policy = report.policyFile;
+    if (!policy || !policy.data) {
+      return res.status(400).json({
+        error: 'צירפת פוליסה אך הקובץ לא נקלט. נא לנסות שוב.',
+      });
+    }
+  }
+
   try {
     const pdfBuffer = await buildFinalReportPdfWithPolicy(report);
 

@@ -376,7 +376,16 @@ export const fetchReportPdf = async (report: ReportData): Promise<Blob> => {
       credentials: 'include',
       body: JSON.stringify({ report }),
     });
-    if (!response.ok) throw new Error('PDF rendering failed');
+    if (!response.ok) {
+      let msg = 'PDF rendering failed';
+      try {
+        const body = await response.json();
+        if (body && typeof body.error === 'string') msg = body.error;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(msg);
+    }
     return await response.blob();
   } catch (error) {
     console.error('PDF render error:', error);

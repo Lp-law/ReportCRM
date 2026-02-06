@@ -320,6 +320,7 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
             <tr>
               <th className="px-3 py-2 border-b text-right">תיק</th>
               <th className="px-3 py-2 border-b text-right">מבטחת</th>
+              <th className="px-3 py-2 border-b text-right">שם התובע / תובעת</th>
               <th className="px-3 py-2 border-b text-right">גרסה</th>
               <th className="px-3 py-2 border-b text-right">סטטוס</th>
               <th className="px-3 py-2 border-b text-right">עודכן לאחרונה</th>
@@ -330,14 +331,14 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-3 py-4 text-center text-gray-500">
                   טוען נתונים…
                 </td>
               </tr>
             )}
             {!loading && filteredSheets.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-3 py-4 text-center text-gray-500">
                   אין טבלאות הוצאות תואמות לסינון.
                 </td>
               </tr>
@@ -403,6 +404,9 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                     </td>
                     <td className="px-3 py-2 border-b text-gray-800">
                       {sheet.insurerName || '—'}
+                    </td>
+                    <td className="px-3 py-2 border-b text-gray-800">
+                      {linkedReport?.plaintiffName || '—'}
                     </td>
                     <td className="px-3 py-2 border-b text-gray-800">
                       דיווח כספי #{sheet.versionIndex}
