@@ -299,6 +299,22 @@ export const requestAssistantHelp = async (
       if (response.status === 401) {
         throw new Error('AUTH_REQUIRED');
       }
+      // Server returns 500 with helpful content (title, bullets) – use it instead of generic error
+      if (response.status >= 500 && data && (data.title || Array.isArray(data.bullets))) {
+        const title =
+          typeof data.title === 'string' && data.title.trim()
+            ? data.title.trim()
+            : 'העוזר החכם אינו זמין כרגע';
+        const bullets: string[] = Array.isArray(data.bullets)
+          ? data.bullets.filter((b: unknown) => typeof b === 'string' && String(b).trim().length > 0)
+          : ['אפשר להמשיך לעבוד כרגיל עם הכלים במסך.'];
+        return {
+          title,
+          bullets,
+          warning: typeof data.warning === 'string' && data.warning.trim() ? data.warning.trim() : undefined,
+          nextSuggestion: typeof data.nextSuggestion === 'string' && data.nextSuggestion.trim() ? data.nextSuggestion.trim() : undefined,
+        };
+      }
       if (response.status >= 500) {
         throw new Error('SERVER_ERROR');
       }

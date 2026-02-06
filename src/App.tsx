@@ -271,6 +271,10 @@ const AutoResizeTextarea = ({ value, onChange, placeholder, disabled, readOnly, 
     const target = e.target as HTMLTextAreaElement;
     if (target.value !== value) onChange({ target } as any);
   };
+  const handleBlur = readOnly || !onChange ? undefined : (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    if (target.value !== value) onChange({ target } as any);
+  };
   return (
     <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
       <textarea
@@ -280,6 +284,7 @@ const AutoResizeTextarea = ({ value, onChange, placeholder, disabled, readOnly, 
         value={value}
         onChange={readOnly ? undefined : onChange}
         onInput={handleInput}
+        onBlur={handleBlur}
         placeholder={placeholder}
         disabled={disabled || readOnly}
         rows={3}

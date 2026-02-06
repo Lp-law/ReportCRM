@@ -144,6 +144,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                 type="button"
                 disabled={loading || !hasReport}
                 onClick={() => onRunIntent(qa.intent)}
+                title={!hasReport ? 'יש לבחור או לפתוח דו״ח כדי להשתמש בעוזר' : undefined}
                 className={`text-[11px] px-3 py-1.5 rounded-full border transition ${
                   loading || !hasReport
                     ? 'border-borderDark200 text-textMuted bg-navySecondary cursor-not-allowed'
