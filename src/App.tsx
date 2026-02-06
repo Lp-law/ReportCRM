@@ -10189,8 +10189,7 @@ const AppInner = () => {
     currentReport.fileNameTitles && currentReport.fileNameTitles.length
       ? currentReport.fileNameTitles
       : defaultFileNameTitles;
-  const canEditFileNameTitles =
-    currentReportNumber !== 1 && availableFileNameTitleOptions.length > 0;
+  const canEditFileNameTitles = availableFileNameTitleOptions.length > 0;
 
    const worksheetSessionItems = worksheetSessions
      .map(session => {
@@ -10734,6 +10733,8 @@ const AppInner = () => {
                         >
                           {previewLabels.editFileNames}
                         </button>
+                        {currentUser?.role !== 'LAWYER' && currentUser?.role !== 'ADMIN' && (
+                        <>
                         <button
                           onClick={() => {
                             const payload = {
@@ -10796,6 +10797,8 @@ const AppInner = () => {
                         >
                           CSV Export
                         </button>
+                        </>
+                        )}
                         <button
                           onClick={handleFinalizeClick}
                           className="flex items-center bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

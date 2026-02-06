@@ -10,6 +10,7 @@
     "server": "node server.js",
     "client": "vite",
     "build": "npx vite build",
+    "build:render": "npm ci && npx puppeteer browsers install chrome && npm run build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

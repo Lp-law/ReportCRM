@@ -1611,7 +1611,8 @@ const buildProceduralTimelineView = (report, currentReportNumber) => {
   };
 };
 
-const buildReportHtml = (report = {}) => {
+const buildReportHtml = (report = {}, options = {}) => {
+  const { forPdf = false } = options;
   const template = getReportTemplate();
   const currentReportNumber =
     (Array.isArray(report.reportHistory) ? report.reportHistory.length : 0) + 1;
@@ -1758,6 +1759,9 @@ const buildReportHtml = (report = {}) => {
 
     // RE line for cover
     reportReLine: subject || buildReLine(report, currentReportNumber),
+
+    // When true, omit signature block and cover badge from PDF output only
+    forPdf,
   };
 
   return template(templateData);
@@ -2251,8 +2255,24 @@ const renderReportPdf = async (report) => {
   // When generating the PDF, we purposely drop invoiceFiles so that
   // invoices are not embedded as HTML <object>/<img> and are instead
   // appended later as real PDF pages via pdf-lib.
-  const safeReportForHtml = { ...report, invoiceFiles: [] };
-  const html = buildReportHtml(safeReportForHtml);
+  let html;
+  try {
+    const safeReportForHtml = { ...report, invoiceFiles: [] };
+    html = buildReportHtml(safeReportForHtml, { forPdf: true });
+    console.log('[PDF] HTML generation completed', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+      htmlLength: html?.length,
+    });
+  } catch (htmlErr) {
+    console.error('[PDF] HTML generation failed', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+      error: htmlErr?.message,
+      stack: htmlErr?.stack,
+    });
+    throw Object.assign(htmlErr, { reason: 'HTML_GENERATION' });
+  }
 
   // Debug: ensure the HTML used for PDF has no invoices appendix embeds
   try {
@@ -2301,7 +2321,23 @@ const renderReportPdf = async (report) => {
     }
   }
 
-  const browser = await puppeteer.launch({ headless: 'new' });
+  let browser;
+  try {
+    browser = await puppeteer.launch({ headless: 'new' });
+    console.log('[PDF] Puppeteer browser launched', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+    });
+  } catch (launchErr) {
+    console.error('[PDF] Puppeteer launch failed', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+      error: launchErr?.message,
+      stack: launchErr?.stack,
+    });
+    throw Object.assign(launchErr, { reason: 'PUPPETEER_LAUNCH' });
+  }
+
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'networkidle0' });
   const pdfBuffer = await page.pdf({
@@ -3779,6 +3815,11 @@ app.post('/api/help-chat', async (req, res) => {
 app.post('/api/assistant/help', async (req, res) => {
   if (!ensureAuthenticated(req, res)) return;
 
+  const hasApiKey = Boolean(process.env.OPENAI_API_KEY || process.env.API_KEY);
+  if (!hasApiKey) {
+    console.error('[Assistant] Missing OPENAI_API_KEY or API_KEY – Smart Assistant will not work');
+  }
+
   const { intent, context, reportMeta } = req.body || {};
 
   const allowedIntents = new Set([
@@ -3909,16 +3950,39 @@ Task:
       nextSuggestion,
     });
   } catch (error) {
-    console.error('Assistant help error', error);
+    const errMsg = error?.message || String(error);
+    const status = error?.status ?? error?.response?.status;
+    let reason = 'AI_UNAVAILABLE';
+    if (!hasApiKey) reason = 'MISSING_API_KEY';
+    else if (status === 401 || /invalid.*api.*key|unauthorized/i.test(errMsg)) reason = 'UNAUTHORIZED';
+    else if (status === 429 || /rate.*limit/i.test(errMsg)) reason = 'RATE_LIMIT';
+    else if (/timeout|ETIMEDOUT|timed out/i.test(errMsg)) reason = 'TIMEOUT';
+    else if (/JSON|parse|invalid response/i.test(errMsg)) reason = 'INVALID_RESPONSE';
+
+    console.error('[Assistant] Smart Assistant error', {
+      intent,
+      reason,
+      error: errMsg,
+      stack: error?.stack,
+    });
+
+    const actionableBullets = [
+      reason === 'MISSING_API_KEY'
+        ? 'OpenAI API key is not configured. Contact your administrator to set OPENAI_API_KEY.'
+        : reason === 'RATE_LIMIT'
+          ? 'AI rate limit reached. Please try again in a few minutes.'
+          : reason === 'TIMEOUT'
+            ? 'The request timed out. Try again or check your connection.'
+            : 'נראה שיש תקלה זמנית בעוזר החכם או בחיבור ל-AI.',
+      'אפשר להמשיך לעבוד כרגיל עם הכלים במסך (שכתוב עברית, בדיקות, תצוגת PDF).',
+      'אם התקלה חוזרת, כדאי לדווח לליאור או לתיעוד התמיכה.',
+    ];
+
     return res.status(500).json({
       title: 'העוזר החכם אינו זמין כרגע',
-      bullets: [
-        'נראה שיש תקלה זמנית בעוזר החכם או בחיבור ל-AI.',
-        'אפשר להמשיך לעבוד כרגיל עם הכלים במסך (למשל שכתוב עברית, בדיקות, ותצוגת PDF).',
-        'אם התקלה חוזרת, כדאי לדווח לליאור או לתיעוד התמיכה.',
-      ],
+      bullets: actionableBullets,
       warning: 'עד שהעוזר יחזור לפעול, האחריות על בדיקות סופיות היא על המשתמשת בלבד.',
-      nextSuggestion: 'נסי לרענן את הדפדפן או להיכנס מחדש למערכת לפני ניסיון נוסף.',
+      nextSuggestion: reason === 'MISSING_API_KEY' ? undefined : 'נסי לרענן את הדפדפן או להיכנס מחדש לפני ניסיון נוסף.',
     });
   }
 });
@@ -4010,8 +4074,17 @@ app.post('/api/render-report-pdf', async (req, res) => {
     }
   }
 
+  console.log('[PDF] Starting PDF generation', {
+    odakanitNo: report?.odakanitNo,
+    reportId: report?.id,
+  });
+
   try {
     const pdfBuffer = await buildFinalReportPdfWithPolicy(report);
+    console.log('[PDF] buildFinalReportPdfWithPolicy completed successfully', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+    });
 
     // 🛡️ נוודא שתמיד יוצא Buffer אמיתי
     let finalBuffer = pdfBuffer;
@@ -4030,8 +4103,32 @@ app.post('/api/render-report-pdf', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.end(finalBuffer);
   } catch (error) {
-    console.error('PDF generation failed:', error);
-    res.status(500).json({ error: 'Failed to generate PDF' });
+    const errMsg = error?.message || String(error);
+    const isChromeMissing =
+      /could not find chrome|failed to launch|executable doesn't exist/i.test(errMsg);
+    const isTimeout = /timeout|ETIMEDOUT|timed out/i.test(errMsg);
+    const isPolicyErr = /policy|appendix/i.test(errMsg);
+    const isInvoiceErr = /invoice.*appendix/i.test(errMsg);
+
+    let userMsg = 'Failed to generate PDF';
+    if (isChromeMissing) {
+      userMsg =
+        'PDF generation failed: Chrome/Chromium not found. Ensure Puppeteer Chrome is installed (e.g. npx puppeteer browsers install chrome in build).';
+    } else if (isTimeout) {
+      userMsg = 'PDF generation timed out. Try again or contact support.';
+    } else if (isPolicyErr) {
+      userMsg = 'Policy appendix error. Check policy file and try again.';
+    } else if (isInvoiceErr) {
+      userMsg = 'Invoice appendix error. Check invoice files and try again.';
+    }
+
+    console.error('[PDF] PDF generation failed', {
+      odakanitNo: report?.odakanitNo,
+      reportId: report?.id,
+      error: errMsg,
+      stack: error?.stack,
+    });
+    res.status(500).json({ error: userMsg });
   }
 });
 
