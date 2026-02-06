@@ -402,7 +402,7 @@ const FinancialTracker = ({ reports, currentUser, onMarkPaid }: { reports: Repor
   return (
     <div className="mb-8 bg-panel rounded-xl shadow-sm border border-indigo-100 overflow-hidden">
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 p-4 text-white flex justify-between items-center">
-         <h3 className="font-bold text-lg flex items-center"><Calculator className="w-6 h-6 mr-2"/> Financial Control - Outstanding Expenses</h3>
+         <h3 className="font-bold text-lg flex items-center"><Calculator className="w-6 h-6 mr-2"/> Financial Control - Outstanding Expenses <span className="text-indigo-200 text-xs font-normal mr-2">(מידע היסטורי – לידיעה בלבד)</span></h3>
          <div className="text-xl font-bold bg-panel/20 px-4 py-1 rounded">Total: ₪{grandTotal.toLocaleString()}</div>
       </div>
       <div className="overflow-x-auto">
@@ -4246,6 +4246,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           const styleIssuesForSection = hebrewStyleIssues.filter(
             (issue) => issue.sectionKey === sec,
           ).length;
+          const hasFinanceExpenses = Boolean(data.expensesSheetId || (data as any).expensesHtml);
 
           return (
           <div
@@ -4874,7 +4875,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             {/* SECTION CONTENT */}
             {sec.includes("Expenses") ? (
                <div className="space-y-4">
-                  {/* Manual Expense Entry */}
+                  {hasFinanceExpenses ? (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-900">
+                      <p className="font-medium">טבלת ההוצאות מגיעה מטבלת הנהלת החשבונות (Expense Sheet).</p>
+                      <p className="text-xs text-emerald-800 mt-1">לעדכון – השתמשי בכפתור &quot;הוסף טבלת הוצאות עדכנית&quot; למעלה.</p>
+                    </div>
+                  ) : (
+                  <>
+                  {/* Manual Expense Entry (Legacy) */}
                   {canManageExpenses && (
                      <div className="bg-blue-50 p-4 rounded border border-blue-100 mb-4">
                         <h4 className="text-sm font-bold text-blue-800 mb-2">Add Expense Item</h4>
@@ -4960,7 +4968,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
                          </div>
                        )}
                     </div>
-
+                  </>
+                  )}
                   {/* INVOICE ATTACHMENTS ZONE (Sub-Admin/Finance Focus) */}
                   <div className={`border-t-2 pt-4 mt-6 ${isRestrictedUser ? 'bg-green-50 p-4 rounded border-green-200' : ''}`}>
                      <h4 className="font-bold text-sm text-textLight mb-2 flex items-center">
@@ -6365,7 +6374,7 @@ const Dashboard = ({
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h3 className="text-lg font-bold text-amber-700 flex items-center gap-2"><Receipt className="w-5 h-5"/> Expenses Overview</h3>
-                <p className="text-sm text-textMuted">Tracking all reports that include expense tables.</p>
+                <p className="text-sm text-textMuted">Tracking all reports that include expense tables. <span className="text-amber-600">כולל מידע היסטורי – לידיעה בלבד.</span></p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <button onClick={() => setShowFavoritesModal(true)} className="text-xs text-amber-700 underline hover:text-amber-900">
