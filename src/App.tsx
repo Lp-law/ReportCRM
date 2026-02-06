@@ -7300,8 +7300,7 @@ const AppInner = () => {
   };
 
   // Migration: השלים expensesHtml לכל דו"ח פיננסי שמבוסס על expensesSheetId
-  // ואין לו עדיין טבלת HTML מוכנה. נעשה זאת פעם אחת פר דו"ח, ברקע, על בסיס
-  // הנתונים המקומיים של FinancialExpenseSheet (אין קריאת רשת).
+  // ואין לו עדיין טבלת HTML מוכנה. Snapshot רך: לא דורס קיים, לא מתקן דיווחים שנשלחו.
   useEffect(() => {
     let cancelled = false;
 
@@ -7311,7 +7310,8 @@ const AppInner = () => {
         (r) =>
           !!r.expensesSheetId &&
           !r.expensesHtml &&
-          !r.expensesHtmlMissing,
+          !r.expensesHtmlMissing &&
+          r.status !== 'SENT',
       );
       if (!targets.length) return;
 

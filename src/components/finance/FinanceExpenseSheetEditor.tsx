@@ -256,8 +256,9 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   const [isDirty, setIsDirty] = useState(false);
 
   const isLockedByPaid = linkedReportForLawyer?.isPaid === true;
-  const isReadOnly = isLockedByPaid && user.role !== 'ADMIN';
-  const isAdminEditingPaid = isLockedByPaid && user.role === 'ADMIN';
+  const canEditWhenPaid = user.role === 'ADMIN' || user.role === 'SUB_ADMIN' || user.role === 'FINANCE';
+  const isReadOnly = isLockedByPaid && !canEditWhenPaid;
+  const isAdminEditingPaid = isLockedByPaid && (user.role === 'ADMIN' || user.role === 'SUB_ADMIN');
 
   const paidToDate = useMemo(() => {
     return financialExpensesClient.getPaidToDateForSheet(sheet);
@@ -934,10 +935,10 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
             <div>
               <strong>הדיווח סומן כשולם ולכן הגיליון נעול לעריכה.</strong>
               <p className="mt-1 text-amber-800">
-                רק ADMIN יכול לתקן עם הערה.
+                FINANCE, ADMIN או SUB_ADMIN יכולים לתקן במקרים חריגים.
               </p>
             </div>
-          ) : (
+          ) : isAdminEditingPaid ? (
             <div>
               <strong>עריכת הוצאה שסומנה כשולמה (ADMIN).</strong>
               <p className="mt-2 text-amber-800">חובה להזין סיבת השינוי לפני שמירה.</p>
@@ -948,6 +949,13 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                 value={adminEditReason}
                 onChange={(e) => setAdminEditReason(e.target.value)}
               />
+            </div>
+          ) : (
+            <div>
+              <strong>עריכת הוצאה שסומנה כשולמה (Snapshot רך).</strong>
+              <p className="mt-1 text-amber-800">
+                ניתן לתקן בדיעבד. העדכון יישמר בגיליון; הדיווח הקיים יקבל Snapshot מעודכן בעת הוספת טבלה מחדש.
+              </p>
             </div>
           )}
         </div>
