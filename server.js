@@ -2321,9 +2321,18 @@ const renderReportPdf = async (report) => {
     }
   }
 
+  const launchArgs = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+  ];
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: launchArgs,
+    });
     console.log('[PDF] Puppeteer browser launched', {
       odakanitNo: report?.odakanitNo,
       reportId: report?.id,
@@ -2339,12 +2348,14 @@ const renderReportPdf = async (report) => {
   }
 
   const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
+  page.setDefaultTimeout(90000);
+  await page.setContent(html, { waitUntil: 'networkidle0', timeout: 90000 });
   const pdfBuffer = await page.pdf({
     format: 'A4',
     printBackground: true,
     preferCSSPageSize: true,
     displayHeaderFooter: true,
+    timeout: 60000,
     headerTemplate: '<div></div>',
     footerTemplate: `
       <div style="
@@ -4105,10 +4116,12 @@ app.post('/api/render-report-pdf', async (req, res) => {
   } catch (error) {
     const errMsg = error?.message || String(error);
     const isChromeMissing =
-      /could not find chrome|failed to launch|executable doesn't exist/i.test(errMsg);
-    const isTimeout = /timeout|ETIMEDOUT|timed out/i.test(errMsg);
+      /could not find chrome|failed to launch|executable doesn't exist|ENOENT|spawn.*chromium/i.test(errMsg);
+    const isTimeout = /timeout|ETIMEDOUT|timed out|navigation timeout/i.test(errMsg);
     const isPolicyErr = /policy|appendix/i.test(errMsg);
     const isInvoiceErr = /invoice.*appendix/i.test(errMsg);
+    const isHtmlErr = /HTML_GENERATION|buildReportHtml/i.test(errMsg);
+    const isMergeErr = /merged pdf page count|appendices layout/i.test(errMsg);
 
     let userMsg = 'Failed to generate PDF';
     if (isChromeMissing) {
@@ -4120,6 +4133,10 @@ app.post('/api/render-report-pdf', async (req, res) => {
       userMsg = 'Policy appendix error. Check policy file and try again.';
     } else if (isInvoiceErr) {
       userMsg = 'Invoice appendix error. Check invoice files and try again.';
+    } else if (isHtmlErr) {
+      userMsg = 'Report content error. Check report data and try again.';
+    } else if (isMergeErr) {
+      userMsg = 'PDF assembly error. Try again or contact support.';
     }
 
     console.error('[PDF] PDF generation failed', {

@@ -267,6 +267,10 @@ const AutoResizeTextarea = ({ value, onChange, placeholder, disabled, readOnly, 
       el.style.height = el.scrollHeight + "px";
     }
   }, [value, refToUse]);
+  const handleInput = readOnly || !onChange ? undefined : (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.target as HTMLTextAreaElement;
+    if (target.value !== value) onChange({ target } as any);
+  };
   return (
     <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
       <textarea
@@ -275,6 +279,7 @@ const AutoResizeTextarea = ({ value, onChange, placeholder, disabled, readOnly, 
         dir={dir}
         value={value}
         onChange={readOnly ? undefined : onChange}
+        onInput={handleInput}
         placeholder={placeholder}
         disabled={disabled || readOnly}
         rows={3}
@@ -3862,17 +3867,6 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-2xl font-bold text-lpBlue font-serif">2. Draft Content</h2>
-        {!isRestrictedUser && onOpenAssistant && (
-          <button
-            type="button"
-            onClick={() => onOpenAssistant()}
-            className="flex items-center text-[11px] px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100"
-            title="העוזר החכם – הסברים על עבודה נכונה במסך זה (ללא שינוי טקסט)."
-          >
-            <Lightbulb className="w-3 h-3 ml-1" />
-            העוזר החכם
-          </button>
-        )}
       </div>
       {!isRestrictedUser && (
         <div className="mb-3 mt-1 space-y-1">
@@ -7276,7 +7270,8 @@ const AppInner = () => {
       setAssistantResponse(resp);
     } catch (error) {
       console.error('Smart assistant request failed', error);
-      setAssistantError('REQUEST_FAILED');
+      const msg = error instanceof Error ? error.message : 'REQUEST_FAILED';
+      setAssistantError(msg === 'AUTH_REQUIRED' ? 'AUTH_REQUIRED' : msg === 'SERVER_ERROR' ? 'SERVER_ERROR' : 'REQUEST_FAILED');
       setAssistantResponse(null);
     } finally {
       setAssistantLoading(false);
@@ -8418,7 +8413,14 @@ const AppInner = () => {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('PDF download failed', error);
-      const msg = error instanceof Error ? error.message : 'הפקת ה-PDF נכשלה. נסה שוב.';
+      let msg = error instanceof Error ? error.message : 'הפקת ה-PDF נכשלה. נסה שוב.';
+      if (msg.includes('Chrome') || msg.includes('Chromium') || msg.includes('Puppeteer Chrome')) {
+        msg = 'הפקת PDF דורשת Chrome. אם התקלה נמשכת, פנה לליאור.';
+      } else if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('ETIMEDOUT')) {
+        msg = 'הפקת ה-PDF ארכה זמן רב. נסה שוב.';
+      } else if (msg.length < 3 || (!/[\u0590-\u05FF]/.test(msg) && msg.length < 50)) {
+        msg = 'הפקת ה-PDF נכשלה. נסה שוב או פנה לליאור.';
+      }
       alert(msg);
     } finally {
       setIsPdfGenerating(false);
@@ -10048,7 +10050,14 @@ const AppInner = () => {
                   title={logoutBackupDone ? '' : 'יש להוריד גיבוי לפני התנתקות'}
                   className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  התנתק
+                  התנתק (לאחר גיבוי)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogoutConfirm}
+                  className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm hover:bg-red-50"
+                >
+                  התנתק בכל זאת
                 </button>
                 <button
                   type="button"
@@ -10692,47 +10701,43 @@ const AppInner = () => {
                       <h2 className="text-xl font-bold text-lpBlue">
                         {previewLabels.title}
                       </h2>
-                        <p className="mt-1 text-xs text-textMuted">
-                          Export options let you back up the current report data (JSON/CSV) in addition to the PDF.
-                        </p>
+                        {(currentUser?.role === 'LAWYER' || currentUser?.role === 'ADMIN') ? null : (
+                          <p className="mt-1 text-xs text-textMuted">
+                            Export options let you back up the current report data (JSON/CSV) in addition to the PDF.
+                          </p>
+                        )}
                       </div>
-                      <div className="flex gap-2 flex-wrap justify-end items-center">
-                        <button
-                          type="button"
-                          onClick={() => setIsAssistantOpen(true)}
-                          className="flex items-center text-[11px] px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100"
-                          title="העוזר החכם – הסברים על בדיקות לפני שליחה והפקת PDF."
-                        >
-                          <Lightbulb className="w-3 h-3 mr-1" />
-                          העוזר החכם
-                        </button>
-                        <button
-                          onClick={() => setIsPreviewVisible((prev) => !prev)}
-                          className="flex items-center bg-borderDark text-textLight px-4 py-2 rounded hover:bg-borderDark"
-                        >
-                          {isPreviewVisible
-                            ? previewLabels.toggleHide
-                            : previewLabels.toggleShow}
-                        </button>
-                        <button
-                          onClick={handleDownloadPdf}
-                          disabled={isPdfGenerating}
-                          className="flex items-center bg-panel text-textLight border border-borderDark px-4 py-2 rounded hover:bg-navySecondary disabled:opacity-50"
-                        >
-                          {isPdfGenerating ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <FileText className="w-4 h-4 mr-2" />
-                          )}
-                          {previewLabels.downloadPdf}
-                        </button>
-                        <button
-                          onClick={() => setIsFileNameModalOpen(true)}
-                          disabled={!canEditFileNameTitles}
-                          className="flex items-center bg-panel text-textLight border border-borderDark px-4 py-2 rounded hover:bg-navySecondary disabled:opacity-40"
-                        >
-                          {previewLabels.editFileNames}
-                        </button>
+                      <div className="flex gap-3 flex-wrap justify-end items-center">
+                        <div className="flex items-center gap-2 text-sm text-textMuted">
+                          <button
+                            onClick={() => setIsPreviewVisible((prev) => !prev)}
+                            className="flex items-center px-3 py-1.5 rounded border border-borderDark hover:bg-navySecondary"
+                          >
+                            {isPreviewVisible
+                              ? previewLabels.toggleHide
+                              : previewLabels.toggleShow}
+                          </button>
+                          <button
+                            onClick={handleDownloadPdf}
+                            disabled={isPdfGenerating}
+                            className="flex items-center px-3 py-1.5 rounded border border-borderDark hover:bg-navySecondary disabled:opacity-50"
+                          >
+                            {isPdfGenerating ? (
+                              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                            ) : (
+                              <FileText className="w-4 h-4 mr-1.5" />
+                            )}
+                            {previewLabels.downloadPdf}
+                          </button>
+                          <button
+                            onClick={() => canEditFileNameTitles && setIsFileNameModalOpen(true)}
+                            disabled={!canEditFileNameTitles}
+                            title={!canEditFileNameTitles ? 'אין כותרות שניתנות לעריכה בשלב זה' : undefined}
+                            className="flex items-center px-3 py-1.5 rounded border border-borderDark hover:bg-navySecondary disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {previewLabels.editFileNames}
+                          </button>
+                        </div>
                         {currentUser?.role !== 'LAWYER' && currentUser?.role !== 'ADMIN' && (
                         <>
                         <button
@@ -10799,22 +10804,24 @@ const AppInner = () => {
                         </button>
                         </>
                         )}
-                        <button
-                          onClick={handleFinalizeClick}
-                          className="flex items-center bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          {previewLabels.finalize}
-                        </button>
-                        {currentUser.role === 'ADMIN' && (
+                        <div className="flex items-center gap-2 border-r border-borderDark pr-3">
                           <button
-                            onClick={handlePrepareResendClick}
-                            className="flex items-center bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+                            onClick={handleFinalizeClick}
+                            className="flex items-center bg-green-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-green-700 shadow-sm"
                           >
                             <Send className="w-4 h-4 mr-2" />
-                            הכן שליחה מחדש למבטחת
+                            {previewLabels.finalize}
                           </button>
-                        )}
+                          {currentUser.role === 'ADMIN' && (
+                            <button
+                              onClick={handlePrepareResendClick}
+                              className="flex items-center bg-orange-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-orange-700 shadow-sm"
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              הכן שליחה מחדש למבטחת
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -10992,7 +10999,14 @@ const AppInner = () => {
                 title={logoutBackupDone ? '' : 'יש להוריד גיבוי לפני התנתקות'}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                התנתק
+                התנתק (לאחר גיבוי)
+              </button>
+              <button
+                type="button"
+                onClick={handleLogoutConfirm}
+                className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm hover:bg-red-50"
+              >
+                התנתק בכל זאת
               </button>
               <button
                 type="button"
