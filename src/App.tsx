@@ -1242,6 +1242,12 @@ const worksheetRowsToExpenseItems = (rows: ExpenseWorksheetRow[]) =>
 // Hebrew block (letters, niqqud) – used to decide whether to suggest name translation
 const hasHebrew = (str: string): boolean => /[\u0590-\u05FF]/.test(str || '');
 
+// Exceptional clients (e.g. TEREM) – CERT/MARKET REF not required, hidden from UI and PDF
+const isExceptionalClient = (insuredName?: string): boolean => {
+  const n = (insuredName || '').trim().toUpperCase();
+  return n === 'TEREM' || n.includes('TEREM');
+};
+
 // --- STEP 1: Setup & Selection ---
 const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, currentUser, timelineGallery, onAddTimelineImages, onRemoveTimelineImage, onSaveAndExit, readOnly }) => {
   const [newCustomSection, setNewCustomSection] = useState('');
@@ -1977,22 +1983,26 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               </div>
             )}
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.lineSlip}</label>
-            {renderInputWithClear(
-              data.lineSlipNo,
-              (val) => updateData({ lineSlipNo: val, marketRef: val }),
-              "B0180PD2391439"
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.certificate}</label>
-            {renderInputWithClear(
-              data.certificateRef || '',
-              (val) => updateData({ certificateRef: val }),
-              "516902624"
-            )}
-          </div>
+          {!isExceptionalClient(data.insuredName) && (
+            <>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.lineSlip}</label>
+                {renderInputWithClear(
+                  data.lineSlipNo,
+                  (val) => updateData({ lineSlipNo: val, marketRef: val }),
+                  "B0180PD2391439"
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-textMuted uppercase">{STEP1_FIELD_LABELS.certificate}</label>
+                {renderInputWithClear(
+                  data.certificateRef || '',
+                  (val) => updateData({ certificateRef: val }),
+                  "516902624"
+                )}
+              </div>
+            </>
+          )}
           <div className="space-y-1">
             <label className="text-xs font-bold text-textMuted uppercase">Insured Name</label>
             {renderInputWithClear(
@@ -2048,7 +2058,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               Procedural Timeline
             </h3>
             <p className="text-sm text-textMuted">
-              בחרי את סוג ההליך, השלב הנוכחי ותאריכי חודש/שנה שיופיעו בציר הזמנים הדו״חי.
+              בחרי את סוג ההליך, השלב הנוכחי ותאריכי חודש/שנה שיופיעו בציר הזמנים בדיווח.
             </p>
           </div>
         </div>
@@ -7498,7 +7508,7 @@ const AppInner = () => {
     reportHistory: [],
     selectedTimeline: 'standard',
     filenameTag: FILENAME_TAGS[0],
-    selectedSections: ['Update', 'Recommendations'],
+    selectedSections: ['Update'],
     content: {},
     translatedContent: {},
     invoiceFiles: [],

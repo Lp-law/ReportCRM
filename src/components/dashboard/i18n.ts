@@ -33,6 +33,7 @@ export const heDashboard = {
 
   // Stats
   statsSectionLabel: 'סיכום לוח בקרה',
+  statsSecondaryHint: 'סיכום משני – חופף לרשימות למעלה',
   statsActiveCases: 'תיקים פעילים',
   statsActionRequired: 'דורש טיפול מיידי',
   statsWaitingOnOthers: 'ממתין לחשבוניות',

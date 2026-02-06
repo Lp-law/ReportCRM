@@ -963,23 +963,23 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
             <div className="overflow-x-auto">
               <table className="min-w-full table-fixed text-[11px]">
                 <thead>
-                  <tr className="border-b border-borderDark bg-navySecondary">
-                    <th className="px-2 py-1 text-right font-semibold w-32">
+                  <tr className="border-b-2 border-slate-300 bg-slate-100">
+                    <th className="px-2 py-2 text-right font-semibold w-32 text-slate-900">
                       {t('caseListHeaderOdakanit')}
                     </th>
-                    <th className="px-2 py-1 text-right font-semibold w-40">
+                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
                       {t('caseListHeaderInsurer')}
                     </th>
-                    <th className="px-2 py-1 text-right font-semibold w-40">
+                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
                       {t('caseListHeaderInsured')}
                     </th>
-                    <th className="px-2 py-1 text-right font-semibold w-40">
+                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
                       {t('caseListHeaderPlaintiff')}
                     </th>
-                    <th className="px-2 py-1 text-right font-semibold w-20">
+                    <th className="px-2 py-2 text-right font-semibold w-20 text-slate-900">
                       {t('caseListHeaderReportNo')}
                     </th>
-                    <th className="px-2 py-1 text-right font-semibold w-20">
+                    <th className="px-2 py-2 text-right font-semibold w-20 text-slate-900">
                       {t('caseListHeaderNextReportNo') ?? 'Next report'}
                     </th>
                   </tr>
@@ -989,40 +989,43 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                     const isHot = row.hasUrgentWork;
                     const hasWork = row.hasOpenWork;
                     const baseStripe =
-                      index % 2 === 0 ? 'bg-panel' : 'bg-navySecondary';
+                      index % 2 === 0 ? 'bg-white' : 'bg-slate-50';
                     const highlight = isHot
-                      ? 'border-l-4 border-red-400 bg-red-50/80 text-gray-900'
+                      ? 'border-l-4 border-red-400 bg-red-50/80'
                       : hasWork
-                        ? 'border-l-4 border-amber-300 bg-amber-50/70 text-gray-900'
+                        ? 'border-l-4 border-amber-300 bg-amber-50/70'
                         : 'border-l border-transparent';
                     return (
                       <tr
                         key={row.odakanitNo}
-                        className={`cursor-pointer border-b border-borderDark ${baseStripe} ${highlight}`}
+                        className={`cursor-pointer border-b border-slate-200 ${baseStripe} ${highlight} text-slate-900`}
                         onClick={() => onOpenCaseFolder(row.odakanitNo)}
                       >
-                        <td className="px-2 py-1 text-right font-mono text-[11px]">
+                        <td className="px-2 py-2 text-right font-mono text-[11px]">
                           <button
                             type="button"
-                            className="text-gold hover:underline"
-                            onClick={() => onOpenCaseFolder(row.odakanitNo)}
+                            className="text-slate-900 font-semibold hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenCaseFolder(row.odakanitNo);
+                            }}
                           >
                             {row.odakanitNo}
                           </button>
                         </td>
-                        <td className="px-2 py-1 text-right">
+                        <td className="px-2 py-2 text-right text-slate-900">
                           {row.insurerName || '—'}
                         </td>
-                        <td className="px-2 py-1 text-right">
+                        <td className="px-2 py-2 text-right text-slate-900">
                           {row.insuredName || '—'}
                         </td>
-                        <td className="px-2 py-1 text-right">
+                        <td className="px-2 py-2 text-right text-slate-900">
                           {row.plaintiffName || '—'}
                         </td>
-                        <td className="px-2 py-1 text-right font-mono text-[11px]">
+                        <td className="px-2 py-2 text-right font-mono text-[11px] text-slate-900">
                           {row.latestReportNumber ?? '—'}
                         </td>
-                        <td className="px-2 py-1 text-right font-mono text-[11px]">
+                        <td className="px-2 py-2 text-right font-mono text-[11px] text-slate-900">
                           {row.nextReportNumber ?? ((row.latestReportNumber || 0) + 1)}
                         </td>
                       </tr>
