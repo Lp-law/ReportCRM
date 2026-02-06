@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -23,29 +23,6 @@ import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactPr
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-/** Resolve Chrome executable path on Render (chrome installed at build to /opt/render/.cache/puppeteer) */
-function getChromeExecutablePath() {
-  if (process.env.RENDER !== 'true') return undefined;
-  const cacheBase = '/opt/render/.cache/puppeteer/chrome';
-  try {
-    if (!fs.existsSync(cacheBase)) return undefined;
-    const dirs = fs.readdirSync(cacheBase);
-    const linuxDir = dirs.find((d) => d.startsWith('linux-'));
-    if (!linuxDir) return undefined;
-    const chromeLinux64 = path.join(cacheBase, linuxDir, 'chrome-linux64', 'chrome');
-    if (fs.existsSync(chromeLinux64)) return chromeLinux64;
-    const chromeAlt = path.join(cacheBase, linuxDir, 'chrome');
-    if (fs.existsSync(chromeAlt)) return chromeAlt;
-  } catch (e) {
-    console.warn('[PDF] Could not resolve Chrome path on Render:', e?.message);
-  }
-  return undefined;
-}
-
-// On Render, Chrome is installed during build to /opt/render/.cache/puppeteer.
-// Do NOT override PUPPETEER_CACHE_DIR here so Puppeteer can find it.
-// executablePath is set explicitly in launch to avoid "Could not find Chrome".
 
 const pdfWorkerSrc = new URL('./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url);
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc.href;
@@ -2380,29 +2357,28 @@ const renderReportPdf = async (report) => {
     '--disable-dev-shm-usage',
     '--disable-gpu',
   ];
-  const executablePath = getChromeExecutablePath();
   let browser;
   try {
-    browser = await puppeteer.launch({
-      executablePath: executablePath || undefined,
-      headless: 'new',
+    browser = await chromium.launch({
+      headless: true,
       args: launchArgs,
     });
-    console.log('[PDF] Puppeteer browser launched', {
+    console.log('[PDF] Playwright browser launched', {
       odakanitNo: report?.odakanitNo,
       reportId: report?.id,
     });
   } catch (launchErr) {
-    console.error('[PDF] Puppeteer launch failed', {
+    console.error('[PDF] Playwright launch failed', {
       odakanitNo: report?.odakanitNo,
       reportId: report?.id,
       error: launchErr?.message,
       stack: launchErr?.stack,
     });
-    throw Object.assign(launchErr, { reason: 'PUPPETEER_LAUNCH' });
+    throw Object.assign(launchErr, { reason: 'PDF_LAUNCH' });
   }
 
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  const page = await context.newPage();
   page.setDefaultTimeout(90000);
   await page.setContent(html, { waitUntil: 'load', timeout: 90000 });
   const pdfBuffer = await page.pdf({
@@ -4172,8 +4148,8 @@ app.post('/api/render-report-pdf', async (req, res) => {
     res.end(finalBuffer);
   } catch (error) {
     const errMsg = error?.message || String(error);
-    const isChromeMissing =
-      /could not find chrome|failed to launch|executable doesn't exist|ENOENT|spawn.*chromium/i.test(errMsg);
+    const isBrowserLaunch =
+      /could not find chrome|failed to launch|executable doesn't exist|ENOENT|spawn.*chromium|browser.*not found/i.test(errMsg);
     const isTimeout = /timeout|ETIMEDOUT|timed out|navigation timeout/i.test(errMsg);
     const isPolicyErr = /policy|appendix/i.test(errMsg);
     const isInvoiceErr = /invoice.*appendix/i.test(errMsg);
@@ -4181,9 +4157,9 @@ app.post('/api/render-report-pdf', async (req, res) => {
     const isMergeErr = /merged pdf page count|appendices layout/i.test(errMsg);
 
     let userMsg = 'Failed to generate PDF';
-    if (isChromeMissing) {
+    if (isBrowserLaunch) {
       userMsg =
-        'PDF generation failed: Chrome/Chromium not found. Ensure Puppeteer Chrome is installed (e.g. npx puppeteer browsers install chrome in build).';
+        'PDF generation failed: Could not launch browser. Try again or contact support.';
     } else if (isTimeout) {
       userMsg = 'PDF generation timed out. Try again or contact support.';
     } else if (isPolicyErr) {
