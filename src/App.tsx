@@ -2023,8 +2023,8 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
              <div className="flex justify-between items-end mb-1">
                <label className="text-xs font-bold text-textMuted uppercase">Party Name</label>
                <div className="flex bg-navySecondary rounded p-0.5 text-xs">
-                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue' : 'bg-slate-600/80 text-slate-200 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
-                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue' : 'bg-slate-600/80 text-slate-200 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue' : 'text-slate-100 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue' : 'text-slate-100 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
                </div>
             </div>
             {renderInputWithClear(
@@ -10078,7 +10078,7 @@ const AppInner = () => {
               </p>
               <input
                 type="text"
-                className="w-full border border-borderDark rounded px-3 py-1.5 text-sm text-textLight"
+                className="w-full border border-borderDark rounded px-3 py-1.5 text-sm bg-white text-slate-900 placeholder:text-slate-500"
                 placeholder="לדוגמה: 1/123"
                 value={newCaseOdakanitInput}
                 onChange={(e) => setNewCaseOdakanitInput(e.target.value)}
