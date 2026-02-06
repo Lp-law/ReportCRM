@@ -24,9 +24,28 @@ import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactPr
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (process.env.RENDER === 'true' && !process.env.PUPPETEER_CACHE_DIR) {
-  process.env.PUPPETEER_CACHE_DIR = path.join(__dirname, '.puppeteer-cache');
+/** Resolve Chrome executable path on Render (chrome installed at build to /opt/render/.cache/puppeteer) */
+function getChromeExecutablePath() {
+  if (process.env.RENDER !== 'true') return undefined;
+  const cacheBase = '/opt/render/.cache/puppeteer/chrome';
+  try {
+    if (!fs.existsSync(cacheBase)) return undefined;
+    const dirs = fs.readdirSync(cacheBase);
+    const linuxDir = dirs.find((d) => d.startsWith('linux-'));
+    if (!linuxDir) return undefined;
+    const chromeLinux64 = path.join(cacheBase, linuxDir, 'chrome-linux64', 'chrome');
+    if (fs.existsSync(chromeLinux64)) return chromeLinux64;
+    const chromeAlt = path.join(cacheBase, linuxDir, 'chrome');
+    if (fs.existsSync(chromeAlt)) return chromeAlt;
+  } catch (e) {
+    console.warn('[PDF] Could not resolve Chrome path on Render:', e?.message);
+  }
+  return undefined;
 }
+
+// On Render, Chrome is installed during build to /opt/render/.cache/puppeteer.
+// Do NOT override PUPPETEER_CACHE_DIR here so Puppeteer can find it.
+// executablePath is set explicitly in launch to avoid "Could not find Chrome".
 
 const pdfWorkerSrc = new URL('./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url);
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc.href;
@@ -2361,9 +2380,11 @@ const renderReportPdf = async (report) => {
     '--disable-dev-shm-usage',
     '--disable-gpu',
   ];
+  const executablePath = getChromeExecutablePath();
   let browser;
   try {
     browser = await puppeteer.launch({
+      executablePath: executablePath || undefined,
       headless: 'new',
       args: launchArgs,
     });
