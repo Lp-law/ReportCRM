@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: report-crm
+    env: node
+    buildCommand: npm ci && npx puppeteer browsers install chrome && npm run build
+    startCommand: npm start
