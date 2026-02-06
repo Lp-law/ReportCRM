@@ -59,7 +59,7 @@ import buildReportFileName, {
   INVALID_FILENAME_CHARS,
   buildReportSubject,
 } from './utils/reportFileName';
-import { translateLegalText, extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
+import { extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
 
 const DOC_ANALYSIS_OCR_FAILED_MSG =
   'לא ניתן לקרוא טקסט מהמסמך.\nניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.\n\nאם יש באפשרותך, ניתן לבצע OCR ב־Adobe Acrobat ולהעלות את הקובץ מחדש.';
@@ -74,6 +74,7 @@ import AssistantPanel from './components/AssistantPanel';
 import { getReportLockState } from './utils/reportLock';
 import { logBlockedEdit } from './utils/telemetry';
 import { normalizeOdakanitNo } from './utils/normalizeOdakanitNo';
+import { transliterateHebrew } from './utils/hebrewTransliterate';
 import { loadPersonalSnippets, upsertPersonalSnippet, deletePersonalSnippet, recordPersonalSnippetUsage } from './utils/personalSnippets';
 
 // Feature flag: האם SUB_ADMIN רשאי לערוך את גוף הדו"ח (ולא רק פיננסים)
@@ -2012,13 +2013,9 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               (currentValue) => {
                 const trimmed = (currentValue || '').trim();
                 if (!trimmed || !hasHebrew(trimmed)) return;
-                translateLegalText(trimmed)
-                  .then((translated) => {
-                    if (!translated || translated.trim() === '' || translated === 'Error translation.') return;
-                    if (insuredNameRef.current !== trimmed) return;
-                    updateData(maybeAutoFillSubject({ insuredName: translated.trim() }));
-                  })
-                  .catch(() => {});
+                if (insuredNameRef.current !== trimmed) return;
+                const transliterated = transliterateHebrew(trimmed);
+                if (transliterated) updateData(maybeAutoFillSubject({ insuredName: transliterated }));
               },
             )}
           </div>
@@ -2026,8 +2023,8 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
              <div className="flex justify-between items-end mb-1">
                <label className="text-xs font-bold text-textMuted uppercase">Party Name</label>
                <div className="flex bg-navySecondary rounded p-0.5 text-xs">
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textLight'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textLight'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue' : 'bg-slate-600/80 text-slate-200 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all font-semibold ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue' : 'bg-slate-600/80 text-slate-200 hover:text-white'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
                </div>
             </div>
             {renderInputWithClear(
@@ -2037,13 +2034,9 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               (currentValue) => {
                 const trimmed = (currentValue || '').trim();
                 if (!trimmed || !hasHebrew(trimmed)) return;
-                translateLegalText(trimmed)
-                  .then((translated) => {
-                    if (!translated || translated.trim() === '' || translated === 'Error translation.') return;
-                    if (plaintiffNameRef.current !== trimmed) return;
-                    updateData(maybeAutoFillSubject({ plaintiffName: translated.trim() }));
-                  })
-                  .catch(() => {});
+                if (plaintiffNameRef.current !== trimmed) return;
+                const transliterated = transliterateHebrew(trimmed);
+                if (transliterated) updateData(maybeAutoFillSubject({ plaintiffName: transliterated }));
               },
             )}
           </div>
@@ -5736,7 +5729,7 @@ const FinanceRequestModal = ({
                 <>
               <div>
                  <label className="block text-xs font-bold text-textMuted">Assign Lawyer</label>
-                 <select className="w-full border p-2 rounded" value={lawyerId} onChange={e => setLawyerId(e.target.value)}>
+                 <select className="w-full border border-borderDark p-2 rounded bg-white text-slate-900" value={lawyerId} onChange={e => setLawyerId(e.target.value)}>
                     <option value="">-- Select --</option>
                     {USERS.filter(u => u.role === 'LAWYER').map(u => (
                        <option key={u.id} value={u.id}>{u.name}</option>
@@ -5746,7 +5739,7 @@ const FinanceRequestModal = ({
               <div>
                  <label className="block text-xs font-bold text-textMuted">Instructions</label>
                 <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
-                  <textarea className="w-full border p-2 rounded" rows={3} value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Notes for lawyer..."/>
+                  <textarea className="w-full border border-borderDark p-2 rounded bg-white text-slate-900 placeholder:text-slate-500" rows={3} value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Notes for lawyer..."/>
                 </GrammarlyEditorPlugin>
               </div>
               <div>
@@ -5771,7 +5764,7 @@ const FinanceRequestModal = ({
                             <div key={row.id} className="border border-amber-100 bg-panel rounded-lg p-2 space-y-2">
                               <div>
                                  <label className="block text-[10px] font-bold text-textMuted">Expense Details</label>
-                                 <select value={row.category} onChange={(e) => updateWorksheetRow(row.id, 'category', e.target.value as ExpenseRowCategory)} className="w-full border rounded text-xs p-2">
+                                 <select value={row.category} onChange={(e) => updateWorksheetRow(row.id, 'category', e.target.value as ExpenseRowCategory)} className="w-full border border-borderDark rounded text-xs p-2 bg-white text-slate-900">
                                     {EXPENSE_DETAIL_OPTIONS.map(opt => (
                                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
@@ -5780,13 +5773,13 @@ const FinanceRequestModal = ({
                               {row.category === 'OTHER' && (
                                 <div>
                                    <label className="block text-[10px] font-bold text-textMuted">Custom Label</label>
-                                   <input className="w-full border rounded text-xs p-2" placeholder="Describe expense" value={row.customLabel || ''} onChange={(e) => updateWorksheetRow(row.id, 'customLabel', e.target.value)} />
+                                   <input className="w-full border border-borderDark rounded text-xs p-2 bg-white text-slate-900 placeholder:text-slate-500" placeholder="Describe expense" value={row.customLabel || ''} onChange={(e) => updateWorksheetRow(row.id, 'customLabel', e.target.value)} />
                                 </div>
                               )}
                               {isExpenseRow && (
                                 <div>
                                    <label className="block text-[10px] font-bold text-textMuted">Service Provider</label>
-                                   <input list={`provider-${row.id}`} className="w-full border rounded text-xs p-2" placeholder="Provider name" value={row.serviceProvider} onChange={(e) => updateWorksheetRow(row.id, 'serviceProvider', e.target.value)} />
+                                   <input list={`provider-${row.id}`} className="w-full border border-borderDark rounded text-xs p-2 bg-white text-slate-900 placeholder:text-slate-500" placeholder="Provider name" value={row.serviceProvider} onChange={(e) => updateWorksheetRow(row.id, 'serviceProvider', e.target.value)} />
                                    <datalist id={`provider-${row.id}`}>
                                       {suggestions.map(fav => (
                                         <option key={fav.id} value={fav.serviceProvider}>{fav.label}</option>
@@ -5802,7 +5795,7 @@ const FinanceRequestModal = ({
                               )}
                               <div>
                                  <label className="block text-[10px] font-bold text-textMuted">Cost (₪)</label>
-                                 <input type="number" min="0" className="w-full border rounded text-xs p-2" placeholder="₪" value={row.amount} onChange={e => updateWorksheetRow(row.id, 'amount', e.target.value)} />
+                                 <input type="number" min="0" className="w-full border border-borderDark rounded text-xs p-2 bg-white text-slate-900 placeholder:text-slate-500" placeholder="₪" value={row.amount} onChange={e => updateWorksheetRow(row.id, 'amount', e.target.value)} />
                               </div>
                               <div className="text-right">
                                  <button type="button" onClick={() => removeWorksheetRow(row.id)} className="text-[10px] text-red-500 hover:underline">Remove</button>

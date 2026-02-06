@@ -1049,7 +1049,7 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
               <input
                 id="case-folder-search"
                 type="text"
-                className="mt-1 w-full rounded-full border border-borderDark px-3 py-1.5 text-xs text-textLight placeholder:text-textMuted focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                className="mt-1 w-full rounded-full border border-borderDark px-3 py-1.5 text-xs bg-white text-slate-900 placeholder:text-slate-500 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
                 placeholder={t('searchOdakanitPlaceholder')}
                 value={caseSearch}
                 onChange={(e) => {
