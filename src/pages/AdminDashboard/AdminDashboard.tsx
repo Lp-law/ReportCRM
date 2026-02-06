@@ -369,10 +369,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <>
             {/* כרטיסיות לפי עורכת דין */}
             <section className="mb-6">
-              <h2 className="text-sm font-semibold text-textLight mb-2">
+              <h2 className="text-base font-semibold text-textLight mb-3">
                 סיכום לפי עורכת דין
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 text-sm">
                 {lawyerCardsStats.map((card) => {
                   const isActive = selectedLawyer?.id === card.lawyer.id;
                   return (
@@ -384,9 +384,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         setSelectedCaseOdakanit(null);
                         setAdminScreen('LAWYER_CASES');
                       }}
-                      className={`flex flex-col items-stretch rounded-2xl border px-3 py-3 text-right shadow-sm transition ${
+                      className={`flex flex-col items-stretch rounded-2xl border px-4 py-4 text-right shadow-sm transition ${
                         isActive
-                          ? 'border-gold bg-blue-50/80'
+                          ? 'border-gold bg-blue-50/80 ring-1 ring-gold/50'
                           : 'border-borderDark bg-panel hover:bg-navySecondary'
                       }`}
                     >

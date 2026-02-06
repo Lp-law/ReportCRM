@@ -24,6 +24,10 @@ import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactPr
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+if (process.env.RENDER === 'true' && !process.env.PUPPETEER_CACHE_DIR) {
+  process.env.PUPPETEER_CACHE_DIR = path.join(__dirname, '.puppeteer-cache');
+}
+
 const pdfWorkerSrc = new URL('./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url);
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc.href;
 const pdfStandardFontPath = new URL('./node_modules/pdfjs-dist/standard_fonts/', import.meta.url);
@@ -2349,7 +2353,7 @@ const renderReportPdf = async (report) => {
 
   const page = await browser.newPage();
   page.setDefaultTimeout(90000);
-  await page.setContent(html, { waitUntil: 'networkidle0', timeout: 90000 });
+  await page.setContent(html, { waitUntil: 'load', timeout: 90000 });
   const pdfBuffer = await page.pdf({
     format: 'A4',
     printBackground: true,

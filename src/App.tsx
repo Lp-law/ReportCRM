@@ -8423,6 +8423,8 @@ const AppInner = () => {
         msg = 'הפקת PDF דורשת Chrome. אם התקלה נמשכת, פנה לליאור.';
       } else if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('ETIMEDOUT')) {
         msg = 'הפקת ה-PDF ארכה זמן רב. נסה שוב.';
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('Network request failed')) {
+        msg = 'שגיאת רשת. בדוק חיבור לאינטרנט ונסה שוב.';
       } else if (msg.length < 3 || (!/[\u0590-\u05FF]/.test(msg) && msg.length < 50)) {
         msg = 'הפקת ה-PDF נכשלה. נסה שוב או פנה לליאור.';
       }
@@ -10706,11 +10708,6 @@ const AppInner = () => {
                       <h2 className="text-xl font-bold text-lpBlue">
                         {previewLabels.title}
                       </h2>
-                        {(currentUser?.role === 'LAWYER' || currentUser?.role === 'ADMIN') ? null : (
-                          <p className="mt-1 text-xs text-textMuted">
-                            Export options let you back up the current report data (JSON/CSV) in addition to the PDF.
-                          </p>
-                        )}
                       </div>
                       <div className="flex gap-3 flex-wrap justify-end items-center">
                         <div className="flex items-center gap-2 text-sm text-textMuted">
@@ -10734,81 +10731,16 @@ const AppInner = () => {
                             )}
                             {previewLabels.downloadPdf}
                           </button>
+                          {canEditFileNameTitles && (
                           <button
-                            onClick={() => canEditFileNameTitles && setIsFileNameModalOpen(true)}
-                            disabled={!canEditFileNameTitles}
-                            title={!canEditFileNameTitles ? 'אין כותרות שניתנות לעריכה בשלב זה' : undefined}
-                            className="flex items-center px-3 py-1.5 rounded border border-borderDark hover:bg-navySecondary disabled:opacity-40 disabled:cursor-not-allowed"
+                            onClick={() => setIsFileNameModalOpen(true)}
+                            className="flex items-center px-3 py-1.5 rounded border border-borderDark hover:bg-navySecondary"
+                            title={previewLabels.editFileNames}
                           >
                             {previewLabels.editFileNames}
                           </button>
+                          )}
                         </div>
-                        {currentUser?.role !== 'LAWYER' && currentUser?.role !== 'ADMIN' && (
-                        <>
-                        <button
-                          onClick={() => {
-                            const payload = {
-                              report: currentReport,
-                            };
-                            const blob = new Blob([JSON.stringify(payload, null, 2)], {
-                              type: 'application/json',
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `report-${currentReport.odakanitNo || currentReport.id}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="flex items-center bg-panel text-textLight border border-borderDark px-3 py-2 rounded hover:bg-navySecondary text-xs"
-                        >
-                          JSON Export
-                        </button>
-                        <button
-                          onClick={() => {
-                            const header = [
-                              'OdakanitNo',
-                              'InsuredName',
-                              'PlaintiffName',
-                              'InsurerName',
-                              'MarketRef',
-                              'LineSlipNo',
-                              'CertificateRef',
-                              'ReportDate',
-                              'Status',
-                            ];
-                            const values = [
-                              currentReport.odakanitNo || '',
-                              currentReport.insuredName || '',
-                              currentReport.plaintiffName || '',
-                              currentReport.insurerName || '',
-                              currentReport.marketRef || '',
-                              currentReport.lineSlipNo || '',
-                              currentReport.certificateRef || '',
-                              currentReport.reportDate || '',
-                              currentReport.status || '',
-                            ];
-                            const escapeCsv = (value: string) => {
-                              const str = String(value ?? '');
-                              return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-                            };
-                            const csv = [header.join(','), values.map(escapeCsv).join(',')].join('\n');
-                            const blob = new Blob(['\uFEFF' + csv], {
-                              type: 'text/csv;charset=utf-8;',
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `report-${currentReport.odakanitNo || currentReport.id}.csv`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="flex items-center bg-panel text-textLight border border-borderDark px-3 py-2 rounded hover:bg-navySecondary text-xs"
-                        >
-                          CSV Export
-                        </button>
-                        </>
-                        )}
                         <div className="flex items-center gap-2 border-r border-borderDark pr-3">
                           <button
                             onClick={handleFinalizeClick}
