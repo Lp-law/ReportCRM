@@ -261,11 +261,41 @@ const ensureOpenAI = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Simple in-memory session handling (cookie-based)
+// Session handling (cookie-based, persisted to file for refresh survival)
 // ---------------------------------------------------------------------------
 
 const SESSION_COOKIE_NAME = 'lp_session';
+const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
 const sessions = new Map(); // sessionId -> { id, username, name, email, role }
+
+function loadSessionsFromFile() {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const raw = fs.readFileSync(SESSIONS_FILE, 'utf-8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach(({ id: sid, user }) => {
+          if (sid && user) sessions.set(sid, user);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[Session] Could not load sessions from file:', e?.message);
+  }
+}
+
+function saveSessionsToFile() {
+  try {
+    const dir = path.dirname(SESSIONS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const arr = Array.from(sessions.entries()).map(([id, user]) => ({ id, user }));
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(arr, null, 0), 'utf-8');
+  } catch (e) {
+    console.warn('[Session] Could not save sessions to file:', e?.message);
+  }
+}
+
+loadSessionsFromFile();
 
 const createSessionId = () => crypto.randomBytes(32).toString('hex');
 
@@ -3369,6 +3399,7 @@ app.post('/api/login', (req, res) => {
       role: user.role,
     };
     sessions.set(sessionId, sessionPayload);
+    saveSessionsToFile();
 
     // Set HTTP-only cookie with the session id
     res.cookie(SESSION_COOKIE_NAME, sessionId, {
@@ -3392,6 +3423,7 @@ app.post('/api/logout', (req, res) => {
     const sessionId = cookies[SESSION_COOKIE_NAME];
     if (sessionId) {
       sessions.delete(sessionId);
+      saveSessionsToFile();
     }
     res.cookie(SESSION_COOKIE_NAME, '', {
       httpOnly: true,

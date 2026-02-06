@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { GrammarlyEditorPlugin } from '@grammarly/editor-sdk-react';
 import { FileText, Check, ChevronRight, ChevronLeft, Plus, Trash2, Calendar, History, ListPlus, X, ShieldAlert, Upload, Loader2, FolderOpen, UserCheck, HelpCircle, Calculator, LogOut, Receipt, Paperclip, Sparkles, Lightbulb, Globe, Send, FilePlus2, AlertTriangle, Eye, Wand2, NotebookPen, Bell, Table, Star, Home, User as UserIcon, KeyRound, ArrowRight, Search, ChevronUp, ChevronDown } from 'lucide-react';
 
@@ -9427,8 +9428,9 @@ const AppInner = () => {
   const [logoutBackupDone, setLogoutBackupDone] = useState(false);
 
   const handleLogoutClick = () => {
-    const hasData = reports.length > 0 || currentReport;
-    if (!hasData) {
+    const hasData = reports.length > 0 || currentReport || (caseFolders && Object.keys(caseFolders).length > 0);
+    const isAdminOrSubAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUB_ADMIN';
+    if (!hasData && !isAdminOrSubAdmin) {
       performLogout();
       return;
     }
@@ -9924,44 +9926,98 @@ const AppInner = () => {
   if (view === 'DASHBOARD') {
     if (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUB_ADMIN') {
       return (
-        <AdminDashboard
-          user={currentUser}
-          reports={reports}
-          caseFolders={caseFolders}
-          onUpdateCaseFolders={(updater) => {
-            setCaseFolders((prev) => {
-              const next = updater(prev);
-              saveCaseFolders(next);
-              return next;
-            });
-          }}
-          onNewReport={handleNewReportFromDashboard}
-          onSelectReport={handleSelectReportFromDashboard}
-          onSelectReportWithFocus={(id: string, focus: 'REVIEW' | 'EXTERNAL_FEEDBACK') =>
-            handleSelectReportFromDashboard(id, focus)
-          }
-          onMarkExternalIssuesDone={markExternalIssuesAsDone}
-          onReopenHebrewDueToExternalFeedback={(id: string) =>
-            reopenHebrewDueToExternalFeedback(id)
-          }
-          canTranslate={canTranslate}
-          onLogout={handleLogoutClick}
-          onOpenAssistant={() => setIsAssistantOpen(true)}
-          onOpenCaseFolder={(odakanitNo: string) => {
-            const key = normalizeOdakanitNo(odakanitNo);
-            if (!key) return;
+        <>
+          <AdminDashboard
+            user={currentUser}
+            reports={reports}
+            caseFolders={caseFolders}
+            onUpdateCaseFolders={(updater) => {
+              setCaseFolders((prev) => {
+                const next = updater(prev);
+                saveCaseFolders(next);
+                return next;
+              });
+            }}
+            onNewReport={handleNewReportFromDashboard}
+            onSelectReport={handleSelectReportFromDashboard}
+            onSelectReportWithFocus={(id: string, focus: 'REVIEW' | 'EXTERNAL_FEEDBACK') =>
+              handleSelectReportFromDashboard(id, focus)
+            }
+            onMarkExternalIssuesDone={markExternalIssuesAsDone}
+            onReopenHebrewDueToExternalFeedback={(id: string) =>
+              reopenHebrewDueToExternalFeedback(id)
+            }
+            canTranslate={canTranslate}
+            onLogout={handleLogoutClick}
+            onOpenAssistant={() => setIsAssistantOpen(true)}
+            onOpenCaseFolder={(odakanitNo: string) => {
+              const key = normalizeOdakanitNo(odakanitNo);
+              if (!key) return;
 
-            // ודא שתיק בעודכנית קיים ומעודכן לפני הניווט למסך התיק
-            setCaseFolders((prev) => {
-              const next = migrateCaseFoldersFromReportsOnceInMap(prev, reports);
-              saveCaseFolders(next);
-              return next;
-            });
+              // ודא שתיק בעודכנית קיים ומעודכן לפני הניווט למסך התיק
+              setCaseFolders((prev) => {
+                const next = migrateCaseFoldersFromReportsOnceInMap(prev, reports);
+                saveCaseFolders(next);
+                return next;
+              });
 
-            setCurrentCaseOdakanitNo(key);
-            setView('CASE_FOLDER');
-          }}
-        />
+              setCurrentCaseOdakanitNo(key);
+              setView('CASE_FOLDER');
+            }}
+          />
+          {showLogoutBackupModal && typeof document !== 'undefined' && createPortal(
+            <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" dir="rtl">
+              <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+                <h3 className="text-lg font-bold text-gold">גיבוי לפני התנתקות</h3>
+                <p className="text-sm text-textLight">
+                  לפני ההתנתקות יש לבצע גיבוי למידע. הורד את קובץ הגיבוי ולאחר מכן אשר התנתקות.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadFullBackup(reports, currentReport, caseFolders);
+                      setLogoutBackupDone(true);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-navy text-gold text-sm font-semibold hover:bg-navySecondary"
+                  >
+                    הורד גיבוי
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoutConfirm}
+                    disabled={!logoutBackupDone}
+                    title={logoutBackupDone ? '' : 'יש להוריד גיבוי לפני התנתקות'}
+                    className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    התנתק (לאחר גיבוי)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogoutConfirm}
+                    className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm hover:bg-red-50"
+                  >
+                    התנתק בכל זאת
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLogoutBackupModal(false);
+                      setLogoutBackupDone(false);
+                    }}
+                    className="px-4 py-2 rounded-lg border border-borderDark text-textLight text-sm hover:bg-navySecondary"
+                  >
+                    ביטול
+                  </button>
+                </div>
+                {logoutBackupDone && (
+                  <p className="text-xs text-green-600">הגיבוי הורד. ניתן להתנתק כעת.</p>
+                )}
+              </div>
+            </div>,
+            document.body
+          )}
+        </>
       );
     }
 
@@ -10032,8 +10088,8 @@ const AppInner = () => {
         onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
-        {showLogoutBackupModal && (
-          <div className="fixed inset-0 bg-black/50 z-[250] flex items-center justify-center p-4" dir="rtl">
+        {showLogoutBackupModal && typeof document !== 'undefined' && createPortal(
+          <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" dir="rtl">
             <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
               <h3 className="text-lg font-bold text-gold">גיבוי לפני התנתקות</h3>
               <p className="text-sm text-textLight">
@@ -10081,7 +10137,8 @@ const AppInner = () => {
                 <p className="text-xs text-green-600">הגיבוי הורד. ניתן להתנתק כעת.</p>
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {currentUser?.role === 'LAWYER' && showNewCaseModal && (
@@ -10911,8 +10968,8 @@ const AppInner = () => {
         </div>
       )}
 
-      {showLogoutBackupModal && (
-        <div className="fixed inset-0 bg-black/50 z-[250] flex items-center justify-center p-4" dir="rtl">
+      {showLogoutBackupModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" dir="rtl">
           <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-bold text-gold">גיבוי לפני התנתקות</h3>
             <p className="text-sm text-textLight">
@@ -10960,7 +11017,8 @@ const AppInner = () => {
               <p className="text-xs text-green-600">הגיבוי הורד. ניתן להתנתק כעת.</p>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {preSendGuard && preSendGuard.issues.length > 0 && (
