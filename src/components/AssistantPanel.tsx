@@ -169,8 +169,11 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800">
               <div className="font-semibold mb-1">העוזר החכם אינו זמין כרגע</div>
               <div>
-                ניתן להמשיך לעבוד כרגיל עם הכלים במסך. אם התקלה חוזרת, כדאי לדווח
-                לליאור.
+                {error === 'AUTH_REQUIRED'
+                  ? 'יש להתחבר מחדש למערכת.'
+                  : error === 'SERVER_ERROR'
+                    ? 'תקלה בשרת. נסה שוב מאוחר יותר.'
+                    : 'ניתן להמשיך לשליחה כרגיל.'}
               </div>
             </div>
           )}

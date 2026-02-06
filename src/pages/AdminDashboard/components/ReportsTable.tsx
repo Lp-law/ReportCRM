@@ -12,6 +12,7 @@ interface ReportsTableProps {
   onResetUiState: () => void;
   onFilterAll: () => void;
   onNewReport: () => void;
+  showNewReportButton?: boolean;
   getHebrewStatusLabel: (report: ReportData) => string;
   formatDateTime: (iso?: string) => string;
   onSelectReport: (id: string) => void;
@@ -26,6 +27,7 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
   onResetUiState,
   onFilterAll,
   onNewReport,
+  showNewReportButton = true,
   getHebrewStatusLabel,
   formatDateTime,
   onSelectReport,
@@ -74,13 +76,15 @@ const ReportsTable: React.FC<ReportsTableProps> = ({
             >
               {adminHe.actions.clearFilter}
             </button>
-            <button
-              type="button"
-              onClick={onNewReport}
-              className="px-3 py-1.5 rounded-full bg-lpBlue text-white text-xs hover:bg-blue-800"
-            >
-              {adminHe.actions.openNewReport}
-            </button>
+            {showNewReportButton && (
+              <button
+                type="button"
+                onClick={onNewReport}
+                className="px-3 py-1.5 rounded-full bg-lpBlue text-white text-xs hover:bg-blue-800"
+              >
+                {adminHe.actions.openNewReport}
+              </button>
+            )}
           </div>
         </div>
       </div>

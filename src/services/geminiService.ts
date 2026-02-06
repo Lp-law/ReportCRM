@@ -288,6 +288,7 @@ export const requestAssistantHelp = async (
     const response = await fetch('/api/assistant/help', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload),
     });
 
@@ -295,6 +296,12 @@ export const requestAssistantHelp = async (
 
     if (!response.ok) {
       console.error('Assistant help HTTP error:', response.status, data);
+      if (response.status === 401) {
+        throw new Error('AUTH_REQUIRED');
+      }
+      if (response.status >= 500) {
+        throw new Error('SERVER_ERROR');
+      }
     }
 
     const title =

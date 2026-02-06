@@ -150,6 +150,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   );
   const [adminScreen, setAdminScreen] = useState<AdminScreen>('SUMMARY');
   const [selectedCaseOdakanit, setSelectedCaseOdakanit] = useState<string | null>(null);
+  const [seedPanelOpen, setSeedPanelOpen] = useState(false);
   const closedCaseFolders: CaseFolder[] = useMemo(
     () =>
       caseFolders
@@ -347,12 +348,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               התנתק
             </button>
-            <button
-              onClick={onNewReport}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-lpBlue text-white text-sm font-semibold shadow-sm hover:bg-blue-800 transition"
-            >
-              {adminHe.actions.openNewReport}
-            </button>
+            {user.role !== 'ADMIN' && (
+              <button
+                onClick={onNewReport}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-lpBlue text-white text-sm font-semibold shadow-sm hover:bg-blue-800 transition"
+              >
+                {adminHe.actions.openNewReport}
+              </button>
+            )}
           </div>
         </header>
 
@@ -416,11 +419,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </section>
 
             {SEED_TOOL_ENABLED && user.role === 'ADMIN' && caseFolders && onUpdateCaseFolders && (
-              <SeedExistingCasesPanel
-                caseFolders={caseFolders}
-                onUpdateCaseFolders={onUpdateCaseFolders}
-                reports={reports}
-              />
+              <section className="mb-6">
+                {!seedPanelOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setSeedPanelOpen(true)}
+                    className="inline-flex items-center px-4 py-2 rounded-lg border border-borderDark bg-panel text-sm font-semibold text-textLight hover:bg-navySecondary transition"
+                  >
+                    SEED
+                  </button>
+                ) : (
+                  <div className="bg-panel rounded-2xl border border-borderDark shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-borderDark bg-navySecondary">
+                      <span className="text-sm font-semibold text-textLight">Seed Existing Cases</span>
+                      <button
+                        type="button"
+                        onClick={() => setSeedPanelOpen(false)}
+                        className="text-[11px] px-3 py-1 rounded border border-borderDark text-textMuted hover:bg-panel"
+                      >
+                        סגור
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <SeedExistingCasesPanel
+                        caseFolders={caseFolders}
+                        onUpdateCaseFolders={onUpdateCaseFolders}
+                        reports={reports}
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
             )}
 
             {user.role === 'ADMIN' && closedCaseFolders.length > 0 && (
