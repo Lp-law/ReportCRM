@@ -790,6 +790,10 @@ const fallbackPolicyExtraction = (text = '') => {
     matchInline(/insured[:\s]+(.+)/i) ||
     matchInline(/insured(?:\s+name)?\s*[:\-]\s*(.+)/i) ||
     matchLineAfter(/insured\b/i) ||
+    matchInline(/מבוטח\s*[:\-]?\s*(.+)/) ||
+    matchInline(/שם\s+המבוטח\s*[:\-]?\s*(.+)/) ||
+    matchLineAfter(/מבוטח\b/) ||
+    matchInline(/לקוח\s*[:\-]?\s*(.+)/) ||
     result.insuredName;
 
   const uniqueMarketRegex = /UNIQUE\s+MARKET\s+REFERENCE(?:\s+NUMBER)?\s+([A-Z0-9]+)/i;
@@ -854,7 +858,9 @@ const fallbackPolicyExtraction = (text = '') => {
   }
 
   if (!result.insuredName) {
-    const inlineClient = matchInline(/(?:client|policyholder)\s*[:\-]\s*(.+)/i);
+    const inlineClient =
+      matchInline(/(?:client|policyholder)\s*[:\-]\s*(.+)/i) ||
+      matchInline(/לקוח\s*[:\-]?\s*(.+)/);
     if (inlineClient) {
       result.insuredName = inlineClient.split(/[,;]/)[0].trim();
     }

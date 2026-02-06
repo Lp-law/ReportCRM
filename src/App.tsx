@@ -1319,6 +1319,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
       alert('יש להזין מספר תיק בעודכנית (Odakanit) לפני מעבר לשלב הבא.');
       return;
     }
+    // Certificate Ref and Unique Market Ref are not required when no Policy (e.g. TEREM)
     onNext();
   };
 
@@ -1738,7 +1739,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
   ) => (
     <div className="relative group">
       <input 
-        className="w-full border border-borderDark p-2 rounded focus:ring-2 focus:ring-lpBlue outline-none pr-8" 
+        className="w-full border border-borderDark p-2 rounded focus:ring-2 focus:ring-lpBlue outline-none pr-8 bg-white text-slate-900 placeholder:text-slate-500" 
         placeholder={placeholder}
         value={value}
         onChange={readOnly ? undefined : (e) => updateField(e.target.value)}
@@ -1781,7 +1782,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
           <div className="bg-indigo-50 border-l-4 border-indigo-600 p-4 mb-6">
              <div className="flex justify-between items-center">
                 <div>
-                   <h3 className="font-bold text-indigo-900 flex items-center"><FolderOpen className="w-5 h-5 mr-2"/> Odakanit Case #{data.odakanitNo}</h3>
+                   <h3 className="font-bold text-slate-900 flex items-center"><FolderOpen className="w-5 h-5 mr-2"/> Odakanit Case #{data.odakanitNo}</h3>
                    <p className="text-sm text-indigo-700">This report folder was initiated by Finance.</p>
                 </div>
              </div>
@@ -1929,7 +1930,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
              <label className="text-xs font-bold text-textMuted uppercase flex items-center"><Calendar className="w-3 h-3 mr-1" /> Report Date</label>
              <input 
                 type="date" 
-                className="w-full border border-borderDark p-2 rounded disabled:bg-navySecondary disabled:text-textMuted"
+                className="w-full border border-borderDark p-2 rounded bg-white text-slate-900 disabled:bg-navySecondary disabled:text-textMuted"
                 value={formatDateForInput(data.reportDate)}
                 onChange={readOnly ? undefined : (e) => updateData({ reportDate: new Date(e.target.value).toISOString() })}
                 disabled={readOnly}
@@ -1939,8 +1940,8 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             <label className="text-xs font-bold text-textMuted uppercase">RE (Subject)</label>
             <input
               type="text"
-              className="w-full border border-borderDark p-2 rounded text-sm disabled:bg-navySecondary disabled:text-textMuted"
-              placeholder="e.g. John Doe v. XYZ Medical Center – Claim Update"
+              className="w-full border border-borderDark p-2 rounded text-sm bg-white text-slate-900 placeholder:text-slate-500 disabled:bg-navySecondary disabled:text-textMuted"
+              placeholder="John Doe v. XYZ Medical Center – Claim Update"
               value={data.reportSubject || ''}
               onChange={readOnly ? undefined : (e) =>
                 updateData({ reportSubject: e.target.value, isSubjectAuto: false })
@@ -1953,13 +1954,13 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.odakanitNo || '',
               (val) => updateData({ odakanitNo: val }),
-              'e.g., 1/123',
+              '1/123',
             )}
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-textMuted uppercase">Insurer Name</label>
             <select 
-              className="w-full border border-borderDark p-2 rounded disabled:bg-navySecondary disabled:text-textMuted"
+              className="w-full border border-borderDark p-2 rounded bg-white text-slate-900 disabled:bg-navySecondary disabled:text-textMuted"
               value={showCustomInsurerInput ? 'OTHER' : data.insurerName} 
               onChange={readOnly ? undefined : (e) => handleInsurerSelect(e.target.value)} 
               disabled={readOnly}
@@ -1981,7 +1982,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.lineSlipNo,
               (val) => updateData({ lineSlipNo: val, marketRef: val }),
-              "e.g., B0180PD2391439"
+              "B0180PD2391439"
             )}
           </div>
           <div className="space-y-1">
@@ -1989,7 +1990,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.certificateRef || '',
               (val) => updateData({ certificateRef: val }),
-              "e.g., 516902624"
+              "516902624"
             )}
           </div>
           <div className="space-y-1">
@@ -1997,7 +1998,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             {renderInputWithClear(
               data.insuredName,
               (val) => updateData(maybeAutoFillSubject({ insuredName: val })),
-              "e.g., Dr. Cohen",
+              "Dr. Cohen",
               (currentValue) => {
                 const trimmed = (currentValue || '').trim();
                 if (!trimmed || !hasHebrew(trimmed)) return;
@@ -2015,14 +2016,14 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
              <div className="flex justify-between items-end mb-1">
                <label className="text-xs font-bold text-textMuted uppercase">Party Name</label>
                <div className="flex bg-navySecondary rounded p-0.5 text-xs">
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textMuted'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
-                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textMuted'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Plaintiff' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textLight'}`} onClick={() => updateData({ plaintiffTitle: 'Plaintiff' })}>Plaintiff</button>
+                  <button className={`px-3 py-1 rounded-sm transition-all ${data.plaintiffTitle === 'Claimant' ? 'bg-panel shadow text-lpBlue font-bold' : 'text-textLight'}`} onClick={() => updateData({ plaintiffTitle: 'Claimant' })}>Claimant</button>
                </div>
             </div>
             {renderInputWithClear(
               data.plaintiffName,
               (val) => updateData(maybeAutoFillSubject({ plaintiffName: val })),
-              "e.g., Mr. Levi",
+              "Mr. Levi",
               (currentValue) => {
                 const trimmed = (currentValue || '').trim();
                 if (!trimmed || !hasHebrew(trimmed)) return;
@@ -2047,7 +2048,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
               Procedural Timeline
             </h3>
             <p className="text-sm text-textMuted">
-              בחרי את סוג ההליך, השלב הנוכחי ותאריכי Month/Year שיופיעו בציר הזמנים הדו&quot;חי.
+              בחרי את סוג ההליך, השלב הנוכחי ותאריכי חודש/שנה שיופיעו בציר הזמנים הדו״חי.
             </p>
           </div>
         </div>
@@ -2057,7 +2058,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
             Procedure Type
           </label>
           <select
-            className="border border-borderDark rounded px-3 py-1 text-sm"
+            className="border border-borderDark rounded px-3 py-1 text-sm bg-white text-slate-900"
             value={data.proceduralTimeline?.procedureType || 'FIRST_INSTANCE'}
             onChange={(e) => handleProcedureTypeChange(e.target.value as ProceduralProcedureType)}
           >
@@ -2133,7 +2134,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                       <div className="mt-1 flex items-center gap-2 text-xs text-textMuted flex-wrap">
                         <span>Month / Year:</span>
                         <select
-                          className="border border-borderDark rounded px-2 py-0.5 text-xs"
+                          className="border border-borderDark rounded px-2 py-0.5 text-xs bg-white text-slate-900"
                           value={month}
                           disabled={!include}
                           onChange={(e) =>
@@ -2156,7 +2157,7 @@ const Step1_Selection: React.FC<StepProps> = ({ data, updateData, onNext, curren
                         </select>
                         <input
                           type="number"
-                          className="w-20 border border-borderDark rounded px-2 py-0.5 text-xs"
+                          className="w-20 border border-borderDark rounded px-2 py-0.5 text-xs bg-white text-slate-900"
                           placeholder="Year"
                           value={year}
                           disabled={!include}
@@ -5719,7 +5720,7 @@ const FinanceRequestModal = ({
            <div className="space-y-3">
               <div>
                  <label className="block text-xs font-bold text-textMuted">Internal Case # (Odakanit)</label>
-                 <input className="w-full border p-2 rounded" value={odakanitNo} onChange={e => setOdakanitNo(e.target.value)} placeholder="e.g. 55492" />
+                 <input className="w-full border border-borderDark p-2 rounded bg-white text-slate-900 placeholder:text-slate-500" value={odakanitNo} onChange={e => setOdakanitNo(e.target.value)} placeholder="55492" />
               </div>
               {!isLawyer && (
                 <>
