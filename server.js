@@ -2419,14 +2419,20 @@ const renderReportPdf = async (report) => {
 };
 
 
-// Initialize Email Transporter (Outlook / SMTP)
+// Initialize Email Transporter (Outlook / SMTP) — created once, reused for all sends
+const EMAIL_SERVICE_RAW = process.env.EMAIL_SERVICE || 'hotmail';
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'hotmail', // 'hotmail' works for outlook.com
+  service: EMAIL_SERVICE_RAW,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
+function maskForLog(s) {
+  if (typeof s !== 'string' || s.length < 4) return '***';
+  return s.slice(0, 2) + '***' + s.slice(-2);
+}
+console.log('[MAIL] Transport created', { service: EMAIL_SERVICE_RAW, user: maskForLog(process.env.EMAIL_USER || '') });
 
 // --- Mail mode & recipients (ENV-only, single source of truth) ---
 const MAIL_MODE = (process.env.MAIL_MODE || 'SANDBOX').trim().toUpperCase();
@@ -4097,6 +4103,8 @@ app.get('/api/mail-config', (req, res) => {
 });
 
 // 10. Send Email – TO/CC built server-side only: TO = broker (ENV), CC = REPORTS (ENV) + lawyer (from report)
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB
+
 app.post('/api/send-email', async (req, res) => {
   if (!ensureAuthenticated(req, res)) return;
   const role = getUserRoleFromRequest(req);
@@ -4112,15 +4120,20 @@ app.post('/api/send-email', async (req, res) => {
     });
   }
 
-  const { subject, body, attachmentBase64, attachmentName, lawyerEmail, reportId } = req.body;
-
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    return res.status(500).json({ error: 'Server email configuration missing' });
-  }
-
-  let to;
-  let cc;
   try {
+    // Step 2: Explicit ENV validation before sending
+    const missing = [];
+    if (!process.env.EMAIL_SERVICE?.trim()) missing.push('EMAIL_SERVICE');
+    if (!process.env.EMAIL_USER?.trim()) missing.push('EMAIL_USER');
+    if (!process.env.EMAIL_PASS) missing.push('EMAIL_PASS');
+    if (missing.length) {
+      throw new Error(`EMAIL_ENV_MISSING: ${missing.join(', ')}`);
+    }
+
+    const { subject, body, attachmentBase64, attachmentName, lawyerEmail, reportId } = req.body;
+
+    let to;
+    let cc;
     const base = getEmailRecipients();
     to = base.to;
     cc = [...(base.cc || [])];
@@ -4128,50 +4141,67 @@ app.post('/api/send-email', async (req, res) => {
     if (lawyer && !cc.some((e) => e.toLowerCase() === lawyer.toLowerCase())) {
       cc.push(lawyer);
     }
-  } catch (error) {
-    const msg = error?.message || 'Recipient configuration error';
-    return res.status(503).json({ error: msg });
-  }
 
-  if (!to || !to.length) {
-    return res.status(503).json({ error: 'Email recipients not configured for current MAIL_MODE' });
-  }
-
-  // C) PDF attachment integrity: must have valid base64 decoding to non-empty buffer
-  const safeBase64 =
-    typeof attachmentBase64 === 'string'
-      ? attachmentBase64.split(',').pop() || attachmentBase64
-      : attachmentBase64;
-  if (!safeBase64) {
-    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
-  }
-  let pdfBuffer;
-  try {
-    pdfBuffer = Buffer.from(safeBase64, 'base64');
-  } catch {
-    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
-  }
-  if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
-    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
-  }
-
-  const filename = (typeof attachmentName === 'string' && attachmentName.trim()) ? attachmentName.trim() : 'Report.pdf';
-
-  // D) Anti-duplicate send: block same reportId within 5 minutes
-  const id = reportId != null ? String(reportId) : null;
-  if (id) {
-    const last = lastSendByReportId.get(id);
-    const now = Date.now();
-    const fiveMin = 5 * 60 * 1000;
-    if (last != null && now - last < fiveMin) {
-      console.warn(`[MAIL][WARN] Duplicate send attempt blocked for reportId=${id}`);
-      return res.status(429).json({
-        error: 'Duplicate send attempt blocked for this report. Please wait before resending.',
-      });
+    if (!to || !to.length) {
+      return res.status(503).json({ error: 'Email recipients not configured for current MAIL_MODE' });
     }
-  }
 
-  try {
+    // Step 3: Attachment validation
+    const safeBase64 =
+      typeof attachmentBase64 === 'string'
+        ? attachmentBase64.split(',').pop() || attachmentBase64
+        : attachmentBase64;
+    if (!safeBase64 || (typeof safeBase64 === 'string' && !safeBase64.trim())) {
+      throw new Error('PDF_ATTACHMENT_MISSING');
+    }
+    let pdfBuffer;
+    try {
+      pdfBuffer = Buffer.from(safeBase64, 'base64');
+    } catch {
+      throw new Error('PDF_ATTACHMENT_MISSING');
+    }
+    if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
+      throw new Error('PDF_ATTACHMENT_MISSING');
+    }
+    if (pdfBuffer.length > MAX_ATTACHMENT_BYTES) {
+      throw new Error(`PDF_ATTACHMENT_TOO_LARGE: ${pdfBuffer.length} bytes (max ${MAX_ATTACHMENT_BYTES})`);
+    }
+    const attachmentBase64Len = typeof attachmentBase64 === 'string' ? attachmentBase64.length : 0;
+    console.log('[MAIL] Attachment decoded', { bufferBytes: pdfBuffer.length, base64Length: attachmentBase64Len });
+
+    const filename = (typeof attachmentName === 'string' && attachmentName.trim()) ? attachmentName.trim() : 'Report.pdf';
+
+    // D) Anti-duplicate send: block same reportId within 5 minutes
+    const id = reportId != null ? String(reportId) : null;
+    if (id) {
+      const last = lastSendByReportId.get(id);
+      const now = Date.now();
+      const fiveMin = 5 * 60 * 1000;
+      if (last != null && now - last < fiveMin) {
+        console.warn(`[MAIL][WARN] Duplicate send attempt blocked for reportId=${id}`);
+        return res.status(429).json({
+          error: 'Duplicate send attempt blocked for this report. Please wait before resending.',
+        });
+      }
+    }
+
+    // Step 1: Pre-send logging (no body, no raw base64 content)
+    const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
+    console.log('[MAIL] Preparing send', {
+      MAIL_MODE: mode,
+      to,
+      cc,
+      subject: typeof subject === 'string' ? subject : '(none)',
+      attachmentName: filename,
+      attachmentBase64Length: attachmentBase64Len,
+      EMAIL_SERVICE: maskForLog(process.env.EMAIL_SERVICE || ''),
+      EMAIL_USER: maskForLog(process.env.EMAIL_USER || ''),
+    });
+
+    // Step 1: Verify transport before send
+    await transporter.verify();
+    console.log('[MAIL] Transport verified');
+
     const attachments = [
       {
         filename,
@@ -4187,13 +4217,10 @@ app.post('/api/send-email', async (req, res) => {
       text: body,
       attachments,
     };
-
     if (Array.isArray(cc) && cc.length) {
       mailOptions.cc = cc.join(',');
     }
 
-    // B) Deterministic audit log (one line, no body)
-    const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
     const toStr = to.join(',');
     const ccStr = cc.join(',');
     const reportIdStr = id != null ? id : 'unknown';
@@ -4207,10 +4234,15 @@ app.post('/api/send-email', async (req, res) => {
       lastSendByReportId.set(id, Date.now());
     }
 
+    // Step 5: Success logging
+    console.log('[MAIL] Sent successfully', { to, cc, subject: typeof subject === 'string' ? subject : '' });
     res.json({ success: true });
-  } catch (error) {
-    console.error('Email send error:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+  } catch (err) {
+    // Step 4: Explicit error response — do not swallow
+    console.error('Email send error (full):', err);
+    if (err && err.stack) console.error(err.stack);
+    const reason = err && err.message ? err.message : 'Unknown error';
+    res.status(500).json({ error: 'EMAIL_SEND_FAILED', reason });
   }
 });
 
