@@ -94,14 +94,22 @@ export function buildSmartEmailSubject(report: ReportData): string {
 // ---------------------------------------------------------------------------
 // Default email body content per scenario (British English, Lloyd's-level)
 // All start with "Please find attached ..."; no "We are pleased to report".
-// First reports (NEW_*): include matter type and policy documentation line.
-// TEREM: same wording but policy line omitted (handled at lookup time).
-// Update reports (UPDATE_*): no policy mention.
+// First reports (NEW_*): matter type + policy documentation (omitted for TEREM at lookup).
+// Update reports (UPDATE_*): standard wording or "further update" when history length > 1.
 // ---------------------------------------------------------------------------
 
-const UPDATE_BODY = `Dear Zeev,
+/** Standard update (first follow-up); used when reportHistory.length === 1 */
+const UPDATE_BODY_STANDARD = `Dear Zeev,
 
-Please find attached our report providing an update in relation to the matter referenced above.
+Please find attached our report advising of an update in respect of the matter referenced above.
+
+Kind regards,
+Lior`;
+
+/** Further update (continuity); used when reportHistory.length > 1 */
+const UPDATE_BODY_FURTHER = `Dear Zeev,
+
+Please find attached our report advising of a further update in respect of the matter referenced above.
 
 Kind regards,
 Lior`;
@@ -115,7 +123,7 @@ const FIRST_REPORT_BODY = (
     : '';
   return `Dear Zeev,
 
-Please find attached our first report in relation to the above-referenced ${matterLabel}${policyLine}.
+Please find attached our first report in respect of the above-referenced ${matterLabel}${policyLine}.
 
 Kind regards,
 Lior`;
@@ -134,10 +142,10 @@ export const EMAIL_SCENARIO_CONTENT: Record<EmailScenario, { body: string }> = {
   NEW_CAUTION_FIRST: {
     body: FIRST_REPORT_BODY('caution notice', true),
   },
-  UPDATE_LAWSUIT: { body: UPDATE_BODY },
-  UPDATE_DEMAND: { body: UPDATE_BODY },
-  UPDATE_TPN: { body: UPDATE_BODY },
-  UPDATE_CAUTION: { body: UPDATE_BODY },
+  UPDATE_LAWSUIT: { body: UPDATE_BODY_STANDARD },
+  UPDATE_DEMAND: { body: UPDATE_BODY_STANDARD },
+  UPDATE_TPN: { body: UPDATE_BODY_STANDARD },
+  UPDATE_CAUTION: { body: UPDATE_BODY_STANDARD },
 };
 
 const POLICY_PHRASE = ', together with the relevant policy documentation.';
@@ -154,15 +162,31 @@ function isFirstReportScenario(scenario: EmailScenario): boolean {
   );
 }
 
+function isUpdateScenario(scenario: EmailScenario): boolean {
+  return (
+    scenario === 'UPDATE_LAWSUIT' ||
+    scenario === 'UPDATE_DEMAND' ||
+    scenario === 'UPDATE_TPN' ||
+    scenario === 'UPDATE_CAUTION'
+  );
+}
+
 /**
  * Returns the default email body for the given scenario.
- * For first-report scenarios and TEREM clients, omits the policy documentation phrase.
+ * First-report + TEREM: policy phrase omitted.
+ * Update scenarios: "further update" when reportHistory.length > 1, else standard update.
  */
 function getDefaultBodyForScenario(
   report: ReportData,
   scenario: EmailScenario
 ): string {
-  let body = EMAIL_SCENARIO_CONTENT[scenario].body;
+  let body: string;
+  if (isUpdateScenario(scenario)) {
+    const historyLength = report.reportHistory?.length ?? 0;
+    body = historyLength > 1 ? UPDATE_BODY_FURTHER : UPDATE_BODY_STANDARD;
+  } else {
+    body = EMAIL_SCENARIO_CONTENT[scenario].body;
+  }
   if (isFirstReportScenario(scenario) && isTEREM(report.insuredName)) {
     body = body.replace(POLICY_PHRASE, '.');
   }
