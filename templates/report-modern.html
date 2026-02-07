@@ -216,8 +216,17 @@
         font-weight: 600;
       }
 
+      /* Atomic wrapper: entire RE block must stay on one page (no split) */
+      .cover-re-block-atomic {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+
       .cover-re-line {
-        margin: 6mm 0 8mm;
+        margin: 4mm 0 6mm;
         padding: 4mm 6mm;
         border-radius: 8px;
         border-left: 3px solid var(--lp-gold);
@@ -763,12 +772,13 @@
   padding-top: 3mm; /* breathing room when a section starts at top of a new page */
 }
 
-/* Signature: keep block together and avoid orphan at bottom of last page */
+/* Signature: never split; always on own page for consistent, intentional placement */
 .signature-block {
   break-inside: avoid;
   page-break-inside: avoid;
   page-break-before: always;
-  padding-top: 4mm; /* top spacing when signature starts on its own page */
+  margin-top: 10mm; /* clear top spacing when on its own page */
+  padding-top: 2mm;
 }
 
 </style>
@@ -814,9 +824,11 @@
     <div class="page cover-page cover-page-2 page-break-after">
       <div class="cover-card">
         {{#if reportReLine}}
-          <div class="cover-re-line">
-            <div class="cover-re-label">Re:</div>
-            <div class="cover-re-value">{{reportReLine}}</div>
+          <div class="cover-re-block-atomic">
+            <div class="cover-re-line">
+              <div class="cover-re-label">Re:</div>
+              <div class="cover-re-value">{{reportReLine}}</div>
+            </div>
           </div>
         {{/if}}
 

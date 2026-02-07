@@ -2394,7 +2394,7 @@ const renderReportPdf = async (report) => {
         width:100%;
         font-size:8px;
         color:#6b7280;
-        padding:4px 10mm;
+        padding:2px 8px;
         font-family: Arial, sans-serif;
         display:flex;
         justify-content:flex-end;
@@ -2405,10 +2405,10 @@ const renderReportPdf = async (report) => {
       </div>
     `,
     margin: {
-      top: '22mm',
-      bottom: '16mm',
-      left: '14mm',
-      right: '14mm',
+      top: '18mm',
+      bottom: '12mm',
+      left: '12mm',
+      right: '12mm',
     },
   });
   await browser.close();
