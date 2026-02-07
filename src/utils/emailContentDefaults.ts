@@ -77,6 +77,18 @@ export const EMAIL_SCENARIO_SUBJECT_PREFIX: Record<EmailScenario, string> = {
   UPDATE_CAUTION: 'Update – Caution Notice – ',
 };
 
+/** Recommended template label per scenario (UI guidance only; non-binding) */
+export const RECOMMENDED_TEMPLATE_LABEL: Record<EmailScenario, string> = {
+  NEW_LAWSUIT_FIRST: 'New Matter Notification',
+  NEW_DEMAND_FIRST: 'New Matter Notification',
+  NEW_TPN_FIRST: 'New Matter Notification',
+  NEW_CAUTION_FIRST: 'New Matter Notification',
+  UPDATE_LAWSUIT: 'Matter Update',
+  UPDATE_DEMAND: 'Matter Update',
+  UPDATE_TPN: 'Matter Update',
+  UPDATE_CAUTION: 'Matter Update',
+};
+
 /**
  * Default email subject with scenario-based prefix when no draft exists.
  * If report.emailSubjectDraft is set, returns it unchanged.

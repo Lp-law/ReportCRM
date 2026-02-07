@@ -13,6 +13,10 @@ import {
 } from '../utils/fileNameTopics';
 import buildReportFileName from '../utils/reportFileName';
 import {
+  resolveEmailScenario,
+  RECOMMENDED_TEMPLATE_LABEL,
+} from '../utils/emailContentDefaults';
+import {
   clearInsurerDefaultTopics,
   getInsurerDefaultTopics,
   loadUserTopicCombos,
@@ -331,6 +335,20 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
     [report, selectedTopics],
   );
 
+  const recommendedTemplateLabel = useMemo(
+    () => RECOMMENDED_TEMPLATE_LABEL[resolveEmailScenario(report)],
+    [report],
+  );
+
+  const bodyDeviatesFromFormat = useMemo(() => {
+    const t = emailBody.trim();
+    if (!t) return false;
+    const lower = t.toLowerCase();
+    const hasOpening = lower.startsWith('please find attached');
+    const hasSignature = lower.includes('kind regards');
+    return !hasOpening || !hasSignature;
+  }, [emailBody]);
+
   const ownerPresent = recipientsPreview.cc.some(
     (email) => email.toLowerCase() !== 'reports@lp-law.co.il',
   );
@@ -449,6 +467,11 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                     style={{ direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext' }}
                   />
                 </GrammarlyEditorPlugin>
+                {bodyDeviatesFromFormat && (
+                  <p className="mt-1.5 text-[11px] text-gray-400">
+                    This email deviates from the recommended professional format.
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -469,7 +492,12 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-medium text-gray-500 mb-1">Template</label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="block text-[11px] font-medium text-gray-500">Template</label>
+                    <span className="text-[10px] text-gray-400">
+                      Recommended: {recommendedTemplateLabel}
+                    </span>
+                  </div>
                   <select
                     value={selectedTemplate}
                     onChange={(e) => handleTemplateChange(e.target.value)}
