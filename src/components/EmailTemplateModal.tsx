@@ -167,6 +167,8 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
   const [topicFilter, setTopicFilter] = useState<string>('');
   const [topicCombos, setTopicCombos] = useState<TopicCombo[]>([]);
   const [insurerDefaultTopics, setInsurerDefaultTopicsState] = useState<string[]>([]);
+  /** Read-first, edit-second: when false, subject/body appear as calm preview; "Edit email content" reveals inputs */
+  const [isEditingContent, setIsEditingContent] = useState(false);
 
   const loadUserTemplates = (id?: string) => {
     if (typeof window === 'undefined') return [];
@@ -213,9 +215,9 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
       getInsurerDefaultTopics(userId, report.insurerName),
     );
     setSubject(subjectDraft);
-    // בכל פתיחה חדשה נוודא שרואים את כל רשימת ה‑TOPICS בלי סינון קודם
     setTopicFilter('');
     setManualTopicInput('');
+    setIsEditingContent(false);
   }, [isOpen, userId, subjectDraft, report.insurerName]);
 
   useEffect(() => {
@@ -354,317 +356,323 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {resendBanner}
           {isOwnerMissingInCc && (
             <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 mt-[1px]" />
+              <AlertTriangle className="w-3.5 h-3.5 mt-[1px] shrink-0" />
               <p>
                 ע״פ הנתונים אין כתובת אימייל של עורכת הדין בדוח הנוכחי. המייל יישלח רק אל
                 הנמען הראשי (To) ואל הכתובות ב‑CC.
               </p>
             </div>
           )}
-          {isSandbox && (
-            <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-md px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 mt-[1px] shrink-0" />
-              <p>Test mode – emails are sent to configured test recipients.</p>
-            </div>
-          )}
-          <div className="text-xs text-gray-600 space-y-1 border rounded-md border-gray-200 bg-gray-50 px-3 py-2">
-            <p className="font-medium text-gray-700 mb-1.5">Recipients (read-only)</p>
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-600">To:</span>{' '}
-              <span>{recipientsPreview.to.join('; ') || '—'}</span>
-            </div>
-            {recipientsPreview.cc.length > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-600">CC:</span>{' '}
-                <span>{recipientsPreview.cc.join('; ')}</span>
+
+          {/* Recipients — read-only */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recipients</p>
+            <div className="space-y-1.5 text-sm text-gray-700 bg-gray-50/80 rounded-lg px-3 py-2.5 border border-gray-100">
+              <div>
+                <span className="text-gray-500 font-medium">To:</span>{' '}
+                {recipientsPreview.to.length ? recipientsPreview.to.join('; ') : '—'}
               </div>
-            )}
-            <div className="pt-1.5 border-t border-gray-200 mt-1.5">
-              <span className="font-medium text-gray-600">Subject:</span>{' '}
-              {subject || '(from case data)'}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-600">Attachment:</span>
-              <span className="inline-flex items-center gap-1.5 text-gray-700">
-                <FileText className="w-3.5 h-3.5 text-red-600 shrink-0" aria-hidden />
-                {attachmentNamePreview}
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-500 mt-1.5">
-              If automatic send fails and a manual email client opens, attach the PDF manually.
-            </p>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-semibold text-gray-800">
-                Subject
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setSubject(defaultSubject);
-                  // True reset: clear draft so next open recomputes from default.
-                  onSubjectDraftChange(undefined);
-                }}
-                className="text-[11px] text-blue-700 hover:underline disabled:opacity-50"
-                disabled={isSending}
-              >
-                Reset
-              </button>
-            </div>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSubject(value);
-                onSubjectDraftChange(value);
-              }}
-              className="w-full border rounded-md p-2 text-sm font-medium text-gray-800"
-              disabled={isSending}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
-            <div className="flex gap-3">
-              <select
-                value={selectedTemplate}
-                onChange={(e) => handleTemplateChange(e.target.value)}
-                className="flex-1 border rounded-md p-2"
-              >
-                {allTemplates.map((template) => (
-                  <option value={template.id} key={template.id}>
-                    {template.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleSaveTemplate}
-                className="px-3 py-2 bg-panel border rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                disabled={isSending}
-              >
-                Save Template
-              </button>
+              {recipientsPreview.cc.length > 0 && (
+                <div>
+                  <span className="text-gray-500 font-medium">CC:</span>{' '}
+                  {recipientsPreview.cc.join('; ')}
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Subject — preview or editable */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              PDF Filename Topics
-            </label>
-            {topicCombos.length > 0 && (
-              <div className="mb-2">
-                <p className="text-[11px] font-semibold text-gray-700 mb-1">
-                  Recent combinations
+            {!isEditingContent ? (
+              <>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Subject</p>
+                <p className="text-base font-semibold text-gray-900 leading-snug">
+                  {subject || '(from case data)'}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {topicCombos.map((combo, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => onSelectedTopicsChange(combo)}
-                      className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-[11px] text-gray-800 border border-gray-300 hover:bg-gray-200"
-                    >
-                      {combo.join(' + ')}
-                    </button>
-                  ))}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Subject</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubject(defaultSubject);
+                      onSubjectDraftChange(undefined);
+                    }}
+                    className="text-[11px] text-gray-600 hover:text-gray-800 hover:underline disabled:opacity-50"
+                    disabled={isSending}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    onSubjectDraftChange(e.target.value);
+                  }}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                  disabled={isSending}
+                />
+              </>
+            )}
+          </div>
+
+          {/* Body — preview or editable */}
+          <div className="max-w-2xl">
+            {!isEditingContent ? (
+              <>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Email</p>
+                <div
+                  className="rounded-lg border border-gray-100 bg-gray-50/50 px-4 py-3 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap font-normal"
+                  style={{ direction: 'ltr', textAlign: 'left' }}
+                >
+                  {emailBody}
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Email body</label>
+                <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
+                  <textarea
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    rows={10}
+                    dir="ltr"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm leading-relaxed text-gray-800 focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                    style={{ direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext' }}
+                  />
+                </GrammarlyEditorPlugin>
+              </>
+            )}
+          </div>
+
+          {/* Single row: Edit email content (or when editing: template + PDF filename) */}
+          {!isEditingContent ? (
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsEditingContent(true)}
+                className="text-sm text-gray-600 hover:text-gray-900 underline underline-offset-2 disabled:opacity-50"
+                disabled={isSending}
+              >
+                Edit email content
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-500 mb-1">Template</label>
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => handleTemplateChange(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm text-gray-700"
+                    disabled={isSending}
+                  >
+                    {allTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-500 mb-1">Save as template</label>
+                  <button
+                    type="button"
+                    onClick={handleSaveTemplate}
+                    className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+                    disabled={isSending}
+                  >
+                    Save current as template
+                  </button>
                 </div>
               </div>
-            )}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {selectedTopics.length === 0 ? (
-                <span className="text-xs text-gray-400">
-                  No topics selected yet. You can choose from the list below or add your own.
-                </span>
-              ) : (
-                selectedTopics.map((topic) => (
+              <div>
+                <label className="block text-[11px] font-medium text-gray-500 mb-1">PDF filename topics</label>
+                <div className="flex flex-wrap gap-1.5 mb-1.5">
+                  {selectedTopics.length === 0 ? (
+                    <span className="text-xs text-gray-400">None selected</span>
+                  ) : (
+                    selectedTopics.map((topic) => (
+                      <button
+                        key={topic}
+                        type="button"
+                        onClick={() => handleToggleTopic(topic)}
+                        className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 border border-gray-200 hover:bg-gray-200"
+                      >
+                        {topic} ×
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={topicFilter}
+                    onChange={(e) => setTopicFilter(e.target.value)}
+                    placeholder="Filter topics…"
+                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs"
+                    disabled={isSending}
+                  />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1 max-h-24 overflow-y-auto border rounded-lg p-2 bg-panel min-w-[120px]">
+                    {filteredTopics.slice(0, 24).map((topic) => {
+                      const id = `topic-${topic}`;
+                      const lower = topic.toLowerCase();
+                      const checked = selectedTopics.some((t) => t.trim().toLowerCase() === lower);
+                      return (
+                        <label key={topic} htmlFor={id} className="flex items-center gap-1 text-[11px] text-gray-700 cursor-pointer">
+                          <input
+                            id={id}
+                            type="checkbox"
+                            className="h-3 w-3"
+                            checked={checked}
+                            onChange={() => handleToggleTopic(topic)}
+                            disabled={isSending}
+                          />
+                          <span className="truncate">{topic}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={manualTopicInput}
+                    onChange={(e) => setManualTopicInput(e.target.value)}
+                    placeholder="Add topic…"
+                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs"
+                    disabled={isSending}
+                  />
                   <button
-                    key={topic}
                     type="button"
-                    onClick={() => handleToggleTopic(topic)}
-                    className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800 border border-blue-200 hover:bg-blue-100"
+                    onClick={handleAddManualTopic}
+                    className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 hover:bg-gray-50"
+                    disabled={isSending}
                   >
-                    <span>{topic}</span>
-                    <span className="text-[10px]">×</span>
+                    Add
                   </button>
-                ))
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                onSelectedTopicsChange([]);
-                // וגם אפס סינון כדי להחזיר את כל רשימת ה‑TOPICS לתצוגה מלאה
-                setTopicFilter('');
-              }}
-              className="mb-2 text-[11px] text-blue-700 hover:underline"
-              disabled={isSending}
-            >
-              נקה כל הנושאים
-            </button>
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={topicFilter}
-                onChange={(e) => setTopicFilter(e.target.value)}
-                placeholder="סינון לפי טקסט..."
-                className="flex-1 border rounded-md p-1.5 text-[11px]"
-                disabled={isSending}
-              />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mb-2 max-h-32 overflow-y-auto border rounded-md p-2 bg-panel">
-              {filteredTopics.map((topic) => {
-                const id = `topic-${topic}`;
-                const lower = topic.toLowerCase();
-                const checked = selectedTopics.some(
-                  (t) => t.trim().toLowerCase() === lower,
-                );
-                return (
-                  <label
-                    key={topic}
-                    htmlFor={id}
-                    className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer"
-                  >
-                    <input
-                      id={id}
-                      type="checkbox"
-                      className="h-3 w-3"
-                      checked={checked}
-                      onChange={() => handleToggleTopic(topic)}
-                      disabled={isSending}
-                    />
-                    <span className="whitespace-normal break-words">{topic}</span>
-                  </label>
-                );
-              })}
-            </div>
-            <div className="flex gap-2 mt-1">
-              <input
-                type="text"
-                value={manualTopicInput}
-                onChange={(e) => setManualTopicInput(e.target.value)}
-                placeholder="Add custom topic…"
-                className="flex-1 border rounded-md p-2 text-xs"
-                disabled={isSending}
-              />
-              <button
-                type="button"
-                onClick={handleAddManualTopic}
-                className="px-3 py-1.5 bg-panel border rounded-md text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                disabled={isSending}
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-3 space-y-1 text-[11px] text-gray-700">
-              <div className="flex gap-2 flex-wrap items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const cleaned = dedupeCaseInsensitive(
-                      selectedTopics.map((t) => sanitizeTopicLabel(t)),
-                    );
-                    if (!cleaned.length) return;
-                    setInsurerDefaultTopics(userId, report.insurerName, cleaned);
-                    setInsurerDefaultTopicsState(cleaned);
-                  }}
-                  className="px-2 py-1 rounded-full border border-gray-300 bg-panel hover:bg-gray-100"
-                  disabled={isSending || selectedTopics.length === 0}
-                >
-                  שמור כנושאי ברירת מחדל למבטחת זו
-                </button>
-                {insurerDefaultTopics.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onSelectedTopicsChange(insurerDefaultTopics)}
-                      className="px-2 py-1 rounded-full border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 disabled:opacity-50"
-                      disabled={isSending}
-                    >
-                      החל נושאי ברירת מחדל למבטחת זו
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearInsurerDefaultTopics(userId, report.insurerName);
-                        setInsurerDefaultTopicsState([]);
-                      }}
-                      className="text-[11px] text-red-600 hover:underline"
-                      disabled={isSending}
-                    >
-                      נקה ברירת מחדל למבטחת זו
-                    </button>
-                  </>
+                </div>
+                {topicCombos.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {topicCombos.slice(0, 5).map((combo, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => onSelectedTopicsChange(combo)}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600 hover:bg-gray-200"
+                      >
+                        {combo.join(' + ')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(insurerDefaultTopics.length > 0 || selectedTopics.length > 0) && (
+                  <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
+                    {insurerDefaultTopics.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onSelectedTopicsChange(insurerDefaultTopics)}
+                          className="text-blue-600 hover:underline"
+                          disabled={isSending}
+                        >
+                          Apply insurer default topics
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearInsurerDefaultTopics(userId, report.insurerName);
+                            setInsurerDefaultTopicsState([]);
+                          }}
+                          className="text-gray-500 hover:underline"
+                          disabled={isSending}
+                        >
+                          Clear default
+                        </button>
+                      </>
+                    )}
+                    {selectedTopics.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cleaned = dedupeCaseInsensitive(
+                            selectedTopics.map((t) => sanitizeTopicLabel(t)),
+                          );
+                          if (!cleaned.length) return;
+                          setInsurerDefaultTopics(userId, report.insurerName, cleaned);
+                          setInsurerDefaultTopicsState(cleaned);
+                        }}
+                        className="text-gray-500 hover:underline"
+                        disabled={isSending}
+                      >
+                        Save as insurer default
+                      </button>
+                    )}
+                  </div>
+                )}
+                {insurerDefaultTopics.length > 0 && selectedTopics.length === 0 && (
+                  <p className="text-[11px] text-gray-500 mt-1">Insurer default topics available.</p>
                 )}
               </div>
-              {insurerDefaultTopics.length > 0 && selectedTopics.length === 0 && (
-                <p className="text-[11px] text-gray-500">
-                  קיימים נושאי ברירת מחדל למבטחת זו. ניתן להחיל אותם בלחיצה על
-                  הכפתור המתאים.
-                </p>
-              )}
-            </div>
+            </>
+          )}
+
+          {/* Attachment — single row */}
+          <div className="flex items-center gap-2 py-2">
+            <FileText className="w-4 h-4 text-red-600 shrink-0" aria-hidden />
+            <span className="text-sm font-medium text-gray-800 truncate">{attachmentNamePreview}</span>
+            <span className="text-xs text-gray-500 shrink-0">Attached PDF report</span>
           </div>
 
-          <div className="max-w-2xl">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
-            <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
-              <textarea
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={12}
-                dir="ltr"
-                className="w-full border rounded-md p-3 text-sm leading-relaxed text-gray-800"
-                style={{ direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext' }}
-              />
-            </GrammarlyEditorPlugin>
-          </div>
-
-          <div className="border-t pt-4 text-right">
-            <p className="text-sm font-semibold text-gray-600 mb-2">Signature</p>
-            <div className="inline-flex flex-col items-end">
+          <div className="border-t border-gray-100 pt-4">
+            <div className="flex flex-col items-end gap-1">
               <img
                 src="/assets/branding/signature.png"
-                alt="Signature placeholder"
-                className="h-16 object-contain mb-2 opacity-80"
+                alt=""
+                className="h-12 object-contain opacity-80"
                 onError={(e) => { (e.currentTarget.style.display = 'none'); }}
               />
-              <span className="text-sm text-gray-700 font-semibold">Adv. Lior Perry</span>
+              <span className="text-sm text-gray-600 font-medium">Adv. Lior Perry</span>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t px-6 py-4 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-md text-gray-600 hover:bg-gray-200"
-            disabled={isSending}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() =>
-              onSend({
-                body: emailBody,
-                templateId: selectedTemplate,
-                subjectBase: subject.trim(),
-                topics: dedupeCaseInsensitive(
-                  selectedTopics.map((t) => sanitizeTopicLabel(t)),
-                ),
-              })
-            }
-            className="px-5 py-2 rounded-md bg-lpBlue text-white font-semibold hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={isSending}
-          >
-            {isSending ? 'Sending…' : 'Send Email'}
-          </button>
+        <div className="border-t px-6 py-4 bg-gray-50 space-y-3">
+          <p className="text-xs text-gray-500">
+            The report PDF will be attached and sent to the recipients above.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200"
+              disabled={isSending}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() =>
+                onSend({
+                  body: emailBody,
+                  templateId: selectedTemplate,
+                  subjectBase: subject.trim(),
+                  topics: dedupeCaseInsensitive(
+                    selectedTopics.map((t) => sanitizeTopicLabel(t)),
+                  ),
+                })
+              }
+              className="px-5 py-2 rounded-lg bg-lpBlue text-white font-semibold hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSending}
+            >
+              {isSending ? 'Sending…' : 'Send Email'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
