@@ -62,6 +62,36 @@ export function resolveEmailScenario(report: ReportData): EmailScenario {
 }
 
 // ---------------------------------------------------------------------------
+// Subject prefix per scenario (British English, Lloyd's / insurer correspondence)
+// Used only when no emailSubjectDraft exists.
+// ---------------------------------------------------------------------------
+
+export const EMAIL_SCENARIO_SUBJECT_PREFIX: Record<EmailScenario, string> = {
+  NEW_LAWSUIT_FIRST: 'New Lawsuit – ',
+  NEW_DEMAND_FIRST: 'New Letter of Demand – ',
+  NEW_TPN_FIRST: 'New Third Party Notice – ',
+  NEW_CAUTION_FIRST: 'New Caution Notice – ',
+  UPDATE_LAWSUIT: 'Update – Lawsuit – ',
+  UPDATE_DEMAND: 'Update – Letter of Demand – ',
+  UPDATE_TPN: 'Update – Third Party Notice – ',
+  UPDATE_CAUTION: 'Update – Caution Notice – ',
+};
+
+/**
+ * Default email subject with scenario-based prefix when no draft exists.
+ * If report.emailSubjectDraft is set, returns it unchanged.
+ * Otherwise returns prefix + buildReportSubject(report).
+ */
+export function buildSmartEmailSubject(report: ReportData): string {
+  const draft = report.emailSubjectDraft?.trim();
+  if (draft) return draft;
+  const scenario = resolveEmailScenario(report);
+  const prefix = EMAIL_SCENARIO_SUBJECT_PREFIX[scenario];
+  const base = buildReportSubject(report);
+  return prefix + base;
+}
+
+// ---------------------------------------------------------------------------
 // Default email body content per scenario (British English, Lloyd's-level)
 // All start with "Please find attached ..."; no "We are pleased to report".
 // First reports (NEW_*): include matter type and policy documentation line.
