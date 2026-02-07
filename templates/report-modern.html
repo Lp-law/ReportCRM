@@ -784,17 +784,17 @@
   padding-top: 3mm; /* breathing room when a section starts at top of a new page */
 }
 
-/* Signature: dedicated page – never at bottom of another page */
+/* Signature: space-dependent – stay with text when room, else new page (never split, never orphaned) */
 .signature-page {
-  page-break-before: always;
-  padding-top: 10mm;
+  page-break-before: avoid;   /* prefer same page as preceding content */
+  padding-top: 8mm;           /* when at top of new page */
   break-inside: avoid;
   page-break-inside: avoid;
 }
 .signature-page .signature-block {
   break-inside: avoid;
   page-break-inside: avoid;
-  margin-top: 0;
+  margin-top: 8mm;            /* gap when attached to text */
   padding-top: 2mm;
 }
 
