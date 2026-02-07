@@ -366,6 +366,10 @@ export interface ReportData {
     to: string;
     cc: string;
     subject: string;
+    /** EmailScenario at send time (e.g. NEW_LAWSUIT_FIRST, UPDATE_DEMAND) */
+    scenario?: string;
+    /** True if sent subject or body differed from smart defaults */
+    wasEdited?: boolean;
   };
 
   // Admin <-> Sub-Admin Messaging

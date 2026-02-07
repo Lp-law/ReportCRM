@@ -60,7 +60,12 @@ import buildReportFileName, {
   INVALID_FILENAME_CHARS,
   buildReportSubject,
 } from './utils/reportFileName';
-import { buildDefaultEmailContent, buildSmartEmailSubject } from './utils/emailContentDefaults';
+import {
+  buildDefaultEmailContent,
+  buildSmartEmailSubject,
+  resolveEmailScenario,
+  EMAIL_SCENARIO_SUBJECT_PREFIX,
+} from './utils/emailContentDefaults';
 import { extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
 
 const DOC_ANALYSIS_OCR_FAILED_MSG =
@@ -8580,6 +8585,9 @@ const AppInner = () => {
     topics: string[];
   };
 
+  // Future: extend email audit trail (multi-send history, insurer rules, confirmations).
+  // Comment only – no execution, no config, no feature flag.
+
   const performEmailSend = async (
     {
       body,
@@ -8646,6 +8654,15 @@ const AppInner = () => {
       });
 
       if (sendSucceeded) {
+        const scenario = resolveEmailScenario(reportForSend);
+        const defaultSubject = buildSmartEmailSubject({
+          ...reportForSend,
+          emailSubjectDraft: undefined,
+        });
+        const defaultBody = buildDefaultEmailContent(reportForSend).body;
+        const wasEdited =
+          subject.trim() !== defaultSubject.trim() ||
+          body.trim() !== defaultBody.trim();
         lastEmailSentAudit = {
           sentAt: new Date().toISOString(),
           sentBy: currentUser?.id ?? currentUser?.name ?? 'unknown',
@@ -8653,9 +8670,12 @@ const AppInner = () => {
           to: recipients.to.join('; '),
           cc: recipients.cc.join('; '),
           subject,
+          scenario,
+          wasEdited,
         };
+        const sentAsLabel = (EMAIL_SCENARIO_SUBJECT_PREFIX[scenario] ?? '').replace(/\s*–\s*$/, '').trim() || 'Report';
         setShowToast({
-          msg: 'Report email sent successfully to the broker and CC recipients.',
+          msg: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
           type: 'success',
         });
       } else {
@@ -8844,9 +8864,19 @@ const AppInner = () => {
         reportId: reportForSend?.id,
       });
 
+      const scenario = sendSucceeded ? resolveEmailScenario(reportForSend) : null;
+      const defaultSubject = sendSucceeded
+        ? buildSmartEmailSubject({ ...reportForSend, emailSubjectDraft: undefined })
+        : '';
+      const defaultBody = sendSucceeded ? buildDefaultEmailContent(reportForSend).body : '';
+      const wasEdited =
+        sendSucceeded &&
+        (subject.trim() !== defaultSubject.trim() || body.trim() !== defaultBody.trim());
+
       if (sendSucceeded) {
+        const sentAsLabel = (scenario ? (EMAIL_SCENARIO_SUBJECT_PREFIX[scenario] ?? '').replace(/\s*–\s*$/, '').trim() : '') || 'Report';
         setShowToast({
-          msg: 'Report email sent successfully to the broker and CC recipients.',
+          msg: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
           type: 'success',
         });
       } else {
@@ -8857,16 +8887,19 @@ const AppInner = () => {
       }
 
       const sentAt = new Date().toISOString();
-      const lastEmailSentAudit: ReportData['lastEmailSent'] = sendSucceeded && recipients
-        ? {
-            sentAt,
-            sentBy: currentUser?.id ?? currentUser?.name ?? 'unknown',
-            mailMode: mailConfig?.mode ?? 'PROD',
-            to: recipients.to.join('; '),
-            cc: recipients.cc.join('; '),
-            subject,
-          }
-        : undefined;
+      const lastEmailSentAudit: ReportData['lastEmailSent'] =
+        sendSucceeded && recipients
+          ? {
+              sentAt,
+              sentBy: currentUser?.id ?? currentUser?.name ?? 'unknown',
+              mailMode: mailConfig?.mode ?? 'PROD',
+              to: recipients.to.join('; '),
+              cc: recipients.cc.join('; '),
+              subject,
+              scenario: scenario ?? undefined,
+              wasEdited: wasEdited ?? false,
+            }
+          : undefined;
 
       // Append resend history & case folder snapshot
       const baseHistoryEntry = buildHistoryEntry(
