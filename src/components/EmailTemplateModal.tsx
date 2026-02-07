@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, FileText, X } from 'lucide-react';
 import { GrammarlyEditorPlugin } from '@grammarly/editor-sdk-react';
 import { ReportData } from '../types';
 import { GRAMMARLY_CLIENT_ID } from '../config/grammarly';
@@ -120,6 +120,8 @@ interface EmailTemplateModalProps {
   mailMode?: string;
   recipientsPreview: { to: string[]; cc: string[] };
   defaultSubject: string;
+  /** Default body when report has no emailBodyDraft; used only on first open, never overrides draft */
+  defaultBodyWhenNoDraft?: string;
   subjectDraft: string;
   onSubjectDraftChange: (value: string | undefined) => void;
   selectedTopics: string[];
@@ -146,6 +148,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
   mailMode,
   recipientsPreview,
   defaultSubject,
+  defaultBodyWhenNoDraft,
   subjectDraft,
   onSubjectDraftChange,
   selectedTopics,
@@ -222,8 +225,17 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
         ? report.selectedEmailTemplate
         : fallbackTemplate.id;
     setSelectedTemplate(templateId);
-    setEmailBody(report.emailBodyDraft || templateMap[templateId].body);
-  }, [isOpen, fallbackTemplate.id, report.emailBodyDraft, report.selectedEmailTemplate, templateMap]);
+    setEmailBody(
+      report.emailBodyDraft || defaultBodyWhenNoDraft || templateMap[templateId].body
+    );
+  }, [
+    isOpen,
+    fallbackTemplate.id,
+    report.emailBodyDraft,
+    report.selectedEmailTemplate,
+    templateMap,
+    defaultBodyWhenNoDraft,
+  ]);
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -332,8 +344,8 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-800">Compose Email</h2>
             {isSandbox && (
-              <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-800 border border-blue-200">
-                SANDBOX
+              <span className="inline-flex items-center rounded-full bg-amber-50/80 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 border border-amber-200/80">
+                Test mode – emails are sent to configured test recipients
               </span>
             )}
           </div>
@@ -354,44 +366,42 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             </div>
           )}
           {isSandbox && (
-            <div className="flex items-start gap-2 text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 mt-[1px]" />
-              <p>
-                מצב בדיקות: הדוא״ל יישלח כעת לכתובות הבדיקה (SANDBOX) במקום לנציג חברת הביטוח, עד לסיום שלב הבדיקות.
-              </p>
+            <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-md px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 mt-[1px] shrink-0" />
+              <p>Test mode – emails are sent to configured test recipients.</p>
             </div>
           )}
-            <div className="text-xs text-gray-600 space-y-1 border rounded-md border-gray-200 bg-gray-50 px-3 py-2">
+          <div className="text-xs text-gray-600 space-y-1 border rounded-md border-gray-200 bg-gray-50 px-3 py-2">
+            <p className="font-medium text-gray-700 mb-1.5">Recipients (read-only)</p>
             <div className="flex items-center justify-between">
-              <span className="font-semibold">To:</span>{' '}
+              <span className="font-medium text-gray-600">To:</span>{' '}
               <span>{recipientsPreview.to.join('; ') || '—'}</span>
             </div>
             {recipientsPreview.cc.length > 0 && (
               <div className="flex items-center justify-between">
-                <span className="font-semibold">CC:</span>{' '}
+                <span className="font-medium text-gray-600">CC:</span>{' '}
                 <span>{recipientsPreview.cc.join('; ')}</span>
               </div>
             )}
-            <p className="text-[11px] text-gray-500 mt-1">
-              To: {primaryTo || '—'} (primary), CC: Office + report owner (אם מוגדר).
-            </p>
-            <div>
-              <span className="font-semibold">Subject:</span>{' '}
-              {subject || '(will be generated from case data)'}
+            <div className="pt-1.5 border-t border-gray-200 mt-1.5">
+              <span className="font-medium text-gray-600">Subject:</span>{' '}
+              {subject || '(from case data)'}
             </div>
-            <div>
-              <span className="font-semibold">Attachment:</span>{' '}
-              {attachmentNamePreview}
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-600">Attachment:</span>
+              <span className="inline-flex items-center gap-1.5 text-gray-700">
+                <FileText className="w-3.5 h-3.5 text-red-600 shrink-0" aria-hidden />
+                {attachmentNamePreview}
+              </span>
             </div>
-            <p className="text-[11px] text-amber-700 mt-1">
-              שימי לב: אם השליחה האוטומטית תיכשל וייפתח מייל ידני, הקובץ לא מצורף
-              אוטומטית וצריך לצרף את ה-PDF ידנית.
+            <p className="text-[11px] text-gray-500 mt-1.5">
+              If automatic send fails and a manual email client opens, attach the PDF manually.
             </p>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-semibold text-gray-800">
                 Subject
               </label>
               <button
@@ -415,7 +425,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                 setSubject(value);
                 onSubjectDraftChange(value);
               }}
-              className="w-full border rounded-md p-2 text-sm"
+              className="w-full border rounded-md p-2 text-sm font-medium text-gray-800"
               disabled={isSending}
             />
           </div>
@@ -603,7 +613,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             </div>
           </div>
 
-          <div>
+          <div className="max-w-2xl">
             <label className="block text-sm font-medium text-gray-700 mb-1">Email Body</label>
             <GrammarlyEditorPlugin clientId={GRAMMARLY_CLIENT_ID}>
               <textarea
@@ -611,7 +621,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={12}
                 dir="ltr"
-                className="w-full border rounded-md p-3 text-sm"
+                className="w-full border rounded-md p-3 text-sm leading-relaxed text-gray-800"
                 style={{ direction: 'ltr', textAlign: 'left', unicodeBidi: 'plaintext' }}
               />
             </GrammarlyEditorPlugin>

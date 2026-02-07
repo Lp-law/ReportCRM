@@ -60,6 +60,7 @@ import buildReportFileName, {
   INVALID_FILENAME_CHARS,
   buildReportSubject,
 } from './utils/reportFileName';
+import { buildDefaultEmailContent } from './utils/emailContentDefaults';
 import { extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
 
 const DOC_ANALYSIS_OCR_FAILED_MSG =
@@ -10916,6 +10917,7 @@ const AppInner = () => {
           mailMode={mailConfig?.mode}
           recipientsPreview={getEmailRecipients(currentReport)}
           defaultSubject={buildEmailSubjectLine(currentReport)}
+          defaultBodyWhenNoDraft={buildDefaultEmailContent(currentReport).body}
           subjectDraft={
             currentReport.emailSubjectDraft?.trim() ||
             buildEmailSubjectLine(currentReport)
