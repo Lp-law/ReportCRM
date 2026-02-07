@@ -712,17 +712,19 @@
    PATCH: cover spacing + optional cover image + body pagination
    ========================================================= */
 
-/* Cover page 1: fixed layout zone – logo, title, meta, RE all on one page (deterministic) */
+/* Cover page 1: single fixed page – no internal breaks (structural guarantee) */
 .cover-page-1 {
-  padding: 22mm 18mm 14mm 18mm;
+  padding: 20mm 16mm 12mm 16mm;
   box-sizing: border-box;
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
-.cover-page-1 .cover-header { margin-bottom: 8mm; }
-.cover-page-1 .cover-meta { margin-top: 6mm; margin-bottom: 6mm; }
-/* RE on page 1: compact so it always fits */
-.cover-page-1 .cover-re-block-atomic { margin-top: 4mm; margin-bottom: 0; }
-.cover-page-1 .cover-re-line { margin: 2mm 0 0; padding: 3mm 5mm; }
+.cover-page-1 .cover-header { margin-bottom: 6mm; }
+.cover-page-1 .cover-meta { margin-top: 5mm; margin-bottom: 5mm; }
+/* RE on page 1 only – compact so logo + title + meta + RE always fit */
+.cover-page-1 .cover-re-block-atomic { margin-top: 3mm; margin-bottom: 0; }
+.cover-page-1 .cover-re-line { margin: 2mm 0 0; padding: 2mm 4mm; }
 
 .cover-extra-image {
   width: 100%;
