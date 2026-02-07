@@ -358,6 +358,16 @@ export interface ReportData {
   fileNameTitles?: string[];
   emailSubjectDraft?: string;
 
+  /** Minimal audit of last successful email send (read-only, not editable) */
+  lastEmailSent?: {
+    sentAt: string;
+    sentBy: string;
+    mailMode: string;
+    to: string;
+    cc: string;
+    subject: string;
+  };
+
   // Admin <-> Sub-Admin Messaging
   financeInstructions?: string; // Message from Finance to Lawyer
   adminMessageToSubAdmin?: string;

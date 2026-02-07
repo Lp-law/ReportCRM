@@ -8628,6 +8628,7 @@ const AppInner = () => {
     let attachmentName = '';
     let pdfBlob: Blob | null = null;
     let sendSucceeded = false;
+    let lastEmailSentAudit: ReportData['lastEmailSent'];
     try {
       pdfBlob = await fetchReportPdf(reportForSend);
       const attachmentBase64 = await blobToBase64(pdfBlob);
@@ -8645,10 +8646,21 @@ const AppInner = () => {
       });
 
       if (sendSucceeded) {
-        setShowToast({ msg: 'הדוא״ל נשלח בהצלחה.', type: 'success' });
+        lastEmailSentAudit = {
+          sentAt: new Date().toISOString(),
+          sentBy: currentUser?.id ?? currentUser?.name ?? 'unknown',
+          mailMode: mailConfig?.mode ?? 'PROD',
+          to: recipients.to.join('; '),
+          cc: recipients.cc.join('; '),
+          subject,
+        };
+        setShowToast({
+          msg: 'Report email sent successfully to the broker and CC recipients.',
+          type: 'success',
+        });
       } else {
         setShowToast({
-          msg: 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית (קובץ ה‑PDF ירד למחשב, יש לצרף אותו ידנית).',
+          msg: 'Sending failed. The PDF can be sent manually if needed.',
           type: 'error',
         });
       }
@@ -8658,14 +8670,12 @@ const AppInner = () => {
       setShowToast({
         msg: errMsg && errMsg.includes('פוליסה')
           ? errMsg
-          : 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית (קובץ ה‑PDF ירד למחשב, יש לצרף אותו ידנית).',
+          : 'Sending failed. The PDF can be sent manually if needed.',
         type: 'error',
       });
     } finally {
       if (recipients) {
-        // Only fall back to mailto when automatic send fails; avoid double-sending on success.
         if (!sendSucceeded) {
-          // Attempt to download the PDF locally so it can be attached manually.
           if (pdfBlob) {
             const downloadName = attachmentName || buildReportFileName(reportForSend);
             const url = URL.createObjectURL(pdfBlob);
@@ -8679,8 +8689,7 @@ const AppInner = () => {
           }
           openEmailClient(recipients, subject || subjectBaseTrimmed, ltrBody);
         }
-        // On first successful send, finalize the report and stamp firstSentAt if needed.
-        finalizeReport(attachmentName || undefined);
+        finalizeReport(attachmentName || undefined, lastEmailSentAudit);
         setIsEmailModalOpen(false);
       }
       setIsSendingEmail(false);
@@ -8836,16 +8845,30 @@ const AppInner = () => {
       });
 
       if (sendSucceeded) {
-        setShowToast({ msg: 'הדוא״ל נשלח בהצלחה (שליחה מחדש).', type: 'success' });
+        setShowToast({
+          msg: 'Report email sent successfully to the broker and CC recipients.',
+          type: 'success',
+        });
       } else {
         setShowToast({
-          msg: 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית.',
+          msg: 'Sending failed. The PDF can be sent manually if needed.',
           type: 'error',
         });
       }
 
-      // Append resend history & case folder snapshot
       const sentAt = new Date().toISOString();
+      const lastEmailSentAudit: ReportData['lastEmailSent'] = sendSucceeded && recipients
+        ? {
+            sentAt,
+            sentBy: currentUser?.id ?? currentUser?.name ?? 'unknown',
+            mailMode: mailConfig?.mode ?? 'PROD',
+            to: recipients.to.join('; '),
+            cc: recipients.cc.join('; '),
+            subject,
+          }
+        : undefined;
+
+      // Append resend history & case folder snapshot
       const baseHistoryEntry = buildHistoryEntry(
         { ...baseReport, status: 'SENT', sentAt },
         attachmentName,
@@ -8883,6 +8906,7 @@ const AppInner = () => {
         reportHistory: [...(baseReport.reportHistory || []), historyEntry],
         selectedEmailTemplate: undefined,
         emailBodyDraft: undefined,
+        ...(lastEmailSentAudit ? { lastEmailSent: lastEmailSentAudit } : {}),
       };
 
       persistCaseTemplate(updatedReport);
@@ -8899,7 +8923,7 @@ const AppInner = () => {
       setShowToast({
         msg: errMsg && errMsg.includes('פוליסה')
           ? errMsg
-          : 'שליחה אוטומטית נכשלה — פתחנו עבורך את המייל לשליחה ידנית.',
+          : 'Sending failed. The PDF can be sent manually if needed.',
         type: 'error',
       });
     } finally {
@@ -9004,7 +9028,10 @@ const AppInner = () => {
     return value;
   };
 
-  const finalizeReport = (overrideFileName?: string) => {
+  const finalizeReport = (
+    overrideFileName?: string,
+    lastEmailSent?: ReportData['lastEmailSent'],
+  ) => {
     if (!currentReport) return;
 
     let nextStatus: ReportStatus = 'READY_TO_SEND';
@@ -9029,8 +9056,8 @@ const AppInner = () => {
         reportHistory: [...(currentReport.reportHistory || []), historyEntry],
         selectedEmailTemplate: undefined,
         emailBodyDraft: undefined,
-        // firstSentAt is stamped only once – on the first successful send to the broker.
         firstSentAt: currentReport.firstSentAt || nowIso,
+        ...(lastEmailSent ? { lastEmailSent } : {}),
       };
     } else if (currentUser?.role === 'FINANCE' || currentUser?.role === 'SUB_ADMIN') {
       nextStatus = 'TASK_ASSIGNED';
@@ -10855,6 +10882,17 @@ const AppInner = () => {
                           )}
                         </div>
                         <div className="flex items-center gap-2 border-r border-borderDark pr-3">
+                          {currentReport.lastEmailSent && (
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              Last email sent on{' '}
+                              {new Date(currentReport.lastEmailSent.sentAt).toLocaleDateString('en-GB', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}{' '}
+                              to Broker (+CC)
+                            </span>
+                          )}
                           <button
                             onClick={handleFinalizeClick}
                             className="flex items-center bg-green-600 text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-green-700 shadow-sm"
