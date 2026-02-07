@@ -8339,9 +8339,16 @@ const AppInner = () => {
     }
   };
 
-  const getEmailRecipients = (_report?: ReportData) => {
+  const getLawyerEmail = (report?: ReportData) =>
+    report?.ownerEmail || (report?.createdBy && USERS.find((u) => u.id === report.createdBy)?.email) || '';
+
+  const getEmailRecipients = (report?: ReportData) => {
     if (!mailConfig) return { to: [] as string[], cc: [] as string[] };
-    return { to: mailConfig.to, cc: mailConfig.cc };
+    const lawyer = getLawyerEmail(report);
+    const cc = lawyer && !mailConfig.cc.some((e) => e.toLowerCase() === lawyer.toLowerCase())
+      ? [...mailConfig.cc, lawyer]
+      : mailConfig.cc;
+    return { to: mailConfig.to, cc };
   };
 
   const fetchMailConfigAndOpenCompose = (resendMode: boolean) => {
@@ -8628,12 +8635,11 @@ const AppInner = () => {
       subject = subjectBaseTrimmed;
 
       sendSucceeded = await sendEmailViaOutlook({
-        to: recipients.to,
-        cc: recipients.cc,
         subject,
         body: ltrBody,
         attachmentBase64,
         attachmentName,
+        lawyerEmail: getLawyerEmail(reportForSend),
       });
 
       if (sendSucceeded) {
@@ -8819,12 +8825,11 @@ const AppInner = () => {
       subject = `Resend – ${subjectBaseTrimmed}`;
 
       sendSucceeded = await sendEmailViaOutlook({
-        to: recipients.to,
-        cc: recipients.cc,
         subject,
         body: ltrBody,
         attachmentBase64,
         attachmentName,
+        lawyerEmail: getLawyerEmail(reportForSend),
       });
 
       if (sendSucceeded) {

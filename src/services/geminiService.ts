@@ -367,12 +367,12 @@ export const generateExecutiveSummary = async (reportContent: any, insurerName: 
 };
 
 export interface EmailPayload {
-  to: string[];
-  cc?: string[];
   subject: string;
   body: string;
   attachmentBase64?: string;
   attachmentName?: string;
+  /** Lawyer (report author) email – server adds to CC; do not send to/cc from client */
+  lawyerEmail?: string;
 }
 
 export const sendEmailViaOutlook = async (emailData: EmailPayload): Promise<boolean> => {

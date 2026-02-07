@@ -4093,14 +4093,14 @@ app.get('/api/mail-config', (req, res) => {
   }
 });
 
-// 10. Send Email (recipients from ENV via getEmailRecipients)
+// 10. Send Email – TO/CC built server-side only: TO = broker (ENV), CC = REPORTS (ENV) + lawyer (from report)
 app.post('/api/send-email', async (req, res) => {
   if (!ensureAuthenticated(req, res)) return;
   const role = getUserRoleFromRequest(req);
   if (role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only ADMIN can send emails' });
   }
-  const { subject, body, attachmentBase64, attachmentName } = req.body;
+  const { subject, body, attachmentBase64, attachmentName, lawyerEmail } = req.body;
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     return res.status(500).json({ error: 'Server email configuration missing' });
@@ -4109,9 +4109,13 @@ app.post('/api/send-email', async (req, res) => {
   let to;
   let cc;
   try {
-    const recipients = getEmailRecipients();
-    to = recipients.to;
-    cc = recipients.cc;
+    const base = getEmailRecipients();
+    to = base.to;
+    cc = [...(base.cc || [])];
+    const lawyer = typeof lawyerEmail === 'string' ? lawyerEmail.trim() : '';
+    if (lawyer && !cc.some((e) => e.toLowerCase() === lawyer.toLowerCase())) {
+      cc.push(lawyer);
+    }
   } catch (error) {
     const msg = error?.message || 'Recipient configuration error';
     return res.status(503).json({ error: msg });
