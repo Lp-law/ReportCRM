@@ -216,13 +216,14 @@
         font-weight: 600;
       }
 
-      /* Atomic wrapper: entire RE block must stay on one page (no split) */
-      .cover-re-block-atomic {
+      /* cover-re-pack: atomic block (RE + Previous Reports) – never split; whole block on page 1 or whole on page 2 */
+      .cover-re-pack {
         break-inside: avoid;
         page-break-inside: avoid;
         display: table;
         width: 100%;
         table-layout: fixed;
+        margin-top: 4mm;
       }
 
       .cover-re-line {
@@ -232,8 +233,6 @@
         border-left: 3px solid var(--lp-gold);
         background: rgba(176, 141, 87, 0.1);
         font-size: 11pt;
-        break-inside: avoid;
-        page-break-inside: avoid;
       }
 
       .cover-re-label {
@@ -712,19 +711,27 @@
    PATCH: cover spacing + optional cover image + body pagination
    ========================================================= */
 
-/* Cover page 1: single fixed page – no internal breaks (structural guarantee) */
+/* Cover page 1: compact header-fixed + atomic cover-re-pack (RE + Previous Reports) */
 .cover-page-1 {
-  padding: 20mm 16mm 12mm 16mm;
+  padding: 14mm 12mm 10mm 12mm;
   box-sizing: border-box;
-  page-break-inside: avoid;
-  break-inside: avoid;
 }
 
-.cover-page-1 .cover-header { margin-bottom: 6mm; }
-.cover-page-1 .cover-meta { margin-top: 5mm; margin-bottom: 5mm; }
-/* RE on page 1 only – compact so logo + title + meta + RE always fit */
-.cover-page-1 .cover-re-block-atomic { margin-top: 3mm; margin-bottom: 0; }
-.cover-page-1 .cover-re-line { margin: 2mm 0 0; padding: 2mm 4mm; }
+/* Header (logo + title + meta) – compact, fixed height feel */
+.cover-page-1 .cover-header-fixed {
+  margin-bottom: 0;
+}
+.cover-page-1 .cover-header-fixed .cover-logo-center { margin-bottom: 6mm; }
+.cover-page-1 .cover-header-fixed .cover-title { font-size: 24pt; margin: 3px 0 1mm; }
+.cover-page-1 .cover-header-fixed .cover-meta { margin-top: 4mm; margin-bottom: 0; }
+.cover-page-1 .cover-header-fixed .cover-meta-row { margin-bottom: 1mm; }
+
+/* cover-re-pack: atomic – entire block on one page or entire at start of next */
+.cover-page-1 .cover-re-pack { margin-top: 4mm; }
+.cover-page-1 .cover-re-pack .cover-re-line { margin: 0 0 4mm; padding: 2mm 4mm; }
+.cover-page-1 .cover-re-pack .previous-reports-section { margin: 0; }
+.cover-page-1 .cover-re-pack .previous-reports-title { margin: 0 0 1.5mm; font-size: 12pt; }
+.cover-page-1 .cover-re-pack .previous-reports-item { margin-bottom: 0.5mm; }
 
 .cover-extra-image {
   width: 100%;
@@ -749,7 +756,7 @@
 .signature-block { break-inside: avoid; page-break-inside: avoid; }
 
 
-.cover-page-1 .cover-page-1-inner {
+.cover-page-1 .cover-header-fixed {
   display: flex;
   flex-direction: column;
 }
@@ -777,22 +784,26 @@
   padding-top: 3mm; /* breathing room when a section starts at top of a new page */
 }
 
-/* Signature: never split; always on own page for consistent, intentional placement */
-.signature-block {
+/* Signature: dedicated page – never at bottom of another page */
+.signature-page {
+  page-break-before: always;
+  padding-top: 10mm;
   break-inside: avoid;
   page-break-inside: avoid;
-  page-break-before: always;
-  margin-top: 10mm; /* clear top spacing when on its own page */
+}
+.signature-page .signature-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin-top: 0;
   padding-top: 2mm;
 }
 
 </style>
   </head>
   <body>
-    <!-- COVER PAGE 1: Visual cover only (logo + titles + date) -->
+    <!-- COVER PAGE 1: header-fixed (compact) + cover-re-pack (RE + Previous Reports, atomic) -->
     <div class="page cover-page cover-page-1 page-break-after">
-      <div class="cover-page-1-inner">
-<div class="cover-header">
+      <div class="cover-header-fixed">
         <div class="cover-logo-center">
           <div class="cover-logo-wrapper">
             {{#if logoBase64}}
@@ -800,7 +811,6 @@
             {{/if}}
           </div>
         </div>
-
         <div class="cover-title-block">
           <div class="cover-confidential-label">CONFIDENTIAL</div>
           <h1 class="cover-title">CLAIM STATUS REPORT</h1>
@@ -808,34 +818,45 @@
             <div class="cover-subtitle-secondary">{{coverSubtitle}}</div>
           {{/if}}
         </div>
-      </div>
-
-      <div class="cover-meta">
-        {{#if reportNumber}}
-          <div class="cover-meta-row">
-            <div class="cover-meta-label">Report No.</div>
-            <div class="cover-meta-value">{{reportNumber}}</div>
-          </div>
-        {{/if}}
-        {{#if reportDate}}
-          <div class="cover-meta-row">
-            <div class="cover-meta-label">Date</div>
-            <div class="cover-meta-value">{{reportDate}}</div>
-          </div>
-        {{/if}}
-      </div>
-
-        {{#if reportReLine}}
-          <div class="cover-re-block-atomic">
-            <div class="cover-re-line">
-              <div class="cover-re-label">Re:</div>
-              <div class="cover-re-value">{{reportReLine}}</div>
+        <div class="cover-meta">
+          {{#if reportNumber}}
+            <div class="cover-meta-row">
+              <div class="cover-meta-label">Report No.</div>
+              <div class="cover-meta-value">{{reportNumber}}</div>
             </div>
+          {{/if}}
+          {{#if reportDate}}
+            <div class="cover-meta-row">
+              <div class="cover-meta-label">Date</div>
+              <div class="cover-meta-value">{{reportDate}}</div>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+
+      <div class="cover-re-pack">
+        {{#if reportReLine}}
+          <div class="cover-re-line">
+            <div class="cover-re-label">Re:</div>
+            <div class="cover-re-value">{{reportReLine}}</div>
           </div>
         {{/if}}
+        <section class="previous-reports-section">
+          <h3 class="previous-reports-title">PREVIOUS REPORTS</h3>
+          {{#if previousReports.hasEntries}}
+            <ul class="previous-reports-list">
+              {{#each previousReports.entries}}
+                <li class="previous-reports-item">{{display}}</li>
+              {{/each}}
+            </ul>
+          {{else}}
+            <p class="previous-reports-none">None</p>
+          {{/if}}
+        </section>
+      </div>
     </div>
 
-        <!-- COVER PAGE 2: Claim details, previous reports, timeline (RE is on page 1) -->
+        <!-- COVER PAGE 2: Claim details, timeline (RE + Previous Reports are in cover-re-pack on page 1) -->
     <div class="page cover-page cover-page-2 page-break-after">
       <div class="cover-card">
         <h2 class="cover-section-title">Claim Details</h2>
@@ -909,19 +930,6 @@
             Procedural Stage: {{currentProceduralStageLabel}} (see Procedural Timeline on the following page)
           </p>
         {{/if}}
-
-        <section class="previous-reports-section">
-          <h3 class="previous-reports-title">PREVIOUS REPORTS</h3>
-          {{#if previousReports.hasEntries}}
-            <ul class="previous-reports-list">
-              {{#each previousReports.entries}}
-                <li class="previous-reports-item">{{display}}</li>
-              {{/each}}
-            </ul>
-          {{else}}
-            <p class="previous-reports-none">None</p>
-          {{/if}}
-        </section>
 
         {{#if timelineImage}}
           <div class="timeline-section">
@@ -1082,6 +1090,7 @@
           </section>
         {{/if}}
 
+        <div class="signature-page">
         {{#if signatureImage}}
           <div class="signature-block">
             <img src="{{signatureImage}}" alt="Signature" class="signature-image" />
@@ -1098,6 +1107,7 @@
             </div>
           {{/if}}
         {{/if}}
+        </div>
       </main>
     </div>
   </body>

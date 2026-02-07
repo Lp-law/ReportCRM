@@ -2394,7 +2394,8 @@ const renderReportPdf = async (report) => {
         width:100%;
         font-size:7px;
         color:#6b7280;
-        padding:1px 6px;
+        padding:1px 4px;
+        line-height:1.2;
         font-family: Arial, sans-serif;
         display:flex;
         justify-content:flex-end;
@@ -2405,14 +2406,15 @@ const renderReportPdf = async (report) => {
       </div>
     `,
     margin: {
-      top: '14mm',
+      top: '12mm',
       bottom: '10mm',
       left: '10mm',
       right: '10mm',
     },
   });
   await browser.close();
-  console.log('[PDF] PDF generated successfully');
+  const marginUsed = { top: '12mm', bottom: '10mm', left: '10mm', right: '10mm' };
+  console.log('[PDF] PDF generated successfully, margins:', marginUsed);
   return pdfBuffer;
 };
 
