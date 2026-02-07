@@ -381,8 +381,8 @@ export const sendEmailViaOutlook = async (emailData: EmailPayload): Promise<bool
   try {
     const response = await fetch('/api/send-email', {
       method: 'POST',
+      credentials: 'include', // required for session cookie so auth passes
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(emailData),
     });
     if (!response.ok) throw new Error('Email failed');
