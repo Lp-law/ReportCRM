@@ -8640,6 +8640,7 @@ const AppInner = () => {
         attachmentBase64,
         attachmentName,
         lawyerEmail: getLawyerEmail(reportForSend),
+        reportId: reportForSend?.id,
       });
 
       if (sendSucceeded) {
@@ -8830,6 +8831,7 @@ const AppInner = () => {
         attachmentBase64,
         attachmentName,
         lawyerEmail: getLawyerEmail(reportForSend),
+        reportId: reportForSend?.id,
       });
 
       if (sendSucceeded) {

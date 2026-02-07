@@ -373,6 +373,8 @@ export interface EmailPayload {
   attachmentName?: string;
   /** Lawyer (report author) email – server adds to CC; do not send to/cc from client */
   lawyerEmail?: string;
+  /** Report id for server audit log and duplicate-send guard */
+  reportId?: string;
 }
 
 export const sendEmailViaOutlook = async (emailData: EmailPayload): Promise<boolean> => {

@@ -2432,6 +2432,9 @@ const transporter = nodemailer.createTransport({
 const MAIL_MODE = (process.env.MAIL_MODE || 'SANDBOX').trim().toUpperCase();
 const VALID_MODES = ['SANDBOX', 'PROD'];
 
+// In-memory soft lock: reportId -> last successful send timestamp (for duplicate-send guard)
+const lastSendByReportId = new Map();
+
 function getEmailRecipients() {
   const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
   const parseList = (raw) => (raw ? raw.split(',').map((e) => e.trim()).filter(Boolean) : []);
@@ -4100,7 +4103,16 @@ app.post('/api/send-email', async (req, res) => {
   if (role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only ADMIN can send emails' });
   }
-  const { subject, body, attachmentBase64, attachmentName, lawyerEmail } = req.body;
+
+  // A) PROD guard: do not allow real sends outside production
+  const nodeEnv = (process.env.NODE_ENV || '').toLowerCase();
+  if (MAIL_MODE === 'PROD' && nodeEnv !== 'production') {
+    return res.status(503).json({
+      error: 'MAIL_MODE=PROD is only allowed when NODE_ENV=production',
+    });
+  }
+
+  const { subject, body, attachmentBase64, attachmentName, lawyerEmail, reportId } = req.body;
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     return res.status(500).json({ error: 'Server email configuration missing' });
@@ -4125,19 +4137,48 @@ app.post('/api/send-email', async (req, res) => {
     return res.status(503).json({ error: 'Email recipients not configured for current MAIL_MODE' });
   }
 
+  // C) PDF attachment integrity: must have valid base64 decoding to non-empty buffer
+  const safeBase64 =
+    typeof attachmentBase64 === 'string'
+      ? attachmentBase64.split(',').pop() || attachmentBase64
+      : attachmentBase64;
+  if (!safeBase64) {
+    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
+  }
+  let pdfBuffer;
   try {
-    const attachments = [];
-    if (attachmentBase64) {
-      const safeBase64 =
-        typeof attachmentBase64 === 'string'
-          ? attachmentBase64.split(',').pop() || attachmentBase64
-          : attachmentBase64;
-      attachments.push({
-        filename: attachmentName || 'Report.pdf',
-        content: Buffer.from(safeBase64, 'base64'),
-        contentType: 'application/pdf',
+    pdfBuffer = Buffer.from(safeBase64, 'base64');
+  } catch {
+    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
+  }
+  if (!Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
+    return res.status(400).json({ error: 'PDF attachment missing or invalid — email not sent' });
+  }
+
+  const filename = (typeof attachmentName === 'string' && attachmentName.trim()) ? attachmentName.trim() : 'Report.pdf';
+
+  // D) Anti-duplicate send: block same reportId within 5 minutes
+  const id = reportId != null ? String(reportId) : null;
+  if (id) {
+    const last = lastSendByReportId.get(id);
+    const now = Date.now();
+    const fiveMin = 5 * 60 * 1000;
+    if (last != null && now - last < fiveMin) {
+      console.warn(`[MAIL][WARN] Duplicate send attempt blocked for reportId=${id}`);
+      return res.status(429).json({
+        error: 'Duplicate send attempt blocked for this report. Please wait before resending.',
       });
     }
+  }
+
+  try {
+    const attachments = [
+      {
+        filename,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ];
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -4151,7 +4192,21 @@ app.post('/api/send-email', async (req, res) => {
       mailOptions.cc = cc.join(',');
     }
 
+    // B) Deterministic audit log (one line, no body)
+    const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
+    const toStr = to.join(',');
+    const ccStr = cc.join(',');
+    const reportIdStr = id != null ? id : 'unknown';
+    console.log(
+      `[MAIL][${mode}] reportId=${reportIdStr} to=${toStr} cc=${ccStr} filename="${filename.replace(/"/g, '\\"')}"`
+    );
+
     await transporter.sendMail(mailOptions);
+
+    if (id) {
+      lastSendByReportId.set(id, Date.now());
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error('Email send error:', error);
