@@ -38,7 +38,7 @@ import AdminDashboard, { ADMIN_DASHBOARD_UI_KEY } from './pages/AdminDashboard/A
 import FinanceExpensesDashboard from './components/finance/FinanceExpensesDashboard';
 import { financialExpensesClient } from './services/financialExpensesClient';
 import { renderExpensesTableText, renderExpensesTableHtml } from './utils/expensesTableText';
-import { ToastProvider } from './components/ui/Toast';
+import { ToastProvider, useToast } from './components/ui/Toast';
 import {
   REPORT_REVIEW_PANEL_ID,
   EXTERNAL_FEEDBACK_PANEL_ID,
@@ -6977,6 +6977,7 @@ type CaseTemplate = {
 };
 
 const AppInner = () => {
+  const { showToast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authCheckDone, setAuthCheckDone] = useState(false);
   const [view, setView] = useState<'DASHBOARD' | 'STEP1' | 'STEP2' | 'PREVIEW' | 'CASE_FOLDER'>(() => loadStoredView());
@@ -8367,7 +8368,7 @@ const AppInner = () => {
         setIsEmailModalOpen(true);
       })
       .catch(() => {
-        setShowToast({ msg: 'לא ניתן לטעון הגדרות דוא״ל. בדוק MAIL_MODE ו־MAIL_* ב־ENV.', type: 'error' });
+        showToast({ message: 'לא ניתן לטעון הגדרות דוא״ל. בדוק MAIL_MODE ו־MAIL_* ב־ENV.', type: 'error' });
       });
   };
 
@@ -8528,8 +8529,8 @@ const AppInner = () => {
     if (currentUser?.role !== 'ADMIN') return;
 
     if (currentReport.status !== 'SENT') {
-      setShowToast({
-        msg: 'שליחה מחדש זמינה רק לאחר שהדוח נשלח (SENT).',
+      showToast({
+        message: 'שליחה מחדש זמינה רק לאחר שהדוח נשלח (SENT).',
         type: 'error',
       });
       return;
@@ -8537,8 +8538,8 @@ const AppInner = () => {
 
     // Block resend if Hebrew is reopened / not re-approved
     if (!canTranslate(currentReport)) {
-      setShowToast({
-        msg: 'הדיווח פתוח לתיקוני עברית/לא אושר לתרגום מחדש. יש להשלים תיקונים ולאשר לפני שליחה מחדש.',
+      showToast({
+        message: 'הדיווח פתוח לתיקוני עברית/לא אושר לתרגום מחדש. יש להשלים תיקונים ולאשר לפני שליחה מחדש.',
         type: 'error',
       });
       return;
@@ -8554,8 +8555,8 @@ const AppInner = () => {
       ) ?? false;
 
     if (hasBlockingExternalIssue) {
-      setShowToast({
-        msg: 'יש משוב מחברת הביטוח שמחייב תיקון בעברית. יש לפתוח מחדש עברית/להשלים תיקונים ולאשר מחדש לפני שליחה מחדש.',
+      showToast({
+        message: 'יש משוב מחברת הביטוח שמחייב תיקון בעברית. יש לפתוח מחדש עברית/להשלים תיקונים ולאשר מחדש לפני שליחה מחדש.',
         type: 'error',
       });
       return;
@@ -8568,8 +8569,8 @@ const AppInner = () => {
       Object.values(currentReport.translatedContent).some((v) => v && v.trim().length > 0);
 
     if (!hasEnglish) {
-      setShowToast({
-        msg: 'אין טקסט אנגלי מוכן לשליחה. יש להשלים תרגום לפני שליחה מחדש.',
+      showToast({
+        message: 'אין טקסט אנגלי מוכן לשליחה. יש להשלים תרגום לפני שליחה מחדש.',
         type: 'error',
       });
       return;
@@ -8674,21 +8675,21 @@ const AppInner = () => {
           wasEdited,
         };
         const sentAsLabel = (EMAIL_SCENARIO_SUBJECT_PREFIX[scenario] ?? '').replace(/\s*–\s*$/, '').trim() || 'Report';
-        setShowToast({
-          msg: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
+        showToast({
+          message: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
           type: 'success',
         });
       } else {
-        setShowToast({
-          msg: 'Sending failed. The PDF can be sent manually if needed.',
+        showToast({
+          message: 'Sending failed. The PDF can be sent manually if needed.',
           type: 'error',
         });
       }
     } catch (error) {
       console.error('Email send failed', error);
       const errMsg = error instanceof Error ? error.message : '';
-      setShowToast({
-        msg: errMsg && errMsg.includes('פוליסה')
+      showToast({
+        message: errMsg && errMsg.includes('פוליסה')
           ? errMsg
           : 'Sending failed. The PDF can be sent manually if needed.',
         type: 'error',
@@ -8784,19 +8785,7 @@ const AppInner = () => {
       effectiveReport = nextReport;
     }
 
-    const issues = computePreSendIssues(effectiveReport, currentUser);
-    if (!issues.length) {
-      await performEmailSend(payload, effectiveReport);
-      return;
-    }
-
-    setPreSendGuard({
-      issues,
-      onContinue: () => {
-        setPreSendGuard(null);
-        void performEmailSend(payload, effectiveReport);
-      },
-    });
+    await performEmailSend(payload, effectiveReport);
   };
 
   const performResendEmailSend = async (
@@ -8875,13 +8864,13 @@ const AppInner = () => {
 
       if (sendSucceeded) {
         const sentAsLabel = (scenario ? (EMAIL_SCENARIO_SUBJECT_PREFIX[scenario] ?? '').replace(/\s*–\s*$/, '').trim() : '') || 'Report';
-        setShowToast({
-          msg: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
+        showToast({
+          message: `Report email sent successfully to the broker and CC recipients. Sent as: ${sentAsLabel} | PDF attached | Broker + CC`,
           type: 'success',
         });
       } else {
-        setShowToast({
-          msg: 'Sending failed. The PDF can be sent manually if needed.',
+        showToast({
+          message: 'Sending failed. The PDF can be sent manually if needed.',
           type: 'error',
         });
       }
@@ -8953,8 +8942,8 @@ const AppInner = () => {
     } catch (error) {
       console.error('Resend email failed', error);
       const errMsg = error instanceof Error ? error.message : '';
-      setShowToast({
-        msg: errMsg && errMsg.includes('פוליסה')
+      showToast({
+        message: errMsg && errMsg.includes('פוליסה')
           ? errMsg
           : 'Sending failed. The PDF can be sent manually if needed.',
         type: 'error',
@@ -9018,19 +9007,7 @@ const AppInner = () => {
       effectiveReport = nextReport;
     }
 
-    const issues = computePreSendIssues(effectiveReport, currentUser);
-    if (!issues.length) {
-      await performResendEmailSend(payload, effectiveReport);
-      return;
-    }
-
-    setPreSendGuard({
-      issues,
-      onContinue: () => {
-        setPreSendGuard(null);
-        void performResendEmailSend(payload, effectiveReport);
-      },
-    });
+    await performResendEmailSend(payload, effectiveReport);
   };
 
   const normalizeOverrideFileName = (overrideFileName?: string): string | undefined => {

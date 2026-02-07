@@ -15,6 +15,8 @@ import buildReportFileName from '../utils/reportFileName';
 import {
   resolveEmailScenario,
   RECOMMENDED_TEMPLATE_LABEL,
+  EMAIL_SCENARIO_CONTENT,
+  type EmailScenario,
 } from '../utils/emailContentDefaults';
 import {
   clearInsurerDefaultTopics,
@@ -173,6 +175,8 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
   const [insurerDefaultTopics, setInsurerDefaultTopicsState] = useState<string[]>([]);
   /** Read-first, edit-second: when false, subject/body appear as calm preview; "Edit email content" reveals inputs */
   const [isEditingContent, setIsEditingContent] = useState(false);
+  const [pdfFilenameMode, setPdfFilenameMode] = useState<'auto' | 'choose'>('auto');
+  const [selectedWordingMode, setSelectedWordingMode] = useState<'auto' | 'new_matter' | 'matter_update' | 'caution' | 'third_party'>('auto');
 
   const loadUserTemplates = (id?: string) => {
     if (typeof window === 'undefined') return [];
@@ -222,6 +226,8 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
     setTopicFilter('');
     setManualTopicInput('');
     setIsEditingContent(false);
+    setPdfFilenameMode('auto');
+    setSelectedWordingMode('auto');
   }, [isOpen, userId, subjectDraft, report.insurerName]);
 
   useEffect(() => {
@@ -330,9 +336,10 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
     setManualTopicInput('');
   };
 
+  const effectiveTopicsForFilename = pdfFilenameMode === 'auto' ? (report.fileNameTitles || []) : selectedTopics;
   const attachmentNamePreview = useMemo(
-    () => buildReportFileName({ ...report, fileNameTitles: selectedTopics }),
-    [report, selectedTopics],
+    () => buildReportFileName({ ...report, fileNameTitles: effectiveTopicsForFilename }),
+    [report, effectiveTopicsForFilename],
   );
 
   const recommendedTemplateLabel = useMemo(
@@ -490,6 +497,69 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             </div>
           ) : (
             <>
+              <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
+                <p className="text-[11px] font-medium text-gray-500">Email wording</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  {[
+                    { value: 'auto' as const, label: 'Auto (recommended)' },
+                    { value: 'new_matter' as const, label: 'New matter notification' },
+                    { value: 'matter_update' as const, label: 'Matter update' },
+                    { value: 'caution' as const, label: 'Caution notice' },
+                    { value: 'third_party' as const, label: 'Third party notice' },
+                  ].map(({ value, label }) => (
+                    <label key={value} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="wording"
+                        checked={selectedWordingMode === value}
+                        onChange={() => {
+                          setSelectedWordingMode(value);
+                          if (value === 'auto') {
+                            setEmailBody(defaultBodyWhenNoDraft ?? emailBody);
+                          } else {
+                            const scenario: EmailScenario =
+                              value === 'new_matter' ? 'NEW_LAWSUIT_FIRST'
+                              : value === 'matter_update' ? 'UPDATE_LAWSUIT'
+                              : value === 'caution' ? 'NEW_CAUTION_FIRST'
+                              : 'NEW_TPN_FIRST';
+                            setEmailBody(EMAIL_SCENARIO_CONTENT[scenario].body);
+                          }
+                        }}
+                        className="h-3 w-3"
+                        disabled={isSending}
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
+                <p className="text-[11px] font-medium text-gray-500">PDF filename</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pdfFilename"
+                      checked={pdfFilenameMode === 'auto'}
+                      onChange={() => setPdfFilenameMode('auto')}
+                      className="h-3 w-3"
+                      disabled={isSending}
+                    />
+                    Auto filename (recommended)
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pdfFilename"
+                      checked={pdfFilenameMode === 'choose'}
+                      onChange={() => setPdfFilenameMode('choose')}
+                      className="h-3 w-3"
+                      disabled={isSending}
+                    />
+                    Choose filename topics
+                  </label>
+                </div>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -521,6 +591,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                   </button>
                 </div>
               </div>
+              {pdfFilenameMode === 'choose' && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-500 mb-1">PDF filename topics</label>
                 <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -649,6 +720,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                   <p className="text-[11px] text-gray-500 mt-1">Insurer default topics available.</p>
                 )}
               </div>
+              )}
             </>
           )}
 
@@ -691,7 +763,7 @@ const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
                   templateId: selectedTemplate,
                   subjectBase: subject.trim(),
                   topics: dedupeCaseInsensitive(
-                    selectedTopics.map((t) => sanitizeTopicLabel(t)),
+                    (pdfFilenameMode === 'auto' ? (report.fileNameTitles || []) : selectedTopics).map((t) => sanitizeTopicLabel(t)),
                   ),
                 })
               }
