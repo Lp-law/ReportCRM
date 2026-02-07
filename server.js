@@ -2419,20 +2419,24 @@ const renderReportPdf = async (report) => {
 };
 
 
-// Initialize Email Transporter (Outlook / SMTP) — created once, reused for all sends
-const EMAIL_SERVICE_RAW = process.env.EMAIL_SERVICE || 'hotmail';
+// Initialize Email Transporter — Office365 SMTP (explicit; do not use service: 'outlook')
 const transporter = nodemailer.createTransport({
-  service: EMAIL_SERVICE_RAW,
+  host: 'smtp.office365.com',
+  port: 587,
+  secure: false, // required for port 587
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    pass: process.env.EMAIL_PASS, // Outlook App Password
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 function maskForLog(s) {
   if (typeof s !== 'string' || s.length < 4) return '***';
   return s.slice(0, 2) + '***' + s.slice(-2);
 }
-console.log('[MAIL] Transport created', { service: EMAIL_SERVICE_RAW, user: maskForLog(process.env.EMAIL_USER || '') });
+console.log('[MAIL] Transport created', { host: 'smtp.office365.com', user: maskForLog(process.env.EMAIL_USER || '') });
 
 // --- Mail mode & recipients (ENV-only, single source of truth) ---
 const MAIL_MODE = (process.env.MAIL_MODE || 'SANDBOX').trim().toUpperCase();
@@ -4123,7 +4127,6 @@ app.post('/api/send-email', async (req, res) => {
   try {
     // Step 2: Explicit ENV validation before sending
     const missing = [];
-    if (!process.env.EMAIL_SERVICE?.trim()) missing.push('EMAIL_SERVICE');
     if (!process.env.EMAIL_USER?.trim()) missing.push('EMAIL_USER');
     if (!process.env.EMAIL_PASS) missing.push('EMAIL_PASS');
     if (missing.length) {
@@ -4194,7 +4197,6 @@ app.post('/api/send-email', async (req, res) => {
       subject: typeof subject === 'string' ? subject : '(none)',
       attachmentName: filename,
       attachmentBase64Length: attachmentBase64Len,
-      EMAIL_SERVICE: maskForLog(process.env.EMAIL_SERVICE || ''),
       EMAIL_USER: maskForLog(process.env.EMAIL_USER || ''),
     });
 
