@@ -712,14 +712,17 @@
    PATCH: cover spacing + optional cover image + body pagination
    ========================================================= */
 
-/* Cover page 1: spacing + header/meta (keep total height within 1 page) */
+/* Cover page 1: fixed layout zone – logo, title, meta, RE all on one page (deterministic) */
 .cover-page-1 {
-  padding: 32mm 18mm 22mm 18mm; /* more air at top */
+  padding: 22mm 18mm 14mm 18mm;
   box-sizing: border-box;
 }
 
-.cover-page-1 .cover-header { margin-bottom: 10mm; }
-.cover-page-1 .cover-meta { margin-top: 8mm; margin-bottom: 10mm; }
+.cover-page-1 .cover-header { margin-bottom: 8mm; }
+.cover-page-1 .cover-meta { margin-top: 6mm; margin-bottom: 6mm; }
+/* RE on page 1: compact so it always fits */
+.cover-page-1 .cover-re-block-atomic { margin-top: 4mm; margin-bottom: 0; }
+.cover-page-1 .cover-re-line { margin: 2mm 0 0; padding: 3mm 5mm; }
 
 .cover-extra-image {
   width: 100%;
@@ -820,9 +823,6 @@
         {{/if}}
       </div>
 
-        <!-- COVER PAGE 2: Cover details (RE, claim grid, previous reports, timeline) -->
-    <div class="page cover-page cover-page-2 page-break-after">
-      <div class="cover-card">
         {{#if reportReLine}}
           <div class="cover-re-block-atomic">
             <div class="cover-re-line">
@@ -831,7 +831,11 @@
             </div>
           </div>
         {{/if}}
+    </div>
 
+        <!-- COVER PAGE 2: Claim details, previous reports, timeline (RE is on page 1) -->
+    <div class="page cover-page cover-page-2 page-break-after">
+      <div class="cover-card">
         <h2 class="cover-section-title">Claim Details</h2>
 
         <div class="cover-grid">

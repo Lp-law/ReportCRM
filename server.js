@@ -2405,8 +2405,8 @@ const renderReportPdf = async (report) => {
       </div>
     `,
     margin: {
-      top: '18mm',
-      bottom: '12mm',
+      top: '16mm',
+      bottom: '10mm',
       left: '12mm',
       right: '12mm',
     },
