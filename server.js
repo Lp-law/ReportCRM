@@ -2428,6 +2428,34 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// --- Mail mode & recipients (ENV-only, single source of truth) ---
+const MAIL_MODE = (process.env.MAIL_MODE || 'SANDBOX').trim().toUpperCase();
+const VALID_MODES = ['SANDBOX', 'PROD'];
+
+function getEmailRecipients() {
+  const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
+  const parseList = (raw) => (raw ? raw.split(',').map((e) => e.trim()).filter(Boolean) : []);
+  if (mode === 'SANDBOX') {
+    const toRaw = process.env.MAIL_TO_SANDBOX?.trim();
+    const to = parseList(toRaw);
+    const cc = parseList(process.env.MAIL_CC_SANDBOX?.trim());
+    if (!to.length) {
+      throw new Error('MAIL_MODE=SANDBOX requires MAIL_TO_SANDBOX to be set');
+    }
+    return { to, cc };
+  }
+  if (mode === 'PROD') {
+    const toRaw = process.env.MAIL_TO_PROD?.trim();
+    const to = parseList(toRaw);
+    const cc = parseList(process.env.MAIL_CC_PROD?.trim());
+    if (!to.length) {
+      throw new Error('MAIL_MODE=PROD requires MAIL_TO_PROD to be set');
+    }
+    return { to, cc };
+  }
+  throw new Error(`Invalid MAIL_MODE: ${MAIL_MODE}. Use SANDBOX or PROD.`);
+}
+
 // --- API Endpoints ---
 
 // 1. Translation Endpoint
@@ -4051,25 +4079,49 @@ app.post('/api/generate-summary', async (req, res) => {
   }
 });
 
-// 10. Send Email (Real implementation via Nodemailer)
+// Mail config (mode + recipients from ENV) for Compose UI
+app.get('/api/mail-config', (req, res) => {
+  if (!ensureAuthenticated(req, res)) return;
+  try {
+    const { to, cc } = getEmailRecipients();
+    const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
+    res.json({ mode, to, cc });
+  } catch (error) {
+    console.error('Mail config error:', error);
+    const msg = error?.message || 'Mail configuration error';
+    res.status(503).json({ error: msg });
+  }
+});
+
+// 10. Send Email (recipients from ENV via getEmailRecipients)
 app.post('/api/send-email', async (req, res) => {
   if (!ensureAuthenticated(req, res)) return;
   const role = getUserRoleFromRequest(req);
   if (role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only ADMIN can send emails' });
   }
-  const { to, cc = [], subject, body, attachmentBase64, attachmentName } = req.body;
+  const { subject, body, attachmentBase64, attachmentName } = req.body;
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     return res.status(500).json({ error: 'Server email configuration missing' });
   }
 
-  if (!Array.isArray(to) || !to.length) {
-    return res.status(400).json({ error: 'Email recipients are required' });
+  let to;
+  let cc;
+  try {
+    const recipients = getEmailRecipients();
+    to = recipients.to;
+    cc = recipients.cc;
+  } catch (error) {
+    const msg = error?.message || 'Recipient configuration error';
+    return res.status(503).json({ error: msg });
+  }
+
+  if (!to || !to.length) {
+    return res.status(503).json({ error: 'Email recipients not configured for current MAIL_MODE' });
   }
 
   try {
-    // Build attachments array safely (support both raw base64 and full data URLs)
     const attachments = [];
     if (attachmentBase64) {
       const safeBase64 =

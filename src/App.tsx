@@ -7058,6 +7058,7 @@ const AppInner = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [isImprovingEnglish, setIsImprovingEnglish] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [mailConfig, setMailConfig] = useState<{ mode: string; to: string[]; cc: string[] } | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isResendMode, setIsResendMode] = useState(false);
   const [isFileNameModalOpen, setIsFileNameModalOpen] = useState(false);
@@ -8338,19 +8339,23 @@ const AppInner = () => {
     }
   };
 
-  const getEmailRecipients = (report: ReportData) => {
-    const toSet = new Set<string>(['lidor@lp-law.co.il']);
-    const ccSet = new Set<string>(['reports@lp-law.co.il']);
-    if (report.ownerEmail) {
-      ccSet.add(report.ownerEmail);
-    } else {
-      const owner = USERS.find((user) => user.id === report.createdBy);
-      if (owner?.email) ccSet.add(owner.email);
-    }
-    return {
-      to: Array.from(toSet),
-      cc: Array.from(ccSet),
-    };
+  const getEmailRecipients = (_report?: ReportData) => {
+    if (!mailConfig) return { to: [] as string[], cc: [] as string[] };
+    return { to: mailConfig.to, cc: mailConfig.cc };
+  };
+
+  const fetchMailConfigAndOpenCompose = (resendMode: boolean) => {
+    setMailConfig(null);
+    fetch('/api/mail-config', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
+      .then((data: { mode: string; to: string[]; cc: string[] }) => {
+        setMailConfig(data);
+        setIsResendMode(resendMode);
+        setIsEmailModalOpen(true);
+      })
+      .catch(() => {
+        setShowToast({ msg: 'לא ניתן לטעון הגדרות דוא״ל. בדוק MAIL_MODE ו־MAIL_* ב־ENV.', type: 'error' });
+      });
   };
 
   const buildEmailSubjectLine = (report: ReportData) => buildReportSubject(report);
@@ -8499,8 +8504,7 @@ const AppInner = () => {
   const handleFinalizeClick = () => {
     if (!currentReport) return;
     if (currentUser?.role === 'ADMIN') {
-      setIsResendMode(false);
-      setIsEmailModalOpen(true);
+      fetchMailConfigAndOpenCompose(false);
     } else {
       finalizeReport();
     }
@@ -8558,8 +8562,7 @@ const AppInner = () => {
       return;
     }
 
-    setIsResendMode(true);
-    setIsEmailModalOpen(true);
+    fetchMailConfigAndOpenCompose(true);
   };
 
   type EmailSendPayload = {
@@ -10903,6 +10906,7 @@ const AppInner = () => {
           isSending={isSendingEmail}
           report={currentReport}
           userId={currentUser?.id}
+          mailMode={mailConfig?.mode}
           recipientsPreview={getEmailRecipients(currentReport)}
           defaultSubject={buildEmailSubjectLine(currentReport)}
           subjectDraft={
