@@ -2307,6 +2307,7 @@ type Step2ContentProps = StepProps & {
   isImprovingEnglish?: boolean;
   onOpenAssistant?: () => void;
   onActiveSectionChange?: (sectionKey: string) => void;
+  showToast?: (opts: { message: string; type: 'success'|'error'|'info' }) => void;
 };
 
 // Shared helper: compute a simple hash/fingerprint for the Hebrew content
@@ -2355,12 +2356,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
   onOpenAssistant,
   onActiveSectionChange,
   readOnly,
+  showToast: showToastProp,
 }) => {
   const CLAIM_SECTION_KEY = CLAIM_SECTION_LABEL;
   const DEMAND_SECTION_KEY = DEMAND_LETTER_SECTION_LABEL;
   const [expandedSnippetSection, setExpandedSnippetSection] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
-  const [showToast, setShowToast] = useState<{msg: string, type: 'success'|'info'|'error'|'warning'} | null>(null);
+  const showToast = showToastProp ?? (() => {});
   const [allSectionTemplates, setAllSectionTemplates] = useState<SectionTemplate[]>([]);
   const [templateSearch, setTemplateSearch] = useState<string>('');
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false);
@@ -2592,7 +2594,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     if (!files) return;
     const existingCount = data.invoiceFiles.length;
     if (existingCount >= 4) {
-      setShowToast({ msg: 'ניתן לצרף עד 4 חשבוניות מס (PDF או Word).', type: 'info' });
+      showToast({ message: 'ניתן לצרף עד 4 חשבוניות מס (PDF או Word).', type: 'info' });
       e.target.value = '';
       return;
     }
@@ -2624,7 +2626,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       isWaitingForInvoices: !hasInvoices,
       status: nextStatus,
     });
-    setShowToast({ msg: "החשבוניות צורפו בהצלחה (עד 4 קבצים).", type: "success" });
+    showToast({ message: "החשבוניות צורפו בהצלחה (עד 4 קבצים).", type: "success" });
   };
 
   const removeInvoice = (id: string) => {
@@ -2721,19 +2723,19 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const refEntry = sectionTextareaRefs.current[section];
     const el = refEntry?.current;
     if (!el) {
-      setShowToast({ msg: 'לא נמצאה בחירה בטקסט בסעיף זה.', type: 'error' });
+      showToast({ message: 'לא נמצאה בחירה בטקסט בסעיף זה.', type: 'error' });
       return;
     }
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
     if (start === end) {
-      setShowToast({ msg: 'בחר טקסט בסעיף לפני שמירה כתבנית.', type: 'info' });
+      showToast({ message: 'בחר טקסט בסעיף לפני שמירה כתבנית.', type: 'info' });
       return;
     }
     const fullText = data.content[section] || '';
     let selected = fullText.slice(start, end).trim();
     if (!selected) {
-      setShowToast({ msg: 'הבחירה ריקה לאחר ניקוי רווחים.', type: 'info' });
+      showToast({ message: 'הבחירה ריקה לאחר ניקוי רווחים.', type: 'info' });
       return;
     }
     if (selected.length < 15) {
@@ -2744,7 +2746,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const input = window.prompt('כותרת לתבנית:', defaultTitle);
     const title = (input || '').trim();
     if (!title) {
-      setShowToast({ msg: 'התבנית לא נשמרה (כותרת נדרשת).', type: 'info' });
+      showToast({ message: 'התבנית לא נשמרה (כותרת נדרשת).', type: 'info' });
       return;
     }
     const nowIso = new Date().toISOString();
@@ -2761,10 +2763,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     try {
       const updated = await upsertSectionTemplateInStore(newTemplate, currentUser.role);
       setAllSectionTemplates(updated);
-      setShowToast({ msg: 'התבנית נשמרה בהצלחה.', type: 'success' });
+      showToast({ message: 'התבנית נשמרה בהצלחה.', type: 'success' });
     } catch (err) {
       console.error('Failed to save template', err);
-      setShowToast({ msg: 'שמירת התבנית נכשלה.', type: 'error' });
+      showToast({ message: 'שמירת התבנית נכשלה.', type: 'error' });
     }
   };
 
@@ -2782,7 +2784,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setAllSectionTemplates(updated);
     } catch (err) {
       console.error('Failed to update template', err);
-      setShowToast({ msg: 'עדכון התבנית נכשל.', type: 'error' });
+      showToast({ message: 'עדכון התבנית נכשל.', type: 'error' });
     }
   };
 
@@ -2793,7 +2795,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setAllSectionTemplates(updated);
     } catch (err) {
       console.error('Failed to delete template', err);
-      setShowToast({ msg: 'מחיקת התבנית נכשלה.', type: 'error' });
+      showToast({ message: 'מחיקת התבנית נכשלה.', type: 'error' });
     }
   };
 
@@ -2804,7 +2806,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setAllSectionTemplates(updated);
     } catch (err) {
       console.error('Failed to reorder template', err);
-      setShowToast({ msg: 'עדכון סדר התבניות נכשל.', type: 'error' });
+      showToast({ message: 'עדכון סדר התבניות נכשל.', type: 'error' });
     }
   };
 
@@ -2838,8 +2840,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     try {
       const result = await refineLegalText(current, hebrewRefineMode);
       if (result.factProtectionBlocked) {
-        setShowToast({
-          msg: 'השכתוב נחסם מטעמי בטיחות (שמירת עובדות). הטקסט נשאר ללא שינוי.',
+        showToast({
+          message: 'השכתוב נחסם מטעמי בטיחות (שמירת עובדות). הטקסט נשאר ללא שינוי.',
           type: 'info',
         });
         return;
@@ -2869,14 +2871,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       } else {
         setHebrewRefineDiff(null);
       }
-      setShowToast({
-        msg: `שכתוב עברית (${hebrewRefineMode === 'SAFE_POLISH' ? 'SAFE_POLISH' : 'REWRITE'}): ${label}`,
+      showToast({
+        message: `שכתוב עברית (${hebrewRefineMode === 'SAFE_POLISH' ? 'SAFE_POLISH' : 'REWRITE'}): ${label}`,
         type: 'success',
       });
       handleContentChange(section, refined);
     } catch (err) {
       console.error('Refine text failed', err);
-      setShowToast({ msg: 'שדרוג הניסוח נכשל. הטקסט לא שונה.', type: 'error' });
+      showToast({ message: 'שדרוג הניסוח נכשל. הטקסט לא שונה.', type: 'error' });
     } finally {
       setIsAiProcessing(false);
       setRefiningSection(null);
@@ -2891,13 +2893,13 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
              const updatedItems = [...data.expensesItems, ...extracted.items];
              const sum = updatedItems.reduce((acc: number, item: any) => acc + (item.amount || 0), 0);
              updateData({ expensesItems: updatedItems, expensesSum: sum.toLocaleString() });
-        setShowToast({ msg: `טבלת ההוצאות "${fileName}" נותחה בהצלחה.`, type: 'success' });
+        showToast({ message: `טבלת ההוצאות "${fileName}" נותחה בהצלחה.`, type: 'success' });
       } else {
-        setShowToast({ msg: 'לא נמצאו הוצאות בקובץ שסופק.', type: 'info' });
+        showToast({ message: 'לא נמצאו הוצאות בקובץ שסופק.', type: 'info' });
          }
     } catch (error) {
       console.error('Expenses extraction failed', error);
-      setShowToast({ msg: 'העיבוד נכשל. נסו קובץ PDF/Word אחר.', type: 'error' });
+      showToast({ message: 'העיבוד נכשל. נסו קובץ PDF/Word אחר.', type: 'error' });
     } finally {
          setIsAiProcessing(false);
        }
@@ -2969,7 +2971,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     }
 
     updateData({ content: newContent, selectedSections: nextSections, complaintAnalysis: analysis });
-    setShowToast({ msg: 'המסמך נותח והמידע נוסף לסעיפים הרלוונטיים.', type: 'success' });
+    showToast({ message: 'המסמך נותח והמידע נוסף לסעיפים הרלוונטיים.', type: 'success' });
   };
 
   const buildClaimSummaryFromAnalysis = (
@@ -3099,7 +3101,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
   };
   const applyFirstReportStrategy = () => {
     handleContentChange('Strategy', FIRST_REPORT_STRATEGY_TEXT);
-    setShowToast({ msg: 'נוסח "דיווח ראשון" נוסף לסעיף.', type: 'success' });
+    showToast({ message: 'נוסח "דיווח ראשון" נוסף לסעיף.', type: 'success' });
   };
 
   const handleSectionFileUpload = (e: React.ChangeEvent<HTMLInputElement>, section: string) => {
@@ -3167,7 +3169,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
               dentalResponse.reason === 'INVALID_DOCUMENT'
                 ? DOC_ANALYSIS_OCR_FAILED_MSG
                 : DOC_ANALYSIS_GENERIC_FAIL_MSG;
-            setShowToast({ msg, type: 'info' });
+            showToast({ message: msg, type: 'info' });
           } else {
             const normalizedText = summaryText;
             const sectionKey = medicalTarget.section || CLAIM_SECTION_KEY;
@@ -3193,17 +3195,17 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             }
 
             updateData(payload);
-            setShowToast({
-              msg: 'הקובץ נותח (דנטלי) והטקסט נוסף לסעיף בהצלחה.',
+            showToast({
+              message: 'הקובץ נותח (דנטלי) והטקסט נוסף לסעיף בהצלחה.',
               type: 'success',
             });
             if (dentalResponse.lowConfidenceDocument) {
-              setTimeout(() => setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
+              setTimeout(() => showToast({ message: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
             }
           }
         } catch (error) {
           console.error('Dental opinion analysis failed', error);
-          setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
+          showToast({ message: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
         } finally {
           setIsAiProcessing(false);
           setMedicalProcessingTarget(null);
@@ -3253,7 +3255,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           response.reason === 'INVALID_DOCUMENT'
             ? DOC_ANALYSIS_OCR_FAILED_MSG
             : DOC_ANALYSIS_GENERIC_FAIL_MSG;
-        setShowToast({ msg, type: 'info' });
+        showToast({ message: msg, type: 'info' });
         return;
       }
 
@@ -3266,7 +3268,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             section: medicalTarget.section,
           });
         if (!summaryText) {
-          setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
+          showToast({ message: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
         } else {
           const sectionKey = medicalTarget.section || CLAIM_SECTION_KEY;
           const existingValue = data.content[sectionKey] || '';
@@ -3289,9 +3291,9 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
             payload.complaintAnalysis = analysis;
           }
           updateData(payload);
-          setShowToast({ msg: 'הקובץ נותח והטקסט נוסף לסעיף בהצלחה.', type: 'success' });
+          showToast({ message: 'הקובץ נותח והטקסט נוסף לסעיף בהצלחה.', type: 'success' });
           if (response.lowConfidenceDocument) {
-            setTimeout(() => setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
+            setTimeout(() => showToast({ message: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' }), 800);
           }
         }
       } else if (analysis) {
@@ -3307,14 +3309,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           });
         }
         if (response.lowConfidenceDocument) {
-          setShowToast({ msg: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' });
+          showToast({ message: DOC_ANALYSIS_LOW_CONFIDENCE_MSG, type: 'info' });
         }
       } else {
-        setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
+        showToast({ message: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
       }
     } catch (error) {
       console.error(error);
-      setShowToast({ msg: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
+      showToast({ message: DOC_ANALYSIS_GENERIC_FAIL_MSG, type: 'info' });
     } finally {
       setIsAiProcessing(false);
       setMedicalProcessingTarget(null);
@@ -3326,7 +3328,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
   const autoFillInsuranceCoverage = () => {
     const { policyPeriodStart, policyPeriodEnd, retroStart, retroEnd } = data;
     if (!policyPeriodStart && !policyPeriodEnd && !retroStart && !retroEnd) {
-      setShowToast({ msg: 'אין נתוני פוליסה למילוי אוטומטי. העלה POLCY קודם.', type: 'info' });
+      showToast({ message: 'אין נתוני פוליסה למילוי אוטומטי. העלה POLCY קודם.', type: 'info' });
       return;
     }
     const current = fillInsuranceCoverageSection(
@@ -3337,7 +3339,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       retroEnd
     );
     handleContentChange('Insurance Coverage', current);
-    setShowToast({ msg: 'נתוני הפוליסה הושלמו אוטומטית.', type: 'success' });
+    showToast({ message: 'נתוני הפוליסה הושלמו אוטומטית.', type: 'success' });
   };
   const hasPolicyDates = Boolean(data.policyPeriodStart || data.policyPeriodEnd || data.retroStart || data.retroEnd);
   const insertWorksheetIntoSection = async (section: string) => {
@@ -3396,7 +3398,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           }
           }
 
-          setShowToast({ msg: 'Expenses Table was inserted into the EXPENSES section.', type: 'success' });
+          showToast({ message: 'Expenses Table was inserted into the EXPENSES section.', type: 'success' });
           return;
         }
       } catch (e) {
@@ -3407,22 +3409,22 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     // Fallback: legacy expenseWorksheet flow
     const worksheet = data.expenseWorksheet;
     if (!worksheet || !worksheet.rows || worksheet.rows.length === 0) {
-      setShowToast({ msg: 'אין טבלת הוצאות זמינה להוספה.', type: 'info' });
+      showToast({ message: 'אין טבלת הוצאות זמינה להוספה.', type: 'info' });
       return;
     }
     if (worksheet.status !== 'LOCKED') {
-      setShowToast({ msg: 'יש לנעול את טבלת ההוצאות לפני שמוסיפים לדו"ח.', type: 'info' });
+      showToast({ message: 'יש לנעול את טבלת ההוצאות לפני שמוסיפים לדו"ח.', type: 'info' });
       return;
     }
     const text = renderWorksheetAsText(worksheet);
     handleContentChange(section, text);
-    setShowToast({ msg: 'טבלת ההוצאות התווספה לדו"ח.', type: 'success' });
+    showToast({ message: 'טבלת ההוצאות התווספה לדו"ח.', type: 'success' });
   };
 
   const triggerFormatAllContent = () => {
     if (!onFormatContent) return;
     onFormatContent();
-    setShowToast({ msg: 'כל הסעיפים עוצבו בפורמט מקצועי.', type: 'success' });
+    showToast({ message: 'כל הסעיפים עוצבו בפורמט מקצועי.', type: 'success' });
   };
 
   const handleRunToneRiskCheck = async () => {
@@ -3437,14 +3439,14 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       updateData({ toneRiskLastRunAt: runAt });
       setToneRiskMeta(result.meta || null);
       if (!issues.length) {
-        setShowToast({ msg: 'לא נמצאו הערות Tone & Risk בדוח.', type: 'success' });
+        showToast({ message: 'לא נמצאו הערות Tone & Risk בדוח.', type: 'success' });
       } else {
-        setShowToast({ msg: 'הבדיקה הושלמה – נמצאו הערות לבדיקה.', type: 'info' });
+        showToast({ message: 'הבדיקה הושלמה – נמצאו הערות לבדיקה.', type: 'info' });
       }
     } catch (err) {
       console.error('Tone & Risk check failed', err);
-      setShowToast({
-        msg: 'בדיקת Tone & Risk נכשלה טכנית – לא ניתן להסיק שאין הערות.',
+      showToast({
+        message: 'בדיקת Tone & Risk נכשלה טכנית – לא ניתן להסיק שאין הערות.',
         type: 'error',
       });
     } finally {
@@ -3477,16 +3479,16 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const current = data.content[sectionKey] || '';
     if (!current || !issue.excerpt || !current.includes(issue.excerpt)) {
       navigator.clipboard?.writeText(issue.suggestion).catch(() => {});
-      setShowToast({
-        msg: 'לא ניתן לבצע החלפה אוטומטית. הנוסח הועתק ללוח.',
+      showToast({
+        message: 'לא ניתן לבצע החלפה אוטומטית. הנוסח הועתק ללוח.',
         type: 'info',
       });
       return;
     }
     if (hasUnsafeNumericChange(issue.excerpt, issue.suggestion)) {
       navigator.clipboard?.writeText(issue.suggestion).catch(() => {});
-      setShowToast({
-        msg: 'הנוסח המוצע כולל שינוי במספרים/תאריכים — העתקנו ללוח במקום להחליף אוטומטית.',
+      showToast({
+        message: 'הנוסח המוצע כולל שינוי במספרים/תאריכים — העתקנו ללוח במקום להחליף אוטומטית.',
         type: 'info',
       });
       return;
@@ -3501,7 +3503,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const { sectionKey, prevText } = lastToneRiskApply;
     handleContentChange(sectionKey, prevText);
     setLastToneRiskApply(null);
-    setShowToast({ msg: 'ההחלפה האחרונה בוטלה.', type: 'info' });
+    showToast({ message: 'ההחלפה האחרונה בוטלה.', type: 'info' });
   };
 
   const handleRunHebrewStyleReview = async () => {
@@ -3514,25 +3516,25 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setHebrewStyleLastRunAt(result.runAt || new Date().toISOString());
 
       if (result.success === false) {
-        setShowToast({
-          msg: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
+        showToast({
+          message: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
           type: 'info',
         });
         return;
       }
 
       if (!issues.length) {
-        setShowToast({ msg: 'לא נמצאו הערות ניסוח מקצועי בעברית.', type: 'success' });
+        showToast({ message: 'לא נמצאו הערות ניסוח מקצועי בעברית.', type: 'success' });
       } else {
-        setShowToast({
-          msg: 'בדיקת הניסוח המקצועי הושלמה – נמצאו הערות לבדיקה.',
+        showToast({
+          message: 'בדיקת הניסוח המקצועי הושלמה – נמצאו הערות לבדיקה.',
           type: 'info',
         });
       }
     } catch (err) {
       console.error('Hebrew style review failed', err);
-      setShowToast({
-        msg: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
+      showToast({
+        message: 'בדיקת הניסוח לא הושלמה כרגע. ניתן להמשיך לעבוד כרגיל.',
         type: 'info',
       });
     } finally {
@@ -3559,10 +3561,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
   const handleCopyMySnippet = async (snippet: PersonalSnippet) => {
     try {
       await navigator.clipboard.writeText(snippet.body);
-      setShowToast({ msg: 'התוכן הועתק ללוח.', type: 'info' });
+      showToast({ message: 'התוכן הועתק ללוח.', type: 'info' });
     } catch {
-      setShowToast({
-        msg: 'לא ניתן להעתיק ללוח בדפדפן זה',
+      showToast({
+        message: 'לא ניתן להעתיק ללוח בדפדפן זה',
         type: 'warning',
       });
     }
@@ -3576,8 +3578,8 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const canReplace = excerpt && current.includes(excerpt);
     if (!canReplace) {
       navigator.clipboard?.writeText(issue.suggestion).catch(() => {});
-      setShowToast({
-        msg: 'לא ניתן לבצע החלפה אוטומטית. ההצעה הועתקה ללוח.',
+      showToast({
+        message: 'לא ניתן לבצע החלפה אוטומטית. ההצעה הועתקה ללוח.',
         type: 'info',
       });
       return;
@@ -3604,19 +3606,19 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     const refEntry = sectionTextareaRefs.current[section];
     const el = refEntry?.current;
     if (!el) {
-      setShowToast({ msg: 'לא נמצאה בחירה בטקסט בסעיף זה.', type: 'error' });
+      showToast({ message: 'לא נמצאה בחירה בטקסט בסעיף זה.', type: 'error' });
       return;
     }
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? 0;
     if (start === end) {
-      setShowToast({ msg: 'בחר טקסט בסעיף לפני שמירה ל-Best Practice.', type: 'info' });
+      showToast({ message: 'בחר טקסט בסעיף לפני שמירה ל-Best Practice.', type: 'info' });
       return;
     }
     const fullText = data.content[section] || '';
     const selected = fullText.slice(start, end).trim();
     if (!selected) {
-      setShowToast({ msg: 'הבחירה ריקה לאחר ניקוי רווחים.', type: 'info' });
+      showToast({ message: 'הבחירה ריקה לאחר ניקוי רווחים.', type: 'info' });
       return;
     }
     setBestPracticeDraft({ sectionKey: section, body: selected });
@@ -3653,10 +3655,10 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     try {
       const updated = await upsertBestPractice(snippet, currentUser.role);
       setBestPractices(updated);
-      setShowToast({ msg: 'Best Practice נשמר בהצלחה.', type: 'success' });
+      showToast({ message: 'Best Practice נשמר בהצלחה.', type: 'success' });
     } catch (err) {
       console.error('Failed to save best practice', err);
-      setShowToast({ msg: 'שמירת ה-Best Practice נכשלה.', type: 'error' });
+      showToast({ message: 'שמירת ה-Best Practice נכשלה.', type: 'error' });
     }
     setBestPracticeDraft(null);
   };
@@ -3686,7 +3688,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
     } catch (err) {
       console.error('Failed to record best practice usage (copy)', err);
     }
-    setShowToast({ msg: 'הטקסט הועתק ללוח.', type: 'info' });
+    showToast({ message: 'הטקסט הועתק ללוח.', type: 'info' });
   };
 
   const handleBestPracticeFieldChange = async (
@@ -3705,7 +3707,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setBestPractices(updated);
     } catch (err) {
       console.error('Failed to update best practice', err);
-      setShowToast({ msg: 'עדכון ה-Best Practice נכשל.', type: 'error' });
+      showToast({ message: 'עדכון ה-Best Practice נכשל.', type: 'error' });
     }
   };
 
@@ -3715,7 +3717,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setBestPractices(updated);
     } catch (err) {
       console.error('Failed to delete best practice', err);
-      setShowToast({ msg: 'מחיקת ה-Best Practice נכשלה.', type: 'error' });
+      showToast({ message: 'מחיקת ה-Best Practice נכשלה.', type: 'error' });
     }
   };
 
@@ -3725,7 +3727,7 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
       setBestPractices(updated);
     } catch (err) {
       console.error('Failed to toggle best practice enabled', err);
-      setShowToast({ msg: 'עדכון סטטוס ה-Best Practice נכשל.', type: 'error' });
+      showToast({ message: 'עדכון סטטוס ה-Best Practice נכשל.', type: 'error' });
     }
   };
 
@@ -3875,7 +3877,6 @@ const Step2_Content: React.FC<Step2ContentProps> = ({
           <span>המערכת מנתחת את המסמך, זה עשוי לקחת מספר שניות…</span>
         </div>
       )}
-      {showToast && <Toast message={showToast.msg} type={showToast.type} onClose={() => setShowToast(null)} />}
       
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-2xl font-bold text-lpBlue font-serif">2. Draft Content</h2>
@@ -8368,7 +8369,10 @@ const AppInner = () => {
         setIsEmailModalOpen(true);
       })
       .catch(() => {
-        showToast({ message: 'לא ניתן לטעון הגדרות דוא״ל. בדוק MAIL_MODE ו־MAIL_* ב־ENV.', type: 'error' });
+        showToast({ message: 'Mail configuration could not be loaded. Recipients may be unavailable.', type: 'info' });
+        setMailConfig({ mode: 'SANDBOX', to: [], cc: [] });
+        setIsResendMode(resendMode);
+        setIsEmailModalOpen(true);
       });
   };
 
@@ -10618,7 +10622,8 @@ const AppInner = () => {
             {view === 'STEP2' && (
                <Step2_Content 
                   data={currentReport} 
-                  updateData={handleUpdateReport} 
+                  updateData={handleUpdateReport}
+                  showToast={showToast} 
                 onNext={() => {
                   if (currentReport) {
                     const odakanitKey = normalizeOdakanitNo(currentReport.odakanitNo);

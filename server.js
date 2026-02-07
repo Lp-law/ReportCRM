@@ -205,8 +205,8 @@ seedTemplatesFromLegacyIfNeeded();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Middleware: allow credentials so cookie-based auth works for same-origin and trusted origins
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images/files
 
 // Initialize OpenAI (ChatGPT)
