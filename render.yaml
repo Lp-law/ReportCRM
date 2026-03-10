@@ -5,5 +5,9 @@ services:
     buildCommand: npm ci && npx playwright install chromium && npm run build
     startCommand: npm start
     envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_TTL_HOURS
+        value: "12"
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: ./.playwright-browsers

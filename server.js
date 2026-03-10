@@ -19,6 +19,22 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { MASTER_PROMPT } from './src/ai/masterPrompt.js';
 import { LEGAL_SNIPPETS, USERS } from './src/constants.js';
 import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactProtection.js';
+import {
+  initPostgresStore,
+  listSectionTemplates,
+  createSectionTemplate,
+  updateSectionTemplate,
+  deleteSectionTemplate,
+  reorderSectionTemplate,
+  listBestPractices,
+  createBestPractice,
+  updateBestPractice,
+  deleteBestPractice,
+  reorderBestPractice,
+  createSession,
+  getSessionUser,
+  deleteSession,
+} from './src/server/postgresStore.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -110,104 +126,22 @@ const TEMPLATES_FILE_PATH =
   process.env.TEMPLATES_FILE_PATH || path.join(DATA_DIR, 'sectionTemplates.json');
 const BEST_PRACTICES_FILE_PATH =
   process.env.BEST_PRACTICES_FILE_PATH || path.join(DATA_DIR, 'bestPractices.json');
-
-const ensureDataDir = () => {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-};
-
-const loadSectionTemplatesFromDisk = () => {
-  ensureDataDir();
-  try {
-    if (!fs.existsSync(TEMPLATES_FILE_PATH)) {
-      return [];
-    }
-    const raw = fs.readFileSync(TEMPLATES_FILE_PATH, 'utf8');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (err) {
-    console.error('Failed to load section templates from disk:', err);
-    return [];
-  }
-};
-
-const loadBestPracticesFromDisk = () => {
-  ensureDataDir();
-  try {
-    if (!fs.existsSync(BEST_PRACTICES_FILE_PATH)) {
-      return [];
-    }
-    const raw = fs.readFileSync(BEST_PRACTICES_FILE_PATH, 'utf8');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (err) {
-    console.error('Failed to load best practices from disk:', err);
-    return [];
-  }
-};
-
-const saveSectionTemplatesToDisk = (list) => {
-  ensureDataDir();
-  try {
-    fs.writeFileSync(TEMPLATES_FILE_PATH, JSON.stringify(list, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed to save section templates to disk:', err);
-  }
-};
-
-const saveBestPracticesToDisk = (list) => {
-  ensureDataDir();
-  try {
-    fs.writeFileSync(BEST_PRACTICES_FILE_PATH, JSON.stringify(list, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed to save best practices to disk:', err);
-  }
-};
-
-const seedTemplatesFromLegacyIfNeeded = () => {
-  const existing = loadSectionTemplatesFromDisk();
-  if (existing.length > 0) return existing;
-
-  const nowIso = new Date().toISOString();
-  const seeded = [];
-
-  Object.entries(LEGAL_SNIPPETS).forEach(([sectionKey, snippets]) => {
-    if (!Array.isArray(snippets)) return;
-    snippets.forEach((body, idx) => {
-      if (typeof body !== 'string' || !body.trim()) return;
-      const words = body.trim().split(/\s+/).slice(0, 6).join(' ');
-      const title = words || `${sectionKey} template ${idx + 1}`;
-      seeded.push({
-        id: `seed-${sectionKey}-${idx}`,
-        sectionKey,
-        title,
-        body,
-        createdByUserId: 'system',
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        isEnabled: true,
-        orderIndex: seeded.length,
-      });
-    });
-  });
-
-  saveSectionTemplatesToDisk(seeded);
-  return seeded;
-};
-
-// Ensure templates file exists with initial seed (idempotent)
-seedTemplatesFromLegacyIfNeeded();
+const SESSIONS_FILE_PATH =
+  process.env.SESSIONS_FILE_PATH || path.join(DATA_DIR, 'sessions.json');
+const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS || 12);
 
 const app = express();
 
 // Middleware: allow credentials so cookie-based auth works for same-origin and trusted origins
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images/files
+
+await initPostgresStore({
+  templatesFilePath: TEMPLATES_FILE_PATH,
+  bestPracticesFilePath: BEST_PRACTICES_FILE_PATH,
+  sessionsFilePath: SESSIONS_FILE_PATH,
+  legalSnippets: LEGAL_SNIPPETS,
+});
 
 // Initialize OpenAI (ChatGPT)
 const apiKey = process.env.OPENAI_API_KEY || process.env.API_KEY;
@@ -257,41 +191,10 @@ const ensureOpenAI = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Session handling (cookie-based, persisted to file for refresh survival)
+// Session handling (cookie-based, persisted in PostgreSQL)
 // ---------------------------------------------------------------------------
 
 const SESSION_COOKIE_NAME = 'lp_session';
-const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
-const sessions = new Map(); // sessionId -> { id, username, name, email, role }
-
-function loadSessionsFromFile() {
-  try {
-    if (fs.existsSync(SESSIONS_FILE)) {
-      const raw = fs.readFileSync(SESSIONS_FILE, 'utf-8');
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        arr.forEach(({ id: sid, user }) => {
-          if (sid && user) sessions.set(sid, user);
-        });
-      }
-    }
-  } catch (e) {
-    console.warn('[Session] Could not load sessions from file:', e?.message);
-  }
-}
-
-function saveSessionsToFile() {
-  try {
-    const dir = path.dirname(SESSIONS_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const arr = Array.from(sessions.entries()).map(([id, user]) => ({ id, user }));
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(arr, null, 0), 'utf-8');
-  } catch (e) {
-    console.warn('[Session] Could not save sessions to file:', e?.message);
-  }
-}
-
-loadSessionsFromFile();
 
 const createSessionId = () => crypto.randomBytes(32).toString('hex');
 
@@ -308,25 +211,25 @@ const parseCookies = (cookieHeader) => {
   return cookies;
 };
 
-const getUserFromRequest = (req) => {
+const getUserFromRequest = async (req) => {
   try {
     const cookies = parseCookies(req.headers.cookie || '');
     const sessionId = cookies[SESSION_COOKIE_NAME];
     if (!sessionId) return null;
-    const session = sessions.get(sessionId);
-    return session || null;
+    const user = await getSessionUser(sessionId);
+    return user || null;
   } catch {
     return null;
   }
 };
 
-const getUserRoleFromRequest = (req) => {
-  const user = getUserFromRequest(req);
+const getUserRoleFromRequest = async (req) => {
+  const user = await getUserFromRequest(req);
   return user?.role ? String(user.role).toUpperCase() : '';
 };
 
-const ensureAuthenticated = (req, res) => {
-  const user = getUserFromRequest(req);
+const ensureAuthenticated = async (req, res) => {
+  const user = await getUserFromRequest(req);
   if (!user) {
     res.status(401).json({ error: 'Not authenticated' });
     return null;
@@ -396,12 +299,12 @@ const chunkText = (text, size = 3500, overlap = 200) => {
   return chunks;
 };
 
-const ensureAdminRole = (req, res) => {
+const ensureAdminRole = async (req, res) => {
   // Use the authenticated session and role derived from cookies.
   // This keeps a single source of truth for role checking.
-  const user = ensureAuthenticated(req, res);
+  const user = await ensureAuthenticated(req, res);
   if (!user) return false;
-  const role = getUserRoleFromRequest(req);
+  const role = await getUserRoleFromRequest(req);
   if (role !== 'ADMIN') {
     res.status(403).json({ error: 'Admin role required' });
     return false;
@@ -2473,7 +2376,7 @@ function getEmailRecipients() {
 
 // 1. Translation Endpoint
 app.post('/api/translate', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: 'Text is required' });
   try {
@@ -2491,7 +2394,7 @@ app.post('/api/translate', async (req, res) => {
 
 // 2. Policy Extraction Endpoint
 app.post('/api/extract-policy', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { image, mimeType } = req.body;
   try {
     const documentText = await getDocumentText(image, mimeType);
@@ -2561,7 +2464,7 @@ app.post('/api/extract-policy', async (req, res) => {
 
 // 3. Text Refinement Endpoint
 app.post('/api/refine-text', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { text, mode } = req.body || {};
   if (typeof text !== 'string' || !text.trim()) {
     return res.status(400).json({ error: 'Text is required' });
@@ -2667,7 +2570,7 @@ app.post('/api/refine-text', async (req, res) => {
 
 // 3a. English Improvement Endpoint (post-translation polishing)
 app.post('/api/improve-english', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { text } = req.body || {};
   if (typeof text !== 'string' || !text.trim()) {
     return res.status(400).json({ error: 'Text is required' });
@@ -2714,7 +2617,7 @@ app.post('/api/improve-english', async (req, res) => {
 
 // 3b. Hebrew report summary for follow-up reports (Update auto-summary)
 app.post('/api/hebrew-report-summary', async (req, res) => {
-  const user = ensureAuthenticated(req, res);
+  const user = await ensureAuthenticated(req, res);
   if (!user) return;
   const { text } = req.body || {};
   if (typeof text !== 'string' || !text.trim()) {
@@ -2782,7 +2685,7 @@ app.post('/api/hebrew-report-summary', async (req, res) => {
 
 // 4. Analyze File
 app.post('/api/analyze-file', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { fileBase64, mimeType, userPrompt } = req.body;
   try {
     const documentText = await getDocumentText(fileBase64, mimeType, { ocrPages: Infinity, forceOcr: true });
@@ -2931,7 +2834,7 @@ const isValidDentalFormat = (text) => {
 };
 
 app.post('/api/analyze-dental-opinion', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { fileBase64, mimeType } = req.body || {};
   if (!fileBase64 || !mimeType) {
     return res.status(400).json({ error: 'Missing file or mimeType' });
@@ -3267,7 +3170,7 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
 
 // 4b. Medical Complaint Analysis
 app.post('/api/analyze-medical-complaint', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const {
     fileBase64,
     mimeType,
@@ -3390,9 +3293,9 @@ Always write in Hebrew.
 
 // 5. Extract Expenses Table (UPDATED to JSON)
 app.post('/api/extract-expenses', async (req, res) => {
-  const user = ensureAuthenticated(req, res);
+  const user = await ensureAuthenticated(req, res);
   if (!user) return;
-  const role = getUserRoleFromRequest(req);
+  const role = await getUserRoleFromRequest(req);
   if (role !== 'FINANCE' && role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only FINANCE or ADMIN can extract expenses' });
   }
@@ -3417,7 +3320,7 @@ app.post('/api/extract-expenses', async (req, res) => {
 });
 
 // 0. Authentication
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body || {};
     if (!username || !password) {
@@ -3440,8 +3343,7 @@ app.post('/api/login', (req, res) => {
       email: user.email,
       role: user.role,
     };
-    sessions.set(sessionId, sessionPayload);
-    saveSessionsToFile();
+    await createSession(sessionId, sessionPayload, SESSION_TTL_HOURS);
 
     // Set HTTP-only cookie with the session id
     res.cookie(SESSION_COOKIE_NAME, sessionId, {
@@ -3449,7 +3351,7 @@ app.post('/api/login', (req, res) => {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: 1000 * 60 * 60 * 12, // 12 hours
+      maxAge: 1000 * 60 * 60 * SESSION_TTL_HOURS,
     });
 
     return res.json({ user: sessionPayload });
@@ -3459,13 +3361,12 @@ app.post('/api/login', (req, res) => {
   }
 });
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', async (req, res) => {
   try {
     const cookies = parseCookies(req.headers.cookie || '');
     const sessionId = cookies[SESSION_COOKIE_NAME];
     if (sessionId) {
-      sessions.delete(sessionId);
-      saveSessionsToFile();
+      await deleteSession(sessionId);
     }
     res.cookie(SESSION_COOKIE_NAME, '', {
       httpOnly: true,
@@ -3481,8 +3382,8 @@ app.post('/api/logout', (req, res) => {
   }
 });
 
-app.get('/api/me', (req, res) => {
-  const user = getUserFromRequest(req);
+app.get('/api/me', async (req, res) => {
+  const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -3530,7 +3431,7 @@ app.post('/api/analyze-tone-risk', async (req, res) => {
   });
 
   try {
-    const role = getUserRoleFromRequest(req);
+    const role = await getUserRoleFromRequest(req);
     if (role !== 'ADMIN' && role !== 'LAWYER') {
       return res.status(403).json(
         makeBaseResponse({
@@ -3719,7 +3620,7 @@ severity:
 // 7. Hebrew professional style review (Hebrew body only, pre-send)
 app.post('/api/review-hebrew-style', async (req, res) => {
   try {
-    const role = getUserRoleFromRequest(req);
+    const role = await getUserRoleFromRequest(req);
     if (role !== 'ADMIN' && role !== 'LAWYER') {
       return res.status(403).json({ error: 'Only ADMIN or LAWYER can review Hebrew style' });
     }
@@ -3886,7 +3787,7 @@ severity:
 
 // 8. Help Chat
 app.post('/api/help-chat', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { question } = req.body;
   try {
     const answer = await createTextCompletion({
@@ -3902,7 +3803,7 @@ app.post('/api/help-chat', async (req, res) => {
 
 // 8b. Smart Assistant – intent-based help (no report bodies)
 app.post('/api/assistant/help', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
 
   const hasApiKey = Boolean(process.env.OPENAI_API_KEY || process.env.API_KEY);
   if (!hasApiKey) {
@@ -4078,7 +3979,7 @@ Task:
 
 // 9. Executive Summary
 app.post('/api/generate-summary', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+  if (!(await ensureAuthenticated(req, res))) return;
   const { reportContent, insurerName, insuredName } = req.body;
   try {
     const summary = await createTextCompletion({
@@ -4093,8 +3994,8 @@ app.post('/api/generate-summary', async (req, res) => {
 });
 
 // Mail config (mode + recipients from ENV) for Compose UI
-app.get('/api/mail-config', (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
+app.get('/api/mail-config', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
   try {
     const { to, cc } = getEmailRecipients();
     const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
@@ -4110,8 +4011,8 @@ app.get('/api/mail-config', (req, res) => {
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB
 
 app.post('/api/send-email', async (req, res) => {
-  if (!ensureAuthenticated(req, res)) return;
-  const role = getUserRoleFromRequest(req);
+  if (!(await ensureAuthenticated(req, res))) return;
+  const role = await getUserRoleFromRequest(req);
   if (role !== 'ADMIN') {
     return res.status(403).json({ error: 'Only ADMIN can send emails' });
   }
@@ -4352,13 +4253,12 @@ app.post('/api/render-report-html', async (req, res) => {
 
 // --- Section Templates API (Lightbulb / Ideas) ---
 
-app.get('/api/templates', (req, res) => {
+app.get('/api/templates', async (req, res) => {
   try {
     const { sectionKey } = req.query || {};
-    let templates = loadSectionTemplatesFromDisk();
-    if (sectionKey && typeof sectionKey === 'string') {
-      templates = templates.filter((t) => t.sectionKey === sectionKey);
-    }
+    const templates = await listSectionTemplates(
+      sectionKey && typeof sectionKey === 'string' ? sectionKey : undefined,
+    );
     res.json(templates);
   } catch (err) {
     console.error('Failed to list templates:', err);
@@ -4366,15 +4266,15 @@ app.get('/api/templates', (req, res) => {
   }
 });
 
-app.post('/api/templates', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.post('/api/templates', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const payload = req.body || {};
     const { sectionKey, title, body, isEnabled, orderIndex, createdByUserId } = payload;
     if (!sectionKey || !title || !body) {
       return res.status(400).json({ error: 'sectionKey, title and body are required' });
     }
-    const all = loadSectionTemplatesFromDisk();
+    const all = await listSectionTemplates();
     const nowIso = new Date().toISOString();
     const maxOrder = all.reduce(
       (max, t) => (typeof t.orderIndex === 'number' && t.orderIndex > max ? t.orderIndex : max),
@@ -4393,21 +4293,26 @@ app.post('/api/templates', (req, res) => {
       isEnabled: isEnabled !== false,
       orderIndex: nextOrder,
     };
-    all.push(tpl);
-    saveSectionTemplatesToDisk(all);
-    res.status(201).json(all);
+    await createSectionTemplate(tpl);
+    const next = await listSectionTemplates();
+    next.sort(
+      (a, b) =>
+        (a.orderIndex || 0) - (b.orderIndex || 0) ||
+        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
+    );
+    res.status(201).json(next);
   } catch (err) {
     console.error('Failed to create template:', err);
     res.status(500).json({ error: 'Failed to create template' });
   }
 });
 
-app.put('/api/templates/:id', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.put('/api/templates/:id', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
     const updates = req.body || {};
-    const all = loadSectionTemplatesFromDisk();
+    const all = await listSectionTemplates();
     const idx = all.findIndex((t) => t.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Template not found' });
@@ -4428,27 +4333,41 @@ app.put('/api/templates/:id', (req, res) => {
         patch[key] = updates[key];
       }
     });
-    all[idx] = {
-      ...existing,
-      ...patch,
-      createdAt: existing.createdAt,
-      updatedAt: nowIso,
-    };
-    saveSectionTemplatesToDisk(all);
-    res.json(all);
+    const dbPatch = {};
+    if (Object.prototype.hasOwnProperty.call(patch, 'sectionKey')) dbPatch.section_key = patch.sectionKey;
+    if (Object.prototype.hasOwnProperty.call(patch, 'title')) dbPatch.title = patch.title;
+    if (Object.prototype.hasOwnProperty.call(patch, 'body')) dbPatch.body = patch.body;
+    if (Object.prototype.hasOwnProperty.call(patch, 'isEnabled')) dbPatch.is_enabled = patch.isEnabled !== false;
+    if (Object.prototype.hasOwnProperty.call(patch, 'orderIndex')) dbPatch.order_index = patch.orderIndex;
+    if (Object.prototype.hasOwnProperty.call(patch, 'createdByUserId')) {
+      dbPatch.created_by_user_id = patch.createdByUserId;
+    }
+    dbPatch.updated_at = nowIso;
+    await updateSectionTemplate(id, dbPatch);
+    const next = await listSectionTemplates();
+    next.sort(
+      (a, b) =>
+        (a.orderIndex || 0) - (b.orderIndex || 0) ||
+        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
+    );
+    res.json(next);
   } catch (err) {
     console.error('Failed to update template:', err);
     res.status(500).json({ error: 'Failed to update template' });
   }
 });
 
-app.delete('/api/templates/:id', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.delete('/api/templates/:id', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
-    const all = loadSectionTemplatesFromDisk();
-    const next = all.filter((t) => t.id !== id);
-    saveSectionTemplatesToDisk(next);
+    await deleteSectionTemplate(id);
+    const next = await listSectionTemplates();
+    next.sort(
+      (a, b) =>
+        (a.orderIndex || 0) - (b.orderIndex || 0) ||
+        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
+    );
     res.json(next);
   } catch (err) {
     console.error('Failed to delete template:', err);
@@ -4456,37 +4375,19 @@ app.delete('/api/templates/:id', (req, res) => {
   }
 });
 
-app.post('/api/templates/:id/reorder', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.post('/api/templates/:id/reorder', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
     const { direction } = req.body || {};
     if (direction !== 'UP' && direction !== 'DOWN') {
       return res.status(400).json({ error: 'direction must be UP or DOWN' });
     }
-    const all = loadSectionTemplatesFromDisk();
-    const sorted = all
-      .slice()
-      .sort(
-        (a, b) =>
-          (a.orderIndex || 0) - (b.orderIndex || 0) ||
-          String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
-      );
-    const index = sorted.findIndex((t) => t.id === id);
-    if (index === -1) {
+    const ok = await reorderSectionTemplate(id, direction);
+    if (!ok) {
       return res.status(404).json({ error: 'Template not found' });
     }
-    const targetIndex = direction === 'UP' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= sorted.length) {
-      return res.json(sorted);
-    }
-    const tmp = sorted[index];
-    sorted[index] = sorted[targetIndex];
-    sorted[targetIndex] = tmp;
-    sorted.forEach((t, idx) => {
-      t.orderIndex = idx;
-    });
-    saveSectionTemplatesToDisk(sorted);
+    const sorted = await listSectionTemplates();
     res.json(sorted);
   } catch (err) {
     console.error('Failed to reorder template:', err);
@@ -4496,57 +4397,11 @@ app.post('/api/templates/:id/reorder', (req, res) => {
 
 // --- Best Practices API ---
 
-const normalizeBestPractices = (items) => {
-  const nowIso = new Date().toISOString();
-  return (items || [])
-    .filter(
-      (t) =>
-        t &&
-        typeof t.sectionKey === 'string' &&
-        typeof t.title === 'string' &&
-        typeof t.body === 'string',
-    )
-    .map((t, index) => {
-      const createdAt = typeof t.createdAt === 'string' ? t.createdAt : nowIso;
-      const updatedAt = typeof t.updatedAt === 'string' ? t.updatedAt : createdAt;
-      const orderIndex =
-        typeof t.orderIndex === 'number'
-          ? t.orderIndex
-          : index;
-      return {
-        id:
-          typeof t.id === 'string' && t.id
-            ? t.id
-            : `bp-${t.sectionKey}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        sectionKey: t.sectionKey,
-        title: t.title,
-        body: t.body,
-        label: t.label === 'LLOYDS_RECOMMENDED' ? 'LLOYDS_RECOMMENDED' : 'BEST_PRACTICE',
-        tags: Array.isArray(t.tags) ? t.tags.map(String) : [],
-        isEnabled: t.isEnabled !== false,
-        createdByUserId: String(t.createdByUserId || 'system'),
-        createdAt,
-        updatedAt,
-        usageCount: typeof t.usageCount === 'number' ? t.usageCount : 0,
-        lastUsedAt: typeof t.lastUsedAt === 'string' ? t.lastUsedAt : null,
-        behavior: t.behavior === 'COPY_ONLY' ? 'COPY_ONLY' : 'INSERTABLE',
-        sourceReportId: t.sourceReportId ? String(t.sourceReportId) : undefined,
-        orderIndex,
-      };
-    });
-};
-
-app.get('/api/best-practices', (req, res) => {
+app.get('/api/best-practices', async (req, res) => {
   try {
     const { sectionKey } = req.query || {};
-    let list = normalizeBestPractices(loadBestPracticesFromDisk());
-    if (sectionKey && typeof sectionKey === 'string') {
-      list = list.filter((bp) => bp.sectionKey === sectionKey);
-    }
-    list.sort(
-      (a, b) =>
-        (a.orderIndex || 0) - (b.orderIndex || 0) ||
-        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
+    const list = await listBestPractices(
+      sectionKey && typeof sectionKey === 'string' ? sectionKey : undefined,
     );
     res.json(list);
   } catch (err) {
@@ -4555,8 +4410,8 @@ app.get('/api/best-practices', (req, res) => {
   }
 });
 
-app.post('/api/best-practices', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.post('/api/best-practices', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const payload = req.body || {};
     const { sectionKey, title, body, label, tags, behavior, isEnabled, createdByUserId } =
@@ -4564,8 +4419,7 @@ app.post('/api/best-practices', (req, res) => {
     if (!sectionKey || !title || !body) {
       return res.status(400).json({ error: 'sectionKey, title and body are required' });
     }
-    const raw = loadBestPracticesFromDisk();
-    const all = normalizeBestPractices(raw);
+    const all = await listBestPractices();
     const nowIso = new Date().toISOString();
     const maxOrder = all.reduce(
       (max, t) =>
@@ -4590,22 +4444,21 @@ app.post('/api/best-practices', (req, res) => {
       behavior: behavior === 'COPY_ONLY' ? 'COPY_ONLY' : 'INSERTABLE',
       orderIndex: nextOrder,
     };
-    all.push(snippet);
-    saveBestPracticesToDisk(all);
-    res.status(201).json(all);
+    await createBestPractice(snippet);
+    const next = await listBestPractices();
+    res.status(201).json(next);
   } catch (err) {
     console.error('Failed to create best practice:', err);
     res.status(500).json({ error: 'Failed to create best practice' });
   }
 });
 
-app.put('/api/best-practices/:id', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.put('/api/best-practices/:id', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
     const updates = req.body || {};
-    const raw = loadBestPracticesFromDisk();
-    const all = normalizeBestPractices(raw);
+    const all = await listBestPractices();
     const idx = all.findIndex((bp) => bp.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Best practice not found' });
@@ -4628,28 +4481,37 @@ app.put('/api/best-practices/:id', (req, res) => {
         patch[key] = updates[key];
       }
     });
-    all[idx] = {
-      ...existing,
-      ...patch,
-      createdAt: existing.createdAt,
-      updatedAt: nowIso,
-    };
-    saveBestPracticesToDisk(all);
-    res.json(all);
+    const dbPatch = {};
+    if (Object.prototype.hasOwnProperty.call(patch, 'sectionKey')) dbPatch.section_key = patch.sectionKey;
+    if (Object.prototype.hasOwnProperty.call(patch, 'title')) dbPatch.title = patch.title;
+    if (Object.prototype.hasOwnProperty.call(patch, 'body')) dbPatch.body = patch.body;
+    if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
+      dbPatch.label = patch.label === 'LLOYDS_RECOMMENDED' ? 'LLOYDS_RECOMMENDED' : 'BEST_PRACTICE';
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'tags')) {
+      dbPatch.tags = JSON.stringify(Array.isArray(patch.tags) ? patch.tags.map(String) : []);
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'isEnabled')) dbPatch.is_enabled = patch.isEnabled !== false;
+    if (Object.prototype.hasOwnProperty.call(patch, 'behavior')) {
+      dbPatch.behavior = patch.behavior === 'COPY_ONLY' ? 'COPY_ONLY' : 'INSERTABLE';
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'orderIndex')) dbPatch.order_index = patch.orderIndex;
+    dbPatch.updated_at = nowIso;
+    await updateBestPractice(id, dbPatch);
+    const next = await listBestPractices();
+    res.json(next);
   } catch (err) {
     console.error('Failed to update best practice:', err);
     res.status(500).json({ error: 'Failed to update best practice' });
   }
 });
 
-app.delete('/api/best-practices/:id', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.delete('/api/best-practices/:id', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
-    const raw = loadBestPracticesFromDisk();
-    const all = normalizeBestPractices(raw);
-    const next = all.filter((bp) => bp.id !== id);
-    saveBestPracticesToDisk(next);
+    await deleteBestPractice(id);
+    const next = await listBestPractices();
     res.json(next);
   } catch (err) {
     console.error('Failed to delete best practice:', err);
@@ -4657,38 +4519,19 @@ app.delete('/api/best-practices/:id', (req, res) => {
   }
 });
 
-app.post('/api/best-practices/:id/reorder', (req, res) => {
-  if (!ensureAdminRole(req, res)) return;
+app.post('/api/best-practices/:id/reorder', async (req, res) => {
+  if (!(await ensureAdminRole(req, res))) return;
   try {
     const { id } = req.params;
     const { direction } = req.body || {};
     if (direction !== 'UP' && direction !== 'DOWN') {
       return res.status(400).json({ error: 'direction must be UP or DOWN' });
     }
-    const raw = loadBestPracticesFromDisk();
-    const all = normalizeBestPractices(raw);
-    const sorted = all
-      .slice()
-      .sort(
-        (a, b) =>
-          (a.orderIndex || 0) - (b.orderIndex || 0) ||
-          String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
-      );
-    const index = sorted.findIndex((t) => t.id === id);
-    if (index === -1) {
+    const ok = await reorderBestPractice(id, direction);
+    if (!ok) {
       return res.status(404).json({ error: 'Best practice not found' });
     }
-    const targetIndex = direction === 'UP' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= sorted.length) {
-      return res.json(sorted);
-    }
-    const tmp = sorted[index];
-    sorted[index] = sorted[targetIndex];
-    sorted[targetIndex] = tmp;
-    sorted.forEach((t, idx) => {
-      t.orderIndex = idx;
-    });
-    saveBestPracticesToDisk(sorted);
+    const sorted = await listBestPractices();
     res.json(sorted);
   } catch (err) {
     console.error('Failed to reorder best practice:', err);
@@ -4696,10 +4539,10 @@ app.post('/api/best-practices/:id/reorder', (req, res) => {
   }
 });
 
-app.post('/api/best-practices/:id/usage', (req, res) => {
+app.post('/api/best-practices/:id/usage', async (req, res) => {
   try {
     const { id } = req.params;
-    const role = getUserRoleFromRequest(req);
+    const role = await getUserRoleFromRequest(req);
     if (role !== 'ADMIN' && role !== 'LAWYER') {
       return res.status(403).json({ error: 'Only ADMIN or LAWYER can record usage' });
     }
@@ -4708,20 +4551,18 @@ app.post('/api/best-practices/:id/usage', (req, res) => {
     // it may be leveraged in future analytics without affecting behavior today.
     const { mode } = req.body || {}; // eslint-disable-line @typescript-eslint/no-unused-vars
 
-    const raw = loadBestPracticesFromDisk();
-    const all = normalizeBestPractices(raw);
+    const all = await listBestPractices();
     const idx = all.findIndex((bp) => bp.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Best practice not found' });
     }
     const existing = all[idx];
-    all[idx] = {
-      ...existing,
-      usageCount: (existing.usageCount || 0) + 1,
-      lastUsedAt: new Date().toISOString(),
-    };
-    saveBestPracticesToDisk(all);
-    res.json(all);
+    await updateBestPractice(id, {
+      usage_count: (existing.usageCount || 0) + 1,
+      last_used_at: new Date().toISOString(),
+    });
+    const next = await listBestPractices();
+    res.json(next);
   } catch (err) {
     console.error('Failed to record best practice usage:', err);
     res.status(500).json({ error: 'Failed to record best practice usage' });
