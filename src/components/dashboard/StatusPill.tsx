@@ -13,45 +13,45 @@ const STATUS_CONFIG: Record<
 > = {
   DRAFT: {
     label: t('statusDraft'),
-    bg: 'bg-navySecondary',
-    text: 'text-textMuted',
-    border: 'border-borderDark',
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-300',
   },
   TASK_ASSIGNED: {
     label: t('statusActionRequired'),
-    bg: 'bg-gold/10',
-    text: 'text-goldLight',
-    border: 'border-gold',
+    bg: 'bg-amber-100',
+    text: 'text-amber-800',
+    border: 'border-amber-300',
   },
   WAITING_FOR_INVOICES: {
     label: t('statusWaitingInvoices'),
-    bg: 'bg-gold/10',
-    text: 'text-goldLight',
-    border: 'border-gold',
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-800',
+    border: 'border-yellow-300',
   },
   PENDING_REVIEW: {
     label: t('statusPendingReview'),
-    bg: 'bg-gold/10',
-    text: 'text-goldLight',
-    border: 'border-gold',
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
+    border: 'border-orange-300',
   },
   APPROVED: {
     label: t('statusApproved'),
-    bg: 'bg-gold/20',
-    text: 'text-goldLight',
-    border: 'border-gold',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-800',
+    border: 'border-emerald-300',
   },
   READY_TO_SEND: {
     label: t('statusReadyToSend'),
-    bg: 'bg-danger/20',
-    text: 'text-red-300',
-    border: 'border-danger',
+    bg: 'bg-red-100',
+    text: 'text-red-800',
+    border: 'border-red-300',
   },
   SENT: {
     label: t('statusSent'),
-    bg: 'bg-gold/20',
-    text: 'text-goldLight',
-    border: 'border-gold',
+    bg: 'bg-blue-100',
+    text: 'text-blue-800',
+    border: 'border-blue-300',
   },
 };
 
@@ -63,7 +63,7 @@ export const StatusPill: React.FC<StatusPillProps> = ({ status, ariaLabel }) => 
   return (
     <span
       className={[
-        'inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-semibold tracking-wide',
+        'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide',
         config.bg,
         config.text,
         config.border,

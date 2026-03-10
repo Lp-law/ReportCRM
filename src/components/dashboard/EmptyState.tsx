@@ -15,17 +15,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onAction,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-8 px-4 text-sm text-textMuted">
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-navySecondary text-gold border border-borderDark">
+    <div className="flex flex-col items-center justify-center px-4 py-8 text-center text-base text-slate-600">
+      <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-blue-800">
         <FileText className="h-5 w-5" aria-hidden="true" />
       </div>
-      <p className="font-semibold text-textLight mb-1">{title}</p>
-      <p className="max-w-sm mb-3">{description}</p>
+      <p className="mb-1 font-semibold text-slate-900">{title}</p>
+      <p className="mb-3 max-w-sm">{description}</p>
       {actionLabel && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex items-center rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-gold shadow-sm hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+          className="inline-flex items-center rounded-full bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
         >
           {actionLabel}
         </button>

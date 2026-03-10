@@ -676,47 +676,47 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
       <button
         type="button"
         onClick={() => setShowNotifications(!showNotifications)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-gold/10 text-xs font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-medium text-blue-800 hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 md:h-11 md:w-11"
         aria-label={t('openNotificationsAria')}
         title={t('openNotificationsTitle')}
       >
-        <Bell className="h-4 w-4" aria-hidden="true" />
+        <Bell className="h-5 w-5" aria-hidden="true" />
         {financeNotificationCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-1.5 -right-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
             {financeNotificationCount}
           </span>
         )}
       </button>
       {showNotifications && (
-        <div className="absolute right-0 mt-2 w-80 rounded-lg border border-borderDark bg-panel text-xs shadow-xl z-50">
-          <div className="flex items-center justify-between border-b px-3 py-2">
-            <span className="font-semibold text-textLight">{t('notificationTitle')}</span>
-            <label className="flex items-center gap-1 text-[11px] text-textMuted">
+        <div className="absolute right-0 z-50 mt-2 w-96 max-w-[90vw] rounded-lg border border-slate-200 bg-white text-sm shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <span className="font-semibold text-slate-900">{t('notificationTitle')}</span>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
               <input
                 type="checkbox"
                 checked={dailySummaryOptIn}
                 onChange={(e) => setDailySummaryOptIn(e.target.checked)}
-                className="h-3 w-3 rounded border-borderDark text-gold focus:ring-gold"
+                className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
               />
               {t('dailySummary')}
             </label>
           </div>
           <div className="max-h-64 overflow-auto divide-y">
             {filteredNotifications.length === 0 && (
-              <div className="p-4 text-center text-textMuted">
+              <div className="p-4 text-center text-slate-600">
                 {t('noNotifications')}
               </div>
             )}
             {filteredNotifications.map((note) => (
-              <div key={note.id} className="p-3 space-y-1">
-                <p className="font-medium text-textLight">{note.message}</p>
-                <p className="text-[10px] text-textMuted">
+              <div key={note.id} className="space-y-1 p-4">
+                <p className="font-medium text-slate-900">{note.message}</p>
+                <p className="text-xs text-slate-600">
                   {new Date(note.createdAt).toLocaleString()}
                 </p>
                 {note.reportId && (
                   <button
                     type="button"
-                    className="mt-1 text-[11px] text-blue-700 hover:underline"
+                    className="mt-1 text-sm text-blue-800 hover:underline"
                     onClick={() => {
                       onSelectReport(note.reportId);
                       setShowNotifications(false);
@@ -728,11 +728,11 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
               </div>
             ))}
           </div>
-          <div className="px-3 py-2 text-right">
+          <div className="px-4 py-3 text-right">
             <button
               type="button"
               onClick={onClearNotifications}
-              className="text-[11px] font-medium text-red-500 hover:underline"
+              className="text-sm font-medium text-red-600 hover:underline"
             >
               {t('clearAll')}
             </button>
@@ -787,36 +787,36 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-navySecondary px-0 pb-6 text-[15px]" dir="rtl" lang="he">
-      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12">
-        <header className="sticky top-0 z-20 mb-4 flex flex-col gap-3 border-b border-borderDark bg-panel/80 pb-3 pt-2 backdrop-blur-sm md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen bg-slate-100 px-0 pb-8 text-base text-slate-900" dir="rtl" lang="he">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
+        <header className="sticky top-0 z-20 mb-5 flex flex-col gap-4 border-b border-slate-200 bg-white/95 pb-4 pt-3 backdrop-blur-sm md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gold font-heebo">
+            <h1 className="font-heebo text-3xl font-bold text-slate-900 md:text-4xl">
               {t('dashboardTitle')}
             </h1>
-            <p className="text-base text-textMuted text-right">
+            <p className="text-base text-slate-700 text-right md:text-lg">
               <span className="font-semibold">{BRAND_NAME}</span>{' '}
-              <span className="text-textMuted">{BRAND_SUBTITLE}</span>
-              <span className="text-textMuted"> · </span>
+              <span className="text-slate-600">{BRAND_SUBTITLE}</span>
+              <span className="text-slate-600"> · </span>
               {t('welcomeBack')},{' '}
               <span className="font-semibold">{user.name}</span>{' '}
-              <span className="text-textMuted">({t('roleLawyer')})</span>
+              <span className="text-slate-600">({t('roleLawyer')})</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
             <button
               type="button"
               onClick={onNewReport}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-lpBlue text-sm font-semibold text-white shadow-sm hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-900 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 md:h-11 md:w-11"
               aria-label={t('openNewCaseFolderAria')}
               title={t('openNewCaseFolderTitle')}
             >
-              <Plus className="h-4 w-4" aria-hidden="true" />
+              <Plus className="h-5 w-5" aria-hidden="true" />
             </button>
             {renderNotifications()}
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gold/10 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-medium text-blue-800 hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 md:h-11 md:w-11"
               onClick={() => {
                 // Inherit existing behavior from App-level user guide
                 const event = new CustomEvent('openUserGuide');
@@ -825,16 +825,16 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
               aria-label={t('openHelpCenterAria')}
               title={t('openHelpCenterTitle')}
             >
-              <HelpCircle className="h-4 w-4" aria-hidden="true" />
+              <HelpCircle className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={onLogout}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 md:h-11 md:w-11"
               aria-label={t('logoutAria')}
               title={t('logoutTitle')}
             >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
+              <LogOut className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </header>
@@ -866,11 +866,11 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
           </section>
         )}
 
-        <section className="mb-3 rounded-2xl border border-borderDark bg-panel px-4 py-3 text-xs text-textLight shadow-sm">
-          <h2 className="mb-1 text-sm font-semibold text-textLight">
+        <section className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base text-slate-900 shadow-sm">
+          <h2 className="mb-2 text-lg font-semibold text-slate-900">
             {t('workloadTitle')}
           </h2>
-          <div className="flex flex-wrap gap-3 text-[11px] text-textLight mb-2">
+          <div className="mb-3 flex flex-wrap gap-4 text-sm text-slate-700 md:text-base">
             <span>
               {financeTasksCount} {t('statsFinanceTasks')}
             </span>
@@ -882,13 +882,13 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
             </span>
           </div>
           {/* רשימת כל הטיוטות שנמצאות בעבודה – כל דיווח שטרם נשלח לחברת הביטוח */}
-              <div className="max-h-40 overflow-y-auto rounded-xl border border-dashed border-borderDark bg-navySecondary px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
             {mine.filter((r) => r.status !== 'SENT').length === 0 ? (
-              <p className="text-[11px] text-textMuted">
+              <p className="text-sm text-slate-600">
                 {t('emptyInProgressTitle')}
               </p>
             ) : (
-              <ul className="space-y-1 text-[11px]">
+              <ul className="space-y-2 text-sm">
                 {mine
                   .filter((r) => r.status !== 'SENT')
                   .sort((a, b) => {
@@ -901,21 +901,21 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                   .map((r) => (
                     <li
                       key={r.id}
-                      className="flex items-center justify-between gap-2 border-b border-borderDark/70 pb-1 last:border-b-0"
+                      className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2 last:border-b-0"
                     >
                       <button
                         type="button"
                         onClick={() => handleOpenReport(r)}
-                        className="flex-1 text-right hover:text-gold"
+                        className="flex-1 text-right hover:text-blue-800"
                       >
                         <span className="font-semibold">
                           {r.insuredName || r.plaintiffName || t('untitledCase')}
                         </span>
                         {r.odakanitNo && (
-                          <span className="text-textMuted"> · {r.odakanitNo}</span>
+                          <span className="text-slate-600"> · {r.odakanitNo}</span>
                         )}
                       </button>
-                      <span className="whitespace-nowrap text-[10px] text-textMuted flex items-center gap-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap text-xs text-slate-600">
                         <span>{STATUS_LABELS[r.status]}</span>
                         <FinanceReportBadge report={r} />
                       </span>
@@ -943,43 +943,43 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
         )}
 
         {/* Case-centric list (per Odakanit) */}
-        <section className="mb-3 rounded-2xl border border-borderDark bg-panel px-4 py-3 text-xs text-textLight shadow-sm">
+        <section className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-900 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-textLight">
+            <h2 className="text-lg font-semibold text-slate-900">
               {t('caseListTitle')}
             </h2>
-            <span className="text-[11px] text-textMuted">
+            <span className="text-sm text-slate-600">
               {caseRows.length}{' '}
               {t('statsActiveCases')}
             </span>
           </div>
-          <p className="mb-2 text-[11px] text-textMuted">
+          <p className="mb-3 text-sm text-slate-600">
             {t('caseListHintActiveOnly')}
           </p>
 
           {caseRows.length === 0 ? (
-            <p className="text-[11px] text-textMuted">{t('caseListEmpty')}</p>
+            <p className="text-sm text-slate-600">{t('caseListEmpty')}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full table-fixed text-[11px]">
+              <table className="min-w-full table-fixed text-sm">
                 <thead>
                   <tr className="border-b-2 border-slate-300 bg-slate-100">
-                    <th className="px-2 py-2 text-right font-semibold w-32 text-slate-900">
+                    <th className="w-32 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderOdakanit')}
                     </th>
-                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
+                    <th className="w-40 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderInsurer')}
                     </th>
-                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
+                    <th className="w-40 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderInsured')}
                     </th>
-                    <th className="px-2 py-2 text-right font-semibold w-40 text-slate-900">
+                    <th className="w-40 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderPlaintiff')}
                     </th>
-                    <th className="px-2 py-2 text-right font-semibold w-20 text-slate-900">
+                    <th className="w-20 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderReportNo')}
                     </th>
-                    <th className="px-2 py-2 text-right font-semibold w-20 text-slate-900">
+                    <th className="w-20 px-3 py-3 text-right font-semibold text-slate-900">
                       {t('caseListHeaderNextReportNo') ?? 'Next report'}
                     </th>
                   </tr>
@@ -1001,7 +1001,7 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                         className={`cursor-pointer border-b border-slate-200 ${baseStripe} ${highlight} text-slate-900`}
                         onClick={() => onOpenCaseFolder(row.odakanitNo)}
                       >
-                        <td className="px-2 py-2 text-right font-mono text-[11px]">
+                        <td className="px-3 py-3 text-right font-mono text-sm">
                           <button
                             type="button"
                             className="text-slate-900 font-semibold hover:underline"
@@ -1013,19 +1013,19 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                             {row.odakanitNo}
                           </button>
                         </td>
-                        <td className="px-2 py-2 text-right text-slate-900">
+                        <td className="px-3 py-3 text-right text-slate-900">
                           {row.insurerName || '—'}
                         </td>
-                        <td className="px-2 py-2 text-right text-slate-900">
+                        <td className="px-3 py-3 text-right text-slate-900">
                           {row.insuredName || '—'}
                         </td>
-                        <td className="px-2 py-2 text-right text-slate-900">
+                        <td className="px-3 py-3 text-right text-slate-900">
                           {row.plaintiffName || '—'}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono text-[11px] text-slate-900">
+                        <td className="px-3 py-3 text-right font-mono text-sm text-slate-900">
                           {row.latestReportNumber ?? '—'}
                         </td>
-                        <td className="px-2 py-2 text-right font-mono text-[11px] text-slate-900">
+                        <td className="px-3 py-3 text-right font-mono text-sm text-slate-900">
                           {row.nextReportNumber ?? ((row.latestReportNumber || 0) + 1)}
                         </td>
                       </tr>
@@ -1183,43 +1183,43 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
               onChangeFilter={handleChangeStatFilter}
             />
             {/* רשימת דיווחים כספיים מאיריס – לפי אותן עמודות של "תיקים לפי מספר עודכנית" */}
-            <section className="mb-3 rounded-2xl border border-emerald-100 bg-panel px-4 py-3 text-xs text-textLight shadow-sm">
+            <section className="mb-4 rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-sm text-slate-900 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-semibold text-textLight">
+                <h2 className="text-lg font-semibold text-slate-900">
                   {t('financeReportsTitle')}
                 </h2>
-                <span className="text-[11px] text-textMuted">
+                <span className="text-sm text-slate-600">
                   {financeTasksCount}
                 </span>
               </div>
-              <p className="mb-2 text-[11px] text-textMuted">
+              <p className="mb-3 text-sm text-slate-600">
                 {t('financeReportsHint')}
               </p>
               {financeReports.length === 0 ? (
-                <p className="text-[11px] text-textMuted">
+                <p className="text-sm text-slate-600">
                   {t('financeReportsEmpty')}
                 </p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full table-fixed text-[11px]">
+                  <table className="min-w-full table-fixed text-sm">
                     <thead>
-                      <tr className="border-b border-borderDark bg-navySecondary">
-                        <th className="px-2 py-1 text-right font-semibold w-48">
+                      <tr className="border-b border-slate-300 bg-slate-100">
+                        <th className="w-48 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderTitle')}
                         </th>
-                        <th className="px-2 py-1 text-right font-semibold w-20">
+                        <th className="w-20 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderReportNo')}
                         </th>
-                        <th className="px-2 py-1 text-right font-semibold w-40">
+                        <th className="w-40 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderPlaintiff')}
                         </th>
-                        <th className="px-2 py-1 text-right font-semibold w-40">
+                        <th className="w-40 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderInsured')}
                         </th>
-                        <th className="px-2 py-1 text-right font-semibold w-40">
+                        <th className="w-40 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderInsurer')}
                         </th>
-                        <th className="px-2 py-1 text-right font-semibold w-32">
+                        <th className="w-32 px-3 py-2 text-right font-semibold">
                           {t('caseListHeaderOdakanit')}
                         </th>
                       </tr>
@@ -1246,7 +1246,7 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                           return (
                             <tr
                               key={r.id}
-                              className="cursor-pointer border-b border-borderDark hover:bg-emerald-50/60 hover:[&_.text-textLight]:text-gray-800 hover:[&_.text-textMuted]:text-gray-600"
+                              className="cursor-pointer border-b border-slate-200 hover:bg-emerald-50/70"
                               onClick={() => {
                                 if (r.odakanitNo) {
                                   onOpenCaseFolder(r.odakanitNo);
@@ -1255,31 +1255,31 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                                 }
                               }}
                             >
-                              <td className="px-2 py-1 text-right">
-                                <div className="font-semibold text-textLight">
+                              <td className="px-3 py-2 text-right">
+                                <div className="font-semibold text-slate-900">
                                   {title || '—'}
                                 </div>
                                 {r.updatedAt && (
-                                  <div className="text-[10px] text-textMuted">
+                                  <div className="text-xs text-slate-600">
                                     {new Date(r.updatedAt).toLocaleString(
                                       'he-IL',
                                     )}
                                   </div>
                                 )}
                               </td>
-                              <td className="px-2 py-1 text-right font-mono text-[11px]">
+                              <td className="px-3 py-2 text-right font-mono text-sm">
                                 {reportNo}
                               </td>
-                              <td className="px-2 py-1 text-right">
+                              <td className="px-3 py-2 text-right">
                                 {r.plaintiffName || '—'}
                               </td>
-                              <td className="px-2 py-1 text-right">
+                              <td className="px-3 py-2 text-right">
                                 {r.insuredName || '—'}
                               </td>
-                              <td className="px-2 py-1 text-right">
+                              <td className="px-3 py-2 text-right">
                                 {r.insurerName || '—'}
                               </td>
-                              <td className="px-2 py-1 text-right font-mono text-[11px]">
+                              <td className="px-3 py-2 text-right font-mono text-sm">
                                 {r.odakanitNo || '—'}
                               </td>
                             </tr>
@@ -1305,15 +1305,15 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                   onClearFilters={hasActiveFilters ? handleClearFilters : undefined}
                 />
 
-                <div className="mb-3 flex items-center justify-start gap-3 text-[11px] text-textMuted">
-                  <span className="text-textMuted">{t('densityLabel')}</span>
+                <div className="mb-4 flex items-center justify-start gap-3 text-sm text-slate-600">
+                  <span className="text-slate-600">{t('densityLabel')}</span>
                   <button
                     type="button"
                     onClick={() => handleDensityChange('COMFORTABLE')}
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2 ${
+                    className={`rounded-full px-3.5 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 ${
                       density === 'COMFORTABLE'
-                        ? 'bg-borderDark text-textLight'
-                        : 'bg-panel text-textMuted border border-borderDark hover:bg-navySecondary'
+                        ? 'bg-blue-900 text-white'
+                        : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
                     }`}
                     aria-pressed={density === 'COMFORTABLE'}
                   >
@@ -1322,19 +1322,19 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDensityChange('COMPACT')}
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2 ${
+                    className={`rounded-full px-3.5 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 ${
                       density === 'COMPACT'
-                        ? 'bg-borderDark text-textLight'
-                        : 'bg-panel text-textMuted border border-borderDark hover:bg-navySecondary'
+                        ? 'bg-blue-900 text-white'
+                        : 'border border-slate-300 bg-white text-slate-600 hover:bg-slate-100'
                     }`}
                     aria-pressed={density === 'COMPACT'}
                   >
                     {t('densityCompact')}
                   </button>
-                  <label className="inline-flex items-center gap-2 text-[11px] text-textLight">
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-800">
                     <input
                       type="checkbox"
-                      className="h-3.5 w-3.5 rounded border-borderDark text-gold focus:ring-gold"
+                      className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
                       checked={focusMode}
                       onChange={(e) => setFocusMode(e.target.checked)}
                     />
@@ -1404,8 +1404,8 @@ export const LawyerDashboard: React.FC<LawyerDashboardProps> = ({
                   />
                 </main>
 
-                <footer className="mt-6 text-[11px] text-textMuted flex items-center gap-2 justify-start">
-                  <Trash2 className="h-3 w-3" aria-hidden="true" />
+                <footer className="mt-6 flex items-center justify-start gap-2 text-sm text-slate-600">
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                   <span>
                     {t('footerArchiveNote')}{' '}
                     {archiveThreshold / (1000 * 60 * 60)}{' '}

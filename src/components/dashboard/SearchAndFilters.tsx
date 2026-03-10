@@ -44,7 +44,7 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
   return (
     <section
       aria-label={t('searchSectionLabel')}
-      className="mb-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+      className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
@@ -52,13 +52,13 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
             {t('searchLabel')}
           </label>
           <Search
-            className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-gray-400"
+            className="pointer-events-none absolute right-3 top-3 h-5 w-5 text-slate-400"
             aria-hidden="true"
           />
           <input
             id="lawyer-dashboard-search"
             type="search"
-            className="w-full rounded-full border border-gray-300 py-2 pr-9 pl-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-lpBlue focus:outline-none focus:ring-1 focus:ring-lpBlue"
+            className="w-full rounded-full border border-slate-300 py-2.5 pr-10 pl-4 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-800"
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
@@ -68,13 +68,13 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
           <div className="flex items-center gap-2">
             <label
               htmlFor="lawyer-dashboard-status-filter"
-              className="text-xs font-semibold uppercase tracking-wide text-gray-500"
+              className="text-sm font-semibold uppercase tracking-wide text-slate-600"
             >
               {t('statusLabel')}
             </label>
             <select
               id="lawyer-dashboard-status-filter"
-              className="rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 focus:border-lpBlue focus:outline-none focus:ring-1 focus:ring-lpBlue"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 focus:border-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-800"
               value={statusFilter}
               onChange={(e) =>
                 onStatusFilterChange(e.target.value as ReportStatus | 'ALL')
@@ -90,13 +90,13 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
           <div className="flex items-center gap-2">
             <label
               htmlFor="lawyer-dashboard-sort-by"
-              className="text-xs font-semibold uppercase tracking-wide text-gray-500"
+              className="text-sm font-semibold uppercase tracking-wide text-slate-600"
             >
               {t('sortByLabel')}
             </label>
             <select
               id="lawyer-dashboard-sort-by"
-              className="rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 focus:border-lpBlue focus:outline-none focus:ring-1 focus:ring-lpBlue"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 focus:border-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-800"
               value={sortBy}
               onChange={(e) =>
                 onSortByChange(e.target.value as DashboardSortBy)
@@ -107,10 +107,10 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
               <option value="INSURED">{t('sortByInsured')}</option>
             </select>
           </div>
-          <label className="inline-flex items-center gap-2 text-xs font-medium text-gray-700">
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 rounded border-gray-300 text-lpBlue focus:ring-lpBlue"
+              className="h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900"
               checked={onlyMyCases}
               onChange={(e) => onOnlyMyCasesChange(e.target.checked)}
             />
@@ -120,7 +120,7 @@ export const SearchAndFilters: React.FC<SearchAndFiltersProps> = ({
             <button
               type="button"
               onClick={onClearFilters}
-              className="text-[11px] font-medium text-gray-600 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lpBlue focus-visible:ring-offset-2"
+              className="text-sm font-medium text-slate-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2"
             >
               {t('clearFilters')}
             </button>

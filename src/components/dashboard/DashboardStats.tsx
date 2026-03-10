@@ -25,27 +25,27 @@ const StatCard: React.FC<{
   const content = (
     <div
       className={[
-        'flex items-center justify-between rounded-2xl border px-4 py-3 shadow-sm transition',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2',
+        'flex items-center justify-between rounded-2xl border px-5 py-4 shadow-sm transition',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2',
         selected
-          ? 'border-gold bg-gold/10'
-          : 'border-borderDark bg-panel hover:bg-navySecondary',
+          ? 'border-amber-300 bg-amber-50'
+          : 'border-slate-200 bg-white hover:bg-slate-50',
       ].join(' ')}
     >
       <div>
         <p
           className={[
-            'text-[11px] uppercase tracking-wide',
-            selected ? 'font-bold text-textLight' : 'font-semibold text-textMuted',
+            'text-xs uppercase tracking-wide md:text-sm',
+            selected ? 'font-bold text-slate-900' : 'font-semibold text-slate-600',
           ].join(' ')}
         >
           {label}
         </p>
-        <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
+        <p className="mt-1 text-2xl font-bold text-slate-900 md:text-3xl">{value}</p>
       </div>
       <div
         className={[
-          'inline-flex h-9 w-9 items-center justify-center rounded-full',
+          'inline-flex h-10 w-10 items-center justify-center rounded-full md:h-11 md:w-11',
           accentClass,
         ].join(' ')}
         aria-hidden="true"
@@ -81,32 +81,32 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({
   return (
     <section
       aria-label={t('statsSectionLabel')}
-      className="mb-3 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3"
+      className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3"
     >
-      <p className="col-span-full text-[10px] text-textMuted mb-0">
+      <p className="col-span-full mb-0 text-sm text-slate-600">
         {t('statsSecondaryHint')}
       </p>
       <StatCard
         label={t('statsFinanceTasks')}
         value={financeTasks}
-        icon={<FileSpreadsheet className="h-4 w-4 text-goldLight" />}
-        accentClass="bg-gold/20"
+        icon={<FileSpreadsheet className="h-5 w-5 text-amber-700" />}
+        accentClass="bg-amber-100"
         selected={selectedFilter === 'FINANCE'}
         onClick={() => handleClick('FINANCE')}
       />
       <StatCard
         label={t('statsWaitingOnOthers')}
         value={waitingOnOthers}
-        icon={<Clock className="h-4 w-4 text-goldLight" />}
-        accentClass="bg-gold/20"
+        icon={<Clock className="h-5 w-5 text-amber-700" />}
+        accentClass="bg-amber-100"
         selected={selectedFilter === 'WAITING'}
         onClick={() => handleClick('WAITING')}
       />
       <StatCard
         label={t('statsDraftsReady')}
         value={draftsAndReady}
-        icon={<Send className="h-4 w-4 text-goldLight" />}
-        accentClass="bg-gold/20"
+        icon={<Send className="h-5 w-5 text-amber-700" />}
+        accentClass="bg-amber-100"
         selected={selectedFilter === 'DRAFTS'}
         onClick={() => handleClick('DRAFTS')}
       />
