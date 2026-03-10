@@ -2,7 +2,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { LEGAL_SNIPPETS } from '../src/constants.js';
-import { initPostgresStore, closePostgresStore } from '../src/server/postgresStore.js';
+import {
+  initPostgresStore,
+  runPostgresSchemaMigrations,
+  importLegacyJsonToPostgres,
+  closePostgresStore,
+} from '../src/server/postgresStore.js';
 
 dotenv.config();
 
@@ -19,14 +24,23 @@ const sessionsFilePath =
   process.env.SESSIONS_FILE_PATH || path.join(dataDir, 'sessions.json');
 
 async function run() {
-  await initPostgresStore({
+  console.log('[DB Migration] Running schema migrations');
+  await runPostgresSchemaMigrations();
+  console.log('[DB Migration] Schema migrations completed');
+
+  console.log('[DB Migration] Initializing store for import');
+  await initPostgresStore();
+  console.log('[DB Migration] Store initialized');
+
+  await importLegacyJsonToPostgres({
     templatesFilePath,
     bestPracticesFilePath,
     sessionsFilePath,
     legalSnippets: LEGAL_SNIPPETS,
   });
+
   await closePostgresStore();
-  console.log('PostgreSQL schema is ready and legacy JSON data migration was attempted.');
+  console.log('[DB Migration] Done');
 }
 
 run().catch((error) => {

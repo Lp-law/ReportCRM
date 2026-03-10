@@ -1,3 +1,9 @@
+databases:
+  - name: report-crm-db
+    plan: starter
+    databaseName: report_crm
+    user: report_crm_user
+
 services:
   - type: web
     name: report-crm
@@ -6,7 +12,9 @@ services:
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: report-crm-db
+          property: connectionString
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: PLAYWRIGHT_BROWSERS_PATH

@@ -1,20 +1,40 @@
 import fs from 'fs';
 import { Pool } from 'pg';
 
-const DATABASE_URL = process.env.DATABASE_URL;
+let pool = null;
+let initialized = false;
 
-if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL is required. File-based storage has been removed.');
-}
+const REQUIRED_TABLES = ['section_templates', 'best_practices', 'user_sessions'];
 
-const shouldUseSsl =
-  process.env.PGSSLMODE !== 'disable' &&
-  (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production');
+const getDatabaseUrlOrThrow = () => {
+  const value = process.env.DATABASE_URL;
+  if (!value || !String(value).trim()) {
+    throw new Error(
+      'DATABASE_URL is missing. Configure DATABASE_URL and run "npm run migrate:postgres" before starting the server.',
+    );
+  }
+  return String(value).trim();
+};
 
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
-});
+const createPool = () => {
+  if (pool) return pool;
+  const shouldUseSsl =
+    process.env.PGSSLMODE !== 'disable' &&
+    (process.env.RENDER === 'true' || process.env.NODE_ENV === 'production');
+
+  pool = new Pool({
+    connectionString: getDatabaseUrlOrThrow(),
+    ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
+  });
+  return pool;
+};
+
+const getPoolOrThrow = () => {
+  if (!pool) {
+    throw new Error('PostgreSQL store is not initialized. Call initPostgresStore() during startup.');
+  }
+  return pool;
+};
 
 const mapTemplateRow = (row) => ({
   id: row.id,
@@ -59,17 +79,14 @@ const readJsonArrayFile = (filePath) => {
 };
 
 const tableCount = async (tableName) => {
-  const result = await pool.query(`SELECT COUNT(*)::int AS count FROM ${tableName}`);
+  const db = getPoolOrThrow();
+  const result = await db.query(`SELECT COUNT(*)::int AS count FROM ${tableName}`);
   return result.rows[0]?.count || 0;
 };
 
-export const initPostgresStore = async ({
-  templatesFilePath,
-  bestPracticesFilePath,
-  sessionsFilePath,
-  legalSnippets,
-}) => {
-  await pool.query(`
+export const runPostgresSchemaMigrations = async () => {
+  const db = createPool();
+  await db.query(`
     CREATE TABLE IF NOT EXISTS section_templates (
       id TEXT PRIMARY KEY,
       section_key TEXT NOT NULL,
@@ -83,7 +100,7 @@ export const initPostgresStore = async ({
     );
   `);
 
-  await pool.query(`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS best_practices (
       id TEXT PRIMARY KEY,
       section_key TEXT NOT NULL,
@@ -103,7 +120,7 @@ export const initPostgresStore = async ({
     );
   `);
 
-  await pool.query(`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS user_sessions (
       id TEXT PRIMARY KEY,
       user_payload JSONB NOT NULL,
@@ -113,15 +130,42 @@ export const initPostgresStore = async ({
     );
   `);
 
-  await pool.query(`
+  await db.query(`
     CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at
     ON user_sessions (expires_at);
   `);
+};
 
-  await pool.query('DELETE FROM user_sessions WHERE expires_at <= NOW()');
+const validateRequiredTablesExist = async () => {
+  const db = getPoolOrThrow();
+  const result = await db.query(
+    `SELECT table_name
+     FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name = ANY($1::text[])`,
+    [REQUIRED_TABLES],
+  );
+  const existing = new Set(result.rows.map((r) => r.table_name));
+  const missing = REQUIRED_TABLES.filter((name) => !existing.has(name));
+  if (missing.length > 0) {
+    throw new Error(
+      `PostgreSQL schema is not initialized. Missing tables: ${missing.join(', ')}. Run "npm run migrate:postgres" first.`,
+    );
+  }
+};
 
+export const importLegacyJsonToPostgres = async ({
+  templatesFilePath,
+  bestPracticesFilePath,
+  sessionsFilePath,
+  legalSnippets,
+} = {}) => {
+  const db = getPoolOrThrow();
+
+  console.log('[DB Migration] Starting legacy JSON import checks');
   const templatesCount = await tableCount('section_templates');
   if (templatesCount === 0) {
+    console.log('[DB Migration] section_templates empty -> importing legacy data');
     const fileTemplates = readJsonArrayFile(templatesFilePath);
     let templatesToInsert = fileTemplates;
 
@@ -150,7 +194,7 @@ export const initPostgresStore = async ({
     }
 
     for (const t of templatesToInsert) {
-      await pool.query(
+      await db.query(
         `INSERT INTO section_templates
           (id, section_key, title, body, created_by_user_id, created_at, updated_at, is_enabled, order_index)
          VALUES
@@ -169,14 +213,19 @@ export const initPostgresStore = async ({
         ],
       );
     }
+    console.log(`[DB Migration] Imported section_templates rows: ${templatesToInsert.length}`);
+  } else {
+    console.log('[DB Migration] section_templates already has data -> skipping import');
   }
 
   const bestPracticesCount = await tableCount('best_practices');
   if (bestPracticesCount === 0) {
+    console.log('[DB Migration] best_practices empty -> importing legacy data');
     const fileBestPractices = readJsonArrayFile(bestPracticesFilePath);
+    let imported = 0;
     for (const bp of fileBestPractices) {
       if (!bp || !bp.sectionKey || !bp.title || !bp.body) continue;
-      await pool.query(
+      await db.query(
         `INSERT INTO best_practices
           (id, section_key, title, body, label, tags, is_enabled, created_by_user_id, created_at, updated_at, usage_count, last_used_at, behavior, source_report_id, order_index)
          VALUES
@@ -200,23 +249,52 @@ export const initPostgresStore = async ({
           Number.isFinite(bp.orderIndex) ? bp.orderIndex : 0,
         ],
       );
+      imported += 1;
     }
+    console.log(`[DB Migration] Imported best_practices rows: ${imported}`);
+  } else {
+    console.log('[DB Migration] best_practices already has data -> skipping import');
   }
 
-  const sessionsFromFile = readJsonArrayFile(sessionsFilePath);
-  for (const row of sessionsFromFile) {
-    if (!row?.id || !row?.user) continue;
-    await pool.query(
-      `INSERT INTO user_sessions (id, user_payload, expires_at)
-       VALUES ($1, $2::jsonb, NOW() + INTERVAL '12 hours')
-       ON CONFLICT (id) DO NOTHING`,
-      [String(row.id), JSON.stringify(row.user)],
-    );
+  const sessionsCount = await tableCount('user_sessions');
+  if (sessionsCount === 0) {
+    console.log('[DB Migration] user_sessions empty -> importing legacy data');
+    const sessionsFromFile = readJsonArrayFile(sessionsFilePath);
+    let imported = 0;
+    for (const row of sessionsFromFile) {
+      if (!row?.id || !row?.user) continue;
+      await db.query(
+        `INSERT INTO user_sessions (id, user_payload, expires_at)
+         VALUES ($1, $2::jsonb, NOW() + INTERVAL '12 hours')
+         ON CONFLICT (id) DO NOTHING`,
+        [String(row.id), JSON.stringify(row.user)],
+      );
+      imported += 1;
+    }
+    console.log(`[DB Migration] Imported user_sessions rows: ${imported}`);
+  } else {
+    console.log('[DB Migration] user_sessions already has data -> skipping import');
+  }
+
+  console.log('[DB Migration] Legacy JSON import check completed');
+};
+
+export const initPostgresStore = async () => {
+  const db = createPool();
+  try {
+    await db.query('SELECT 1');
+    await validateRequiredTablesExist();
+    await db.query('DELETE FROM user_sessions WHERE expires_at <= NOW()');
+    initialized = true;
+    console.log('[DB] PostgreSQL initialized and schema verified');
+  } catch (error) {
+    throw new Error(`PostgreSQL startup initialization failed: ${error.message || error}`);
   }
 };
 
 export const listSectionTemplates = async (sectionKey) => {
-  const result = await pool.query(
+  const db = getPoolOrThrow();
+  const result = await db.query(
     `SELECT * FROM section_templates
      WHERE ($1::text IS NULL OR section_key = $1)
      ORDER BY order_index ASC, created_at ASC`,
@@ -226,7 +304,8 @@ export const listSectionTemplates = async (sectionKey) => {
 };
 
 export const createSectionTemplate = async (template) => {
-  await pool.query(
+  const db = getPoolOrThrow();
+  await db.query(
     `INSERT INTO section_templates
       (id, section_key, title, body, created_by_user_id, created_at, updated_at, is_enabled, order_index)
      VALUES
@@ -246,6 +325,8 @@ export const createSectionTemplate = async (template) => {
 };
 
 export const updateSectionTemplate = async (id, patch) => {
+  if (!patch || Object.keys(patch).length === 0) return;
+  const db = getPoolOrThrow();
   const fields = [];
   const values = [];
   let idx = 1;
@@ -254,19 +335,21 @@ export const updateSectionTemplate = async (id, patch) => {
     values.push(value);
   });
   values.push(id);
-  await pool.query(`UPDATE section_templates SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+  await db.query(`UPDATE section_templates SET ${fields.join(', ')} WHERE id = $${idx}`, values);
 };
 
 export const deleteSectionTemplate = async (id) => {
-  await pool.query('DELETE FROM section_templates WHERE id = $1', [id]);
+  const db = getPoolOrThrow();
+  await db.query('DELETE FROM section_templates WHERE id = $1', [id]);
 };
 
 export const reorderSectionTemplate = async (id, direction) => {
-  const client = await pool.connect();
+  const db = getPoolOrThrow();
+  const client = await db.connect();
   try {
     await client.query('BEGIN');
     const rows = await client.query(
-      'SELECT id FROM section_templates ORDER BY order_index ASC, created_at ASC',
+      'SELECT id FROM section_templates ORDER BY order_index ASC, created_at ASC FOR UPDATE',
     );
     const sorted = rows.rows.map((r) => r.id);
     const index = sorted.indexOf(id);
@@ -296,7 +379,8 @@ export const reorderSectionTemplate = async (id, direction) => {
 };
 
 export const listBestPractices = async (sectionKey) => {
-  const result = await pool.query(
+  const db = getPoolOrThrow();
+  const result = await db.query(
     `SELECT * FROM best_practices
      WHERE ($1::text IS NULL OR section_key = $1)
      ORDER BY order_index ASC, created_at ASC`,
@@ -306,7 +390,8 @@ export const listBestPractices = async (sectionKey) => {
 };
 
 export const createBestPractice = async (snippet) => {
-  await pool.query(
+  const db = getPoolOrThrow();
+  await db.query(
     `INSERT INTO best_practices
       (id, section_key, title, body, label, tags, is_enabled, created_by_user_id, created_at, updated_at, usage_count, last_used_at, behavior, source_report_id, order_index)
      VALUES
@@ -332,6 +417,8 @@ export const createBestPractice = async (snippet) => {
 };
 
 export const updateBestPractice = async (id, patch) => {
+  if (!patch || Object.keys(patch).length === 0) return;
+  const db = getPoolOrThrow();
   const fields = [];
   const values = [];
   let idx = 1;
@@ -345,19 +432,21 @@ export const updateBestPractice = async (id, patch) => {
     values.push(value);
   });
   values.push(id);
-  await pool.query(`UPDATE best_practices SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+  await db.query(`UPDATE best_practices SET ${fields.join(', ')} WHERE id = $${idx}`, values);
 };
 
 export const deleteBestPractice = async (id) => {
-  await pool.query('DELETE FROM best_practices WHERE id = $1', [id]);
+  const db = getPoolOrThrow();
+  await db.query('DELETE FROM best_practices WHERE id = $1', [id]);
 };
 
 export const reorderBestPractice = async (id, direction) => {
-  const client = await pool.connect();
+  const db = getPoolOrThrow();
+  const client = await db.connect();
   try {
     await client.query('BEGIN');
     const rows = await client.query(
-      'SELECT id FROM best_practices ORDER BY order_index ASC, created_at ASC',
+      'SELECT id FROM best_practices ORDER BY order_index ASC, created_at ASC FOR UPDATE',
     );
     const sorted = rows.rows.map((r) => r.id);
     const index = sorted.indexOf(id);
@@ -387,7 +476,8 @@ export const reorderBestPractice = async (id, direction) => {
 };
 
 export const createSession = async (sessionId, userPayload, sessionTtlHours = 12) => {
-  await pool.query(
+  const db = getPoolOrThrow();
+  await db.query(
     `INSERT INTO user_sessions (id, user_payload, expires_at, last_seen_at)
      VALUES ($1, $2::jsonb, NOW() + ($3::text || ' hours')::interval, NOW())
      ON CONFLICT (id)
@@ -397,22 +487,27 @@ export const createSession = async (sessionId, userPayload, sessionTtlHours = 12
 };
 
 export const getSessionUser = async (sessionId) => {
-  const result = await pool.query(
+  const db = getPoolOrThrow();
+  const result = await db.query(
     `SELECT user_payload
      FROM user_sessions
      WHERE id = $1 AND expires_at > NOW()`,
     [sessionId],
   );
   if (!result.rows.length) return null;
-  await pool.query('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = $1', [sessionId]);
+  await db.query('UPDATE user_sessions SET last_seen_at = NOW() WHERE id = $1', [sessionId]);
   return result.rows[0].user_payload || null;
 };
 
 export const deleteSession = async (sessionId) => {
-  await pool.query('DELETE FROM user_sessions WHERE id = $1', [sessionId]);
+  const db = getPoolOrThrow();
+  await db.query('DELETE FROM user_sessions WHERE id = $1', [sessionId]);
 };
 
 export const closePostgresStore = async () => {
+  if (!pool) return;
   await pool.end();
+  pool = null;
+  initialized = false;
 };
 

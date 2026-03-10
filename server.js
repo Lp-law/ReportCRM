@@ -17,7 +17,7 @@ import Handlebars from 'handlebars';
 import crypto from 'crypto';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { MASTER_PROMPT } from './src/ai/masterPrompt.js';
-import { LEGAL_SNIPPETS, USERS } from './src/constants.js';
+import { USERS } from './src/constants.js';
 import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactProtection.js';
 import {
   initPostgresStore,
@@ -121,14 +121,14 @@ Object.entries(TIMELINE_STAGE_FILES).forEach(([stage, filename]) => {
 // Configure environment variables
 dotenv.config();
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const TEMPLATES_FILE_PATH =
-  process.env.TEMPLATES_FILE_PATH || path.join(DATA_DIR, 'sectionTemplates.json');
-const BEST_PRACTICES_FILE_PATH =
-  process.env.BEST_PRACTICES_FILE_PATH || path.join(DATA_DIR, 'bestPractices.json');
-const SESSIONS_FILE_PATH =
-  process.env.SESSIONS_FILE_PATH || path.join(DATA_DIR, 'sessions.json');
-const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS || 12);
+const parsedSessionTtlHours = Number.parseInt(process.env.SESSION_TTL_HOURS || '12', 10);
+const SESSION_TTL_HOURS =
+  Number.isFinite(parsedSessionTtlHours) && parsedSessionTtlHours > 0
+    ? parsedSessionTtlHours
+    : 12;
+if (!Number.isFinite(parsedSessionTtlHours) || parsedSessionTtlHours <= 0) {
+  console.warn('[Startup] Invalid SESSION_TTL_HOURS; using default 12 hours');
+}
 
 const app = express();
 
@@ -136,12 +136,12 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images/files
 
-await initPostgresStore({
-  templatesFilePath: TEMPLATES_FILE_PATH,
-  bestPracticesFilePath: BEST_PRACTICES_FILE_PATH,
-  sessionsFilePath: SESSIONS_FILE_PATH,
-  legalSnippets: LEGAL_SNIPPETS,
-});
+try {
+  await initPostgresStore();
+} catch (error) {
+  console.error('[Startup] Database initialization failed:', error);
+  throw error;
+}
 
 // Initialize OpenAI (ChatGPT)
 const apiKey = process.env.OPENAI_API_KEY || process.env.API_KEY;
@@ -218,7 +218,8 @@ const getUserFromRequest = async (req) => {
     if (!sessionId) return null;
     const user = await getSessionUser(sessionId);
     return user || null;
-  } catch {
+  } catch (error) {
+    console.warn('[Auth] Failed to resolve session from request:', error?.message || error);
     return null;
   }
 };
@@ -2245,12 +2246,16 @@ const renderReportPdf = async (report) => {
 
   // Optional debug: write HTML to disk for manual inspection
   if (process.env.PDF_DEBUG === '1') {
-    try {
-      const debugPath = path.join(__dirname, 'debug-report.html');
-      fs.writeFileSync(debugPath, html, 'utf-8');
-      console.log('[PDF_DEBUG] Wrote debug HTML to:', debugPath);
-    } catch (err) {
-      console.error('[PDF_DEBUG] Failed to write debug HTML:', err);
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('[PDF_DEBUG] Ignored in production for filesystem safety');
+    } else {
+      try {
+        const debugPath = path.join(__dirname, 'debug-report.html');
+        fs.writeFileSync(debugPath, html, 'utf-8');
+        console.log('[PDF_DEBUG] Wrote debug HTML to:', debugPath);
+      } catch (err) {
+        console.error('[PDF_DEBUG] Failed to write debug HTML:', err);
+      }
     }
   }
 
