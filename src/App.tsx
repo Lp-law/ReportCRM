@@ -6864,6 +6864,7 @@ const LoginScreen = ({ onLogin }: { onLogin: (u: User) => void }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const externalDashboardUrl = 'https://ringforge.onrender.com/dashboard';
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -6948,6 +6949,15 @@ const LoginScreen = ({ onLogin }: { onLogin: (u: User) => void }) => {
         >
           {isSubmitting ? 'Signing in…' : 'Sign In'} <ArrowRight className="w-4 h-4" />
         </button>
+
+        <a
+          href={externalDashboardUrl}
+          className="mt-3 w-full inline-flex items-center justify-center rounded-full border border-borderDark bg-panel px-4 py-3 text-sm font-semibold text-textLight transition-colors hover:bg-navySecondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+          aria-label="מעבר לדשבורד החיצוני"
+          dir="rtl"
+        >
+          דשבורד
+        </a>
 
         <div className="mt-6 text-[11px] text-textMuted tracking-[0.3em] uppercase">
           Lior Perry Law Office &amp; Notary © 2024
