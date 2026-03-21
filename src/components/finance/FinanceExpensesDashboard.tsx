@@ -228,7 +228,7 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
     const linkedReport =
       latestReportBySheetId.get(selectedSheetRelations.sheet.id) || null;
     return (
-<div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6">
+      <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6" dir="rtl" lang="he">
           <FinanceExpenseSheetEditor
           user={user}
           sheetWithRelations={selectedSheetRelations}
@@ -242,7 +242,7 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
   }
 
   return (
-    <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6">
+    <div className="w-full px-6 md:px-8 lg:px-10 xl:px-12 py-6" dir="rtl" lang="he">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">טבלאות הוצאות</h1>
@@ -440,8 +440,8 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                         ? `${totals.amountToRequest.toLocaleString('he-IL')} ₪`
                         : '—'}
                     </td>
-                    <td className="px-3 py-2 border-b text-left">
-                      <div className="flex items-center gap-2 justify-start">
+                    <td className="px-3 py-2 border-b text-right">
+                      <div className="flex items-center gap-2 justify-end">
                         <button
                           type="button"
                           className="px-3 py-1 text-sm rounded border border-blue-500 text-blue-700 hover:bg-blue-50"

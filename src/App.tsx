@@ -7010,6 +7010,7 @@ const AppInner = () => {
    const [timelineGallery, setTimelineGallery] = useState<{id: string, name: string, src: string}[]>([]);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const isAdminUser = currentUser?.role === 'ADMIN';
+  const isHebrewUi = Boolean(currentUser);
   const [notifications, setNotifications] = useState<NotificationEntry[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -7057,6 +7058,16 @@ const AppInner = () => {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.dir = isHebrewUi ? 'rtl' : 'ltr';
+    document.documentElement.lang = isHebrewUi ? 'he' : 'en';
+    if (document.body) {
+      document.body.dir = isHebrewUi ? 'rtl' : 'ltr';
+      document.body.lang = isHebrewUi ? 'he' : 'en';
+    }
+  }, [isHebrewUi]);
 
   // Persist notifications so that messages from Iris נשמרות גם אחרי החלפת משתמש בדפדפן
   useEffect(() => {
