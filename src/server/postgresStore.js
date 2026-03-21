@@ -170,7 +170,7 @@ const validateRequiredTablesExist = async () => {
   const missing = REQUIRED_TABLES.filter((name) => !existing.has(name));
   if (missing.length > 0) {
     throw new Error(
-      `PostgreSQL schema is not initialized. Missing tables: ${missing.join(', ')}. Run "npm run migrate:postgres" first.`,
+      `PostgreSQL schema is not initialized. Missing tables: ${missing.join(', ')}.`,
     );
   }
 };
@@ -304,6 +304,8 @@ export const initPostgresStore = async () => {
   const db = createPool();
   try {
     await db.query('SELECT 1');
+    // Keep startup self-healing in environments where manual migration is hard to run.
+    await runPostgresSchemaMigrations();
     await validateRequiredTablesExist();
     await db.query('DELETE FROM user_sessions WHERE expires_at <= NOW()');
     initialized = true;
