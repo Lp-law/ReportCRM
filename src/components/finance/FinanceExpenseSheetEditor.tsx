@@ -37,7 +37,6 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
 }) => {
   const [amountInput, setAmountInput] = useState('');
   const [dateInput, setDateInput] = useState(() => new Date().toISOString().slice(0, 10));
-  const [referenceInput, setReferenceInput] = useState('');
   const [noteInput, setNoteInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +75,11 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
         sheetId: sheet.id,
         amount,
         paidAt: paidAtIso,
-        reference: referenceInput || null,
+        reference: null,
         note: noteInput || null,
       });
       onChangeEvents([...paymentEvents, created]);
       setAmountInput('');
-      setReferenceInput('');
       setNoteInput('');
       setError(null);
     } finally {
@@ -102,7 +100,7 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
         <div>
           <label className="block text-[11px] font-medium text-slate-700 mb-1">
             סכום התשלום (₪)
@@ -124,17 +122,6 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
             className="w-full border rounded px-2 py-1 text-xs"
             value={dateInput}
             onChange={(e) => setDateInput(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-[11px] font-medium text-slate-700 mb-1">
-            אסמכתא (מס׳ צ׳ק / הפקדה)
-          </label>
-          <input
-            type="text"
-            className="w-full border rounded px-2 py-1 text-xs"
-            value={referenceInput}
-            onChange={(e) => setReferenceInput(e.target.value)}
           />
         </div>
         <div>
@@ -188,9 +175,6 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
                     day: '2-digit',
                   })}
                 </span>
-                {ev.reference && (
-                  <span className="text-slate-600">אסמכתא: {ev.reference}</span>
-                )}
                 {ev.note && <span className="text-slate-600">הערה: {ev.note}</span>}
                 <button
                   type="button"
@@ -1232,7 +1216,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       {/* Quick help */}
       <div className="mt-2 text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-md p-2">
         <span className="font-semibold mr-1">עזרה קצרה:</span>
-        מלאי שורה לכל הוצאה (ספק, תיאור, תאריך, כמות, מחיר ומע״מ). הסרגל הכחול מסכם את
+        מלאי שורה לכל הוצאה (ספק, תיאור, תאריך, מחיר ומע״מ). הסרגל הכחול מסכם את
         הגיליון הנוכחי בלבד, בעוד הטבלה המצורפת לדו״ח מציגה תמונת מצב מצטברת לכל ההוצאות
         והתשלומים בתיק.
       </div>
@@ -1324,7 +1308,6 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
               <th className="px-2 py-1 border-b text-right">ספק</th>
               <th className="px-2 py-1 border-b text-right">תיאור</th>
               <th className="px-2 py-1 border-b text-right">תאריך</th>
-              <th className="px-2 py-1 border-b text-right">כמות</th>
               <th className="px-2 py-1 border-b text-right">מחיר יחידה</th>
               <th className="px-2 py-1 border-b text-right">מע״מ %</th>
               <th className="px-2 py-1 border-b text-right">נכלל בבקשה</th>
@@ -1338,7 +1321,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
               <tr>
                 <td
                   className="px-2 py-1 border-b text-xs text-slate-600 bg-slate-50"
-                  colSpan={9}
+                  colSpan={10}
                 >
                   הוצאות קודמות (לקריאה בלבד) – מסוכמות מגיליונות קודמים בתיק זה.
                 </td>
@@ -1369,13 +1352,13 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                     {line.date || ''}
                   </td>
                   <td className="px-2 py-1 border-b text-xs">
-                    {line.quantity ?? ''}
-                  </td>
-                  <td className="px-2 py-1 border-b text-xs">
                     {line.unitPrice ?? ''}
                   </td>
                   <td className="px-2 py-1 border-b text-xs">
                     {line.vatRate ?? ''}
+                  </td>
+                  <td className="px-2 py-1 border-b text-xs">
+                    —
                   </td>
                   <td className="px-2 py-1 border-b text-xs">
                     {Number.isFinite(lineTotal)
@@ -1384,6 +1367,9 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                   </td>
                   <td className="px-2 py-1 border-b text-[11px] text-slate-400">
                     מדיווח קודם
+                  </td>
+                  <td className="px-2 py-1 border-b text-xs text-slate-400">
+                    —
                   </td>
                 </tr>
               );
@@ -1498,20 +1484,6 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                       onChange={(e) =>
                         handleLineChange(index, { date: e.target.value || null })
                       }
-                    />
-                  </td>
-                  <td className="px-2 py-1 border-b">
-                    <input
-                      type="number"
-                      className="border rounded px-1 py-0.5 w-20 text-xs disabled:bg-gray-100 disabled:text-gray-400"
-                      value={line.quantity ?? 1}
-                      disabled={isCompensation}
-                      onChange={(e) => {
-                        if (isCompensation) return;
-                        const value = Number(e.target.value);
-                        const safe = Number.isFinite(value) ? Math.max(0, value) : 0;
-                        handleLineChange(index, { quantity: safe });
-                      }}
                     />
                   </td>
                   <td className="px-2 py-1 border-b">
