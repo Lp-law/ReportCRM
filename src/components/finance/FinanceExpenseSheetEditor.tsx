@@ -178,7 +178,7 @@ const PaymentEventsPanel: React.FC<PaymentEventsPanelProps> = ({
                 {ev.note && <span className="text-slate-600">הערה: {ev.note}</span>}
                 <button
                   type="button"
-                  className="ml-auto text-xs text-red-600 hover:underline"
+                  className="mr-auto text-xs text-red-600 hover:underline"
                   onClick={() => handleDelete(ev.id)}
                 >
                   מחיקה
@@ -912,7 +912,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
   }, [linkedReportForLawyer]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 text-right" dir="rtl" lang="he">
       {isLockedByPaid && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {isReadOnly ? (
@@ -1048,7 +1048,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       )}
 
       {previewHtml && (
-        <div className="mt-2 rounded border border-gray-300 bg-white px-3 py-3 text-sm text-left">
+        <div className="mt-2 rounded border border-gray-300 bg-white px-3 py-3 text-sm text-right" dir="rtl">
           <div className="flex justify-between items-center mb-2">
             <span className="font-semibold text-gray-800">Expenses Table – Preview</span>
             <button
@@ -1215,7 +1215,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
       {/* Quick help */}
       <div className="mt-2 text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-md p-2">
-        <span className="font-semibold mr-1">עזרה קצרה:</span>
+        <span className="font-semibold ml-1">עזרה קצרה:</span>
         מלאי שורה לכל הוצאה (ספק, תיאור, תאריך, מחיר ומע״מ). הסרגל הכחול מסכם את
         הגיליון הנוכחי בלבד, בעוד הטבלה המצורפת לדו״ח מציגה תמונת מצב מצטברת לכל ההוצאות
         והתשלומים בתיק.
@@ -1289,7 +1289,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
           <ul className="list-disc pr-5 space-y-0.5">
             {issues.map((issue) => (
               <li key={`${issue.code}-${issue.scope}-${issue.entityId || 'sheet'}`}>
-                <span className="font-mono text-xs text-gray-500 ml-1">
+                <span className="font-mono text-xs text-gray-500 mr-1">
                   [{issue.severity}]
                 </span>
                 <span className="text-red-900"> {issue.messageHe}</span>
@@ -1523,7 +1523,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                       }
                     />
                   </td>
-                  <td className="px-2 py-1 border-b text-left font-mono text-xs">
+                  <td className="px-2 py-1 border-b text-right font-mono text-xs">
                     {line.lineTotalAmount != null
                       ? line.lineTotalAmount.toLocaleString('he-IL')
                       : ''}
@@ -1568,7 +1568,7 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
                       )}
                     </div>
                     {linkedAttachment && (
-                      <div className="mt-0.5 text-[11px] text-gray-700 text-left">
+                      <div className="mt-0.5 text-[11px] text-gray-700 text-right">
                         <span className="text-gray-500">קובץ:</span>{' '}
                         <span className="font-mono break-all">{linkedAttachment.originalFileName}</span>
                       </div>
