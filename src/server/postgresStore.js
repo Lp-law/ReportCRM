@@ -7,10 +7,16 @@ let initialized = false;
 const REQUIRED_TABLES = ['section_templates', 'best_practices', 'user_sessions'];
 
 const getDatabaseUrlOrThrow = () => {
-  const value = process.env.DATABASE_URL;
+  const value =
+    process.env.DATABASE_URL ||
+    process.env.DATABASE_URL_INTERNAL ||
+    process.env.DATABASE_INTERNAL_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRESQL_URL ||
+    process.env.PG_URL;
   if (!value || !String(value).trim()) {
     throw new Error(
-      'DATABASE_URL is missing. Configure DATABASE_URL and run "npm run migrate:postgres" before starting the server.',
+      'PostgreSQL connection string is missing. Set DATABASE_URL (preferred) or DATABASE_URL_INTERNAL and run "npm run migrate:postgres" before starting the server.',
     );
   }
   return String(value).trim();

@@ -9,12 +9,17 @@ services:
     name: report-crm
     env: node
     buildCommand: npm ci && npx playwright install chromium && npm run build
+    preDeployCommand: npm run migrate:postgres
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: report-crm-db
           property: connectionString
+      - key: DATABASE_URL_INTERNAL
+        fromDatabase:
+          name: report-crm-db
+          property: internalConnectionString
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: PLAYWRIGHT_BROWSERS_PATH
