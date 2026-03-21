@@ -6,6 +6,20 @@ let initialized = false;
 
 const REQUIRED_TABLES = ['section_templates', 'best_practices', 'user_sessions'];
 
+const buildConnectionStringFromParts = () => {
+  const host = process.env.PGHOST || process.env.POSTGRES_HOST;
+  const port = process.env.PGPORT || process.env.POSTGRES_PORT || '5432';
+  const database = process.env.PGDATABASE || process.env.POSTGRES_DB;
+  const user = process.env.PGUSER || process.env.POSTGRES_USER;
+  const password = process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD;
+
+  if (!host || !database || !user || !password) {
+    return null;
+  }
+
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+};
+
 const getDatabaseUrlOrThrow = () => {
   const value =
     process.env.DATABASE_URL ||
@@ -13,7 +27,8 @@ const getDatabaseUrlOrThrow = () => {
     process.env.DATABASE_INTERNAL_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRESQL_URL ||
-    process.env.PG_URL;
+    process.env.PG_URL ||
+    buildConnectionStringFromParts();
   if (!value || !String(value).trim()) {
     throw new Error(
       'PostgreSQL connection string is missing. Set DATABASE_URL (preferred) or DATABASE_URL_INTERNAL and run "npm run migrate:postgres" before starting the server.',

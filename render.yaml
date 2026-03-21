@@ -19,7 +19,7 @@ services:
       - key: DATABASE_URL_INTERNAL
         fromDatabase:
           name: report-crm-db
-          property: internalConnectionString
+          property: connectionString
       - key: SESSION_TTL_HOURS
         value: "12"
       - key: PLAYWRIGHT_BROWSERS_PATH
