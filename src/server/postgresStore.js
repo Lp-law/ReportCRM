@@ -31,7 +31,7 @@ const getDatabaseUrlOrThrow = () => {
     buildConnectionStringFromParts();
   if (!value || !String(value).trim()) {
     throw new Error(
-      'PostgreSQL connection string is missing. Set DATABASE_URL (preferred) or DATABASE_URL_INTERNAL and run "npm run migrate:postgres" before starting the server.',
+      'PostgreSQL connection string is missing. Set DATABASE_URL (preferred) or provide PGHOST/PGUSER/PGPASSWORD/PGDATABASE.',
     );
   }
   return String(value).trim();
