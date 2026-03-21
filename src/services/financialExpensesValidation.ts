@@ -57,7 +57,6 @@ const buildIssue = (
     MISSING_PROVIDER: 'שם ספק הוצאה חסר בשורה.',
     MISSING_DESCRIPTION: 'תיאור שורה חסר.',
     INVALID_DATE_FUTURE: 'תאריך שורה בעתיד – נא לוודא.',
-    INVALID_QUANTITY: 'כמות בשורה חייבת להיות גדולה מ-0.',
     INVALID_UNIT_PRICE: 'מחיר יחידה לא יכול להיות שלילי.',
     INVALID_VAT_RATE: 'שיעור מע״מ לא יכול להיות שלילי.',
     NEGATIVE_AMOUNT: 'סכומי השורה לא יכולים להיות שליליים.',
@@ -143,17 +142,6 @@ const validateLineBasics = (line: FinancialExpenseLineItem): ValidationIssue[] =
       buildIssue({
         code: 'INVALID_DATE_FUTURE',
         severity: 'WARNING',
-        scope: 'LINE_ITEM',
-        entityId: line.id,
-      }),
-    );
-  }
-
-  if (line.quantity != null && line.quantity <= 0) {
-    issues.push(
-      buildIssue({
-        code: 'INVALID_QUANTITY',
-        severity: 'ERROR',
         scope: 'LINE_ITEM',
         entityId: line.id,
       }),

@@ -258,7 +258,13 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
 
   useEffect(() => {
     setSheet(sheetWithRelations.sheet);
-    setLines(sheetWithRelations.lineItems);
+    // Quantity field is intentionally hidden in Iris UI; normalize legacy rows.
+    setLines(
+      sheetWithRelations.lineItems.map((line) => ({
+        ...line,
+        quantity: 1,
+      })),
+    );
     setAttachments(sheetWithRelations.attachments);
     setIsDirty(false);
 
@@ -860,7 +866,6 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       'Date',
       'Provider',
       'Description',
-      'Quantity',
       'UnitPrice',
       'VatRate',
       'IncludedInRequest',
@@ -871,7 +876,6 @@ const FinanceExpenseSheetEditor: React.FC<Props> = ({
       line.date || '',
       (line.providerName || '').replace(/"/g, '""'),
       (line.description || '').replace(/"/g, '""'),
-      line.quantity ?? '',
       line.unitPrice ?? '',
       line.vatRate ?? '',
       line.isIncludedInRequestedAmount !== false ? 'YES' : 'NO',
