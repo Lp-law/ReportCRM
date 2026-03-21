@@ -315,17 +315,17 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
       </div>
 
       <div className="bg-white border rounded-lg shadow-sm overflow-x-auto text-base">
-        <table className="min-w-full">
+        <table className="min-w-full table-fixed">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-3 py-2 border-b text-right">תיק</th>
-              <th className="px-3 py-2 border-b text-right">מבטחת</th>
-              <th className="px-3 py-2 border-b text-right">שם התובע / תובעת</th>
-              <th className="px-3 py-2 border-b text-right">גרסה</th>
-              <th className="px-3 py-2 border-b text-right">סטטוס</th>
-              <th className="px-3 py-2 border-b text-right">עודכן לאחרונה</th>
-              <th className="px-3 py-2 border-b text-right">סכום להזמנה</th>
-              <th className="px-3 py-2 border-b text-right">פעולות</th>
+              <th className="w-[14%] px-3 py-2 border-b text-right whitespace-nowrap">תיק</th>
+              <th className="w-[14%] px-3 py-2 border-b text-right whitespace-nowrap">מבטחת</th>
+              <th className="w-[16%] px-3 py-2 border-b text-right whitespace-nowrap">שם התובע / תובעת</th>
+              <th className="w-[12%] px-3 py-2 border-b text-right whitespace-nowrap">גרסה</th>
+              <th className="w-[18%] px-3 py-2 border-b text-right whitespace-nowrap">סטטוס</th>
+              <th className="w-[12%] px-3 py-2 border-b text-right whitespace-nowrap">עודכן לאחרונה</th>
+              <th className="w-[8%] px-3 py-2 border-b text-right whitespace-nowrap">סכום להזמנה</th>
+              <th className="w-[14%] px-3 py-2 border-b text-right whitespace-nowrap">פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -390,8 +390,8 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
 
                 return (
                   <tr key={sheet.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 border-b font-mono text-sm text-gray-800">
-                      <div className="flex flex-col items-start gap-0.5">
+                    <td className="px-3 py-2 border-b font-mono text-sm text-gray-800 text-right">
+                      <div className="flex flex-col items-end gap-0.5">
                         <span>{sheet.caseId}</span>
                         <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-700 border border-gray-200">
                           {caseStatusLabel === 'סגור'
@@ -427,15 +427,17 @@ const FinanceExpensesDashboard: React.FC<Props> = ({
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 border-b text-gray-700">
-                      {sheet.updatedAt
-                        ? new Date(sheet.updatedAt).toLocaleString('he-IL', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })
-                        : '—'}
+                    <td className="px-3 py-2 border-b text-gray-700 text-right whitespace-nowrap tabular-nums">
+                      <span dir="ltr" className="inline-block">
+                        {sheet.updatedAt
+                          ? new Date(sheet.updatedAt).toLocaleString('he-IL', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })
+                          : '—'}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 border-b text-blue-700 font-semibold">
+                    <td className="px-3 py-2 border-b text-blue-700 font-semibold text-right whitespace-nowrap tabular-nums">
                       {totals
                         ? `${totals.amountToRequest.toLocaleString('he-IL')} ₪`
                         : '—'}
