@@ -66,7 +66,7 @@ import {
   resolveEmailScenario,
   EMAIL_SCENARIO_SUBJECT_PREFIX,
 } from './utils/emailContentDefaults';
-import { extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, type HebrewRefineMode } from './services/geminiService';
+import { extractPolicyData, refineLegalText, improveEnglishText, extractExpensesTable, askHelpChat, analyzeMedicalComplaint, analyzeDentalOpinion, sendEmailViaOutlook, fetchReportPdf, requestAssistantHelp, generateHebrewReportSummary, translateLegalText, type HebrewRefineMode } from './services/geminiService';
 
 const DOC_ANALYSIS_OCR_FAILED_MSG =
   'לא ניתן לקרוא טקסט מהמסמך.\nניתן להמשיך לעבוד ולהוסיף את הסיכום ידנית.\n\nאם יש באפשרותך, ניתן לבצע OCR ב־Adobe Acrobat ולהעלות את הקובץ מחדש.';
