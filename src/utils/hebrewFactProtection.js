@@ -51,10 +51,11 @@ export const protectHebrewFacts = (text) => {
   applyPattern(/\b\d{1,3}(?:[,\.\s]\d{3})*(?:[,\.\s]\d+)?\b/g, 'NUM');
 
   // 6) Numbers written in Hebrew words (conservative list)
+  // Note: \b doesn't work with Hebrew. Use lookbehind/lookahead for word boundaries.
   const numWord =
-    '(?:אפס|אחד|שתיים|שניים|שלוש|ארבע|חמש|שש|שבע|שמונה|תשע|עשר|אחת עשרה|אחת-עשרה|שתים עשרה|שתים-עשרה|שתים-עשר|שלוש עשרה|שלוש-עשרה|ארבע עשרה|ארבע-עשרה|חמש עשרה|חמש-עשרה|שש עשרה|שש-עשרה|שבע עשרה|שבע-עשרה|שמונה עשרה|שמונה-עשרה|תשע עשרה|תשע-עשרה|עשרים|עשרים ואחת|עשרים ואחד|שלושים|ארבעים|חמישים|שישים|שבעים|שמונים|תשעים|מאה|מאתיים|שלוש מאות|ארבע מאות|חמש מאות|שש מאות|שבע מאות|שמונה מאות|תשע מאות|אלף|אלפים|מיליון|מיליארד)';
+    '(?:אפס|אחד|אחת|שתיים|שניים|שלושה|שלושים|שלוש|ארבעה|ארבעים|ארבע|חמישה|חמישים|חמש|שישה|שישים|שש|שבעה|שבעים|שבע|שמונים|שמונה|תשעים|תשעה|תשע|עשרים|עשרה|עשר|אחת עשרה|אחת-עשרה|שתים עשרה|שתים-עשרה|שלוש עשרה|שלוש-עשרה|ארבע עשרה|ארבע-עשרה|חמש עשרה|חמש-עשרה|שש עשרה|שש-עשרה|שבע עשרה|שבע-עשרה|שמונה עשרה|שמונה-עשרה|תשע עשרה|תשע-עשרה|מאתיים|מאה|שלוש מאות|ארבע מאות|חמש מאות|שש מאות|שבע מאות|שמונה מאות|תשע מאות|אלפיים|אלפים|אלף|מיליארד|מיליון)';
   const numWordPattern = new RegExp(
-    `\\b${numWord}(?:\\s+ו?${numWord})*(?:\\s+(?:אחוז(?:ים)?|שקל(?:ים)?|₪|אלף|אלפים|מיליון|מיליארד))?`,
+    `(?:^|(?<=\\s))${numWord}(?:\\s+ו?${numWord})*(?:\\s+(?:אחוז(?:ים)?|שקל(?:ים)?|₪|אלף|אלפיים|אלפים|מיליון|מיליארד))?`,
     'g',
   );
   applyPattern(numWordPattern, 'NUMWORD');
@@ -69,18 +70,29 @@ export const protectHebrewFacts = (text) => {
   );
 
   // 8) Hebrew initials as names: "א. ב.", "א׳ ב׳"
-  applyPattern(/\b[א-ת]['״׳\.]\s*[א-ת]['״׳\.]/g, 'NAME');
+  applyPattern(/(?:^|(?<=\s))[א-ת][.'״׳]\s*[א-ת][.'״׳]/g, 'NAME');
 
-  // 9) Contextual Hebrew names after strong role words, e.g. "התובעת שרה לוי"
+  // 9) Contextual Hebrew names after strong role words, e.g. "התובעת שרה לוי", "מר משה כהן"
+  // Exclude common verbs/nouns that follow role words but aren't names.
+  const hebrewNonNameWords = new Set([
+    'טוענת', 'טוען', 'הגישה', 'הגיש', 'פנתה', 'פנה', 'ביקשה', 'ביקש',
+    'קיבלה', 'קיבל', 'שילם', 'שילמה', 'נפגעה', 'נפגע', 'סבלה', 'סבל',
+    'עברה', 'עבר', 'טופלה', 'טופל', 'אושפזה', 'אושפז', 'נותחה', 'נותח',
+    'נולדה', 'נולד', 'התגוררה', 'התגורר', 'העידה', 'העיד',
+    'לנכות', 'בשיעור', 'בסך', 'בגין', 'בגלל', 'לפיצוי', 'לפיצויים',
+  ]);
   const contextNamePattern =
-    /\b(התובעת|התובע|הנתבע|הנתבעת|המבוטח|המבוטחת|העד|המומחה|הרופא|הגב׳|הגב'|מר|מר\.|גב׳|גב'|Mr|Mrs)\s+[א-ת]{2,12}\s+[א-ת]{2,12}/g;
-  protectedText = protectedText.replace(contextNamePattern, (match) => {
+    /(?:^|(?<=\s))(התובעת|התובע|הנתבע|הנתבעת|המבוטח|המבוטחת|העד|המומחה|הרופא|הגב׳|הגב'|מר|גב׳|גב'|Mr|Mrs)\s+([א-ת]{2,12})\s+([א-ת]{2,12})/g;
+  protectedText = protectedText.replace(contextNamePattern, (match, role, word1, word2) => {
     if (/^__\w+_\d+__$/.test(match)) return match;
+    // Skip if the first word after the role is a common verb/noun
+    if (hebrewNonNameWords.has(word1)) return match;
+    const name = `${word1} ${word2}`;
     const key = makeKey('NAME');
     if (!map[key]) {
-      map[key] = match;
+      map[key] = name;
     }
-    return key;
+    return `${role} ${key}`;
   });
 
   return { protectedText, map };

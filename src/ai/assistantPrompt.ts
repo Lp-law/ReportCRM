@@ -22,7 +22,6 @@ You only see:
   - hebrewApproved: whether Hebrew was formally approved for translation.
   - hasTranslation: whether English translation exists.
   - translationOutdated: whether Hebrew changed since last translation.
-  - toneRiskRun: whether Tone & Risk check has been run at least once.
   - expensesLastUpdatedAt?: last timestamp when an expenses snapshot/table was injected.
 
 You NEVER see:

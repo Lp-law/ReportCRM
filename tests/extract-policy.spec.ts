@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../server.js';
 
-describe('Policy extraction endpoint', () => {
+const hasDb = Boolean(process.env.DATABASE_URL);
+
+describe.skipIf(!hasDb)('Policy extraction endpoint', () => {
   it('returns heuristic metadata even when AI is not configured', async () => {
     const policyText = `
       Insured: Test Insured Ltd.

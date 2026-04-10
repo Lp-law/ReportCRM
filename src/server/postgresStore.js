@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 let pool = null;
 let initialized = false;
 
-const REQUIRED_TABLES = ['section_templates', 'best_practices', 'user_sessions'];
+const REQUIRED_TABLES = ['section_templates', 'best_practices', 'user_sessions', 'reports', 'case_folders'];
 
 const buildConnectionStringFromParts = () => {
   const host = process.env.PGHOST || process.env.POSTGRES_HOST;
@@ -45,7 +45,7 @@ const createPool = () => {
 
   pool = new Pool({
     connectionString: getDatabaseUrlOrThrow(),
-    ssl: shouldUseSsl ? { rejectUnauthorized: false } : false,
+    ssl: shouldUseSsl ? { rejectUnauthorized: process.env.PG_REJECT_UNAUTHORIZED !== 'false' } : false,
   });
   return pool;
 };
@@ -154,6 +154,60 @@ export const runPostgresSchemaMigrations = async () => {
   await db.query(`
     CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at
     ON user_sessions (expires_at);
+  `);
+
+  // --- Reports table (full ReportData stored as JSONB with queryable columns) ---
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS reports (
+      id TEXT PRIMARY KEY,
+      created_by TEXT NOT NULL,
+      owner_name TEXT NOT NULL DEFAULT '',
+      report_number INTEGER,
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      hebrew_workflow_status TEXT,
+      odakanit_no TEXT,
+      report_subject TEXT,
+      recipient_id TEXT,
+      insurer_name TEXT,
+      insured_name TEXT,
+      plaintiff_name TEXT,
+      line_slip_no TEXT,
+      market_ref TEXT,
+      certificate_ref TEXT,
+      sent_at TIMESTAMPTZ,
+      first_sent_at TIMESTAMPTZ,
+      deleted_at TIMESTAMPTZ,
+      deleted_by TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      data JSONB NOT NULL DEFAULT '{}'::jsonb
+    );
+  `);
+
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_reports_created_by ON reports (created_by);`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_reports_status ON reports (status);`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_reports_odakanit_no ON reports (odakanit_no);`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_reports_updated_at ON reports (updated_at DESC);`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_reports_deleted_at ON reports (deleted_at);`);
+
+  // --- Case folders table ---
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS case_folders (
+      odakanit_no TEXT PRIMARY KEY,
+      re_template TEXT NOT NULL DEFAULT '',
+      insured_name TEXT,
+      insurer_name TEXT,
+      plaintiff_name TEXT,
+      assigned_lawyer TEXT,
+      market_ref TEXT,
+      line_slip_no TEXT,
+      certificate_ref TEXT,
+      closed_at TIMESTAMPTZ,
+      closed_by_user_id TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      data JSONB NOT NULL DEFAULT '{}'::jsonb
+    );
   `);
 };
 
@@ -525,6 +579,217 @@ export const getSessionUser = async (sessionId) => {
 export const deleteSession = async (sessionId) => {
   const db = getPoolOrThrow();
   await db.query('DELETE FROM user_sessions WHERE id = $1', [sessionId]);
+};
+
+// ---------------------------------------------------------------------------
+// Reports CRUD
+// ---------------------------------------------------------------------------
+
+const reportToRow = (r) => ({
+  id: r.id,
+  created_by: r.createdBy || '',
+  owner_name: r.ownerName || '',
+  report_number: r.reportNumber ?? null,
+  status: r.status || 'DRAFT',
+  hebrew_workflow_status: r.hebrewWorkflowStatus || null,
+  odakanit_no: r.odakanitNo || null,
+  report_subject: r.reportSubject || null,
+  recipient_id: r.recipientId || null,
+  insurer_name: r.insurerName || null,
+  insured_name: r.insuredName || null,
+  plaintiff_name: r.plaintiffName || null,
+  line_slip_no: r.lineSlipNo || null,
+  market_ref: r.marketRef || null,
+  certificate_ref: r.certificateRef || null,
+  sent_at: r.sentAt || null,
+  first_sent_at: r.firstSentAt || null,
+  deleted_at: r.deletedAt || null,
+  deleted_by: r.deletedBy || null,
+  updated_at: r.updatedAt || new Date().toISOString(),
+  data: JSON.stringify(r),
+});
+
+export const listReports = async ({ createdBy, status, odakanitNo, includeDeleted, limit = 200, offset = 0 } = {}) => {
+  const db = getPoolOrThrow();
+  const conditions = [];
+  const values = [];
+  let idx = 1;
+
+  if (!includeDeleted) {
+    conditions.push('deleted_at IS NULL');
+  }
+  if (createdBy) {
+    conditions.push(`created_by = $${idx++}`);
+    values.push(createdBy);
+  }
+  if (status) {
+    conditions.push(`status = $${idx++}`);
+    values.push(status);
+  }
+  if (odakanitNo) {
+    conditions.push(`odakanit_no = $${idx++}`);
+    values.push(odakanitNo);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  values.push(limit, offset);
+  const result = await db.query(
+    `SELECT data FROM reports ${where} ORDER BY updated_at DESC LIMIT $${idx++} OFFSET $${idx}`,
+    values,
+  );
+  return result.rows.map((row) => row.data);
+};
+
+export const getReport = async (id) => {
+  const db = getPoolOrThrow();
+  const result = await db.query('SELECT data FROM reports WHERE id = $1', [id]);
+  return result.rows.length > 0 ? result.rows[0].data : null;
+};
+
+export const upsertReport = async (reportData) => {
+  const db = getPoolOrThrow();
+  const row = reportToRow(reportData);
+  await db.query(
+    `INSERT INTO reports
+      (id, created_by, owner_name, report_number, status, hebrew_workflow_status,
+       odakanit_no, report_subject, recipient_id, insurer_name, insured_name,
+       plaintiff_name, line_slip_no, market_ref, certificate_ref,
+       sent_at, first_sent_at, deleted_at, deleted_by, created_at, updated_at, data)
+     VALUES
+      ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),$20,$21::jsonb)
+     ON CONFLICT (id) DO UPDATE SET
+       created_by = EXCLUDED.created_by,
+       owner_name = EXCLUDED.owner_name,
+       report_number = EXCLUDED.report_number,
+       status = EXCLUDED.status,
+       hebrew_workflow_status = EXCLUDED.hebrew_workflow_status,
+       odakanit_no = EXCLUDED.odakanit_no,
+       report_subject = EXCLUDED.report_subject,
+       recipient_id = EXCLUDED.recipient_id,
+       insurer_name = EXCLUDED.insurer_name,
+       insured_name = EXCLUDED.insured_name,
+       plaintiff_name = EXCLUDED.plaintiff_name,
+       line_slip_no = EXCLUDED.line_slip_no,
+       market_ref = EXCLUDED.market_ref,
+       certificate_ref = EXCLUDED.certificate_ref,
+       sent_at = EXCLUDED.sent_at,
+       first_sent_at = EXCLUDED.first_sent_at,
+       deleted_at = EXCLUDED.deleted_at,
+       deleted_by = EXCLUDED.deleted_by,
+       updated_at = EXCLUDED.updated_at,
+       data = EXCLUDED.data`,
+    [
+      row.id, row.created_by, row.owner_name, row.report_number, row.status,
+      row.hebrew_workflow_status, row.odakanit_no, row.report_subject,
+      row.recipient_id, row.insurer_name, row.insured_name, row.plaintiff_name,
+      row.line_slip_no, row.market_ref, row.certificate_ref,
+      row.sent_at, row.first_sent_at, row.deleted_at, row.deleted_by,
+      row.updated_at, row.data,
+    ],
+  );
+};
+
+export const softDeleteReport = async (id, userId) => {
+  const db = getPoolOrThrow();
+  const now = new Date().toISOString();
+  // Update both the column and the JSONB data
+  await db.query(
+    `UPDATE reports
+     SET deleted_at = $2, deleted_by = $3, updated_at = $2,
+         data = jsonb_set(jsonb_set(data, '{deletedAt}', to_jsonb($2::text)), '{deletedBy}', to_jsonb($3::text))
+     WHERE id = $1`,
+    [id, now, userId],
+  );
+};
+
+export const bulkImportReports = async (reportsArray) => {
+  const db = getPoolOrThrow();
+  const client = await db.connect();
+  let imported = 0;
+  try {
+    await client.query('BEGIN');
+    for (const report of reportsArray) {
+      if (!report || !report.id) continue;
+      const row = reportToRow(report);
+      await client.query(
+        `INSERT INTO reports
+          (id, created_by, owner_name, report_number, status, hebrew_workflow_status,
+           odakanit_no, report_subject, recipient_id, insurer_name, insured_name,
+           plaintiff_name, line_slip_no, market_ref, certificate_ref,
+           sent_at, first_sent_at, deleted_at, deleted_by, created_at, updated_at, data)
+         VALUES
+          ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),$20,$21::jsonb)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          row.id, row.created_by, row.owner_name, row.report_number, row.status,
+          row.hebrew_workflow_status, row.odakanit_no, row.report_subject,
+          row.recipient_id, row.insurer_name, row.insured_name, row.plaintiff_name,
+          row.line_slip_no, row.market_ref, row.certificate_ref,
+          row.sent_at, row.first_sent_at, row.deleted_at, row.deleted_by,
+          row.updated_at, row.data,
+        ],
+      );
+      imported += 1;
+    }
+    await client.query('COMMIT');
+    console.log(`[DB] Bulk-imported ${imported} reports`);
+    return imported;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Case Folders CRUD
+// ---------------------------------------------------------------------------
+
+export const listCaseFolders = async () => {
+  const db = getPoolOrThrow();
+  const result = await db.query('SELECT data FROM case_folders ORDER BY updated_at DESC');
+  return result.rows.map((row) => row.data);
+};
+
+export const upsertCaseFolder = async (odakanitNo, folderData) => {
+  const db = getPoolOrThrow();
+  const now = new Date().toISOString();
+  await db.query(
+    `INSERT INTO case_folders
+      (odakanit_no, re_template, insured_name, insurer_name, plaintiff_name,
+       assigned_lawyer, market_ref, line_slip_no, certificate_ref,
+       closed_at, closed_by_user_id, updated_at, data)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb)
+     ON CONFLICT (odakanit_no) DO UPDATE SET
+       re_template = EXCLUDED.re_template,
+       insured_name = EXCLUDED.insured_name,
+       insurer_name = EXCLUDED.insurer_name,
+       plaintiff_name = EXCLUDED.plaintiff_name,
+       assigned_lawyer = EXCLUDED.assigned_lawyer,
+       market_ref = EXCLUDED.market_ref,
+       line_slip_no = EXCLUDED.line_slip_no,
+       certificate_ref = EXCLUDED.certificate_ref,
+       closed_at = EXCLUDED.closed_at,
+       closed_by_user_id = EXCLUDED.closed_by_user_id,
+       updated_at = EXCLUDED.updated_at,
+       data = EXCLUDED.data`,
+    [
+      odakanitNo,
+      folderData.reTemplate || '',
+      folderData.insuredName || null,
+      folderData.insurerName || null,
+      folderData.plaintiffName || null,
+      folderData.assignedLawyer || folderData.createdBy || null,
+      folderData.marketRef || null,
+      folderData.lineSlipNo || null,
+      folderData.certificateRef || null,
+      folderData.closedAt || null,
+      folderData.closedByUserId || null,
+      now,
+      JSON.stringify(folderData),
+    ],
+  );
 };
 
 export const closePostgresStore = async () => {

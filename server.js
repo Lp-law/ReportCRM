@@ -2,23 +2,42 @@ import { chromium } from 'playwright';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import OpenAI from 'openai';
+// OpenAI — now imported via src/server/utils/openaiClient.js
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import nodemailer from 'nodemailer';
+// nodemailer — now imported via src/server/email/transporter.js
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-import Tesseract from 'tesseract.js';
-import { createCanvas } from '@napi-rs/canvas';
+// Tesseract.js removed — Document Intelligence handles all OCR
+// @napi-rs/canvas removed — was only used for Tesseract OCR page rendering
 import fetch from 'node-fetch';
 import fs from 'fs';
 import Handlebars from 'handlebars';
 import crypto from 'crypto';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { MASTER_PROMPT } from './src/ai/masterPrompt.js';
-import { USERS } from './src/constants.js';
+import { USERS, verifyPassword } from './src/server/auth/users.js';
 import { protectHebrewFacts, restoreHebrewFacts } from './src/utils/hebrewFactProtection.js';
+import { validate } from './src/server/middleware/validate.js';
+import { csrfTokenEndpoint, csrfProtection } from './src/server/middleware/csrf.js';
+import authRoutes from './src/server/routes/auth.routes.js';
+import templatesRoutes from './src/server/routes/templates.routes.js';
+import bestPracticesRoutes from './src/server/routes/bestPractices.routes.js';
+import reportsRoutes from './src/server/routes/reports.routes.js';
+import reportLocksRoutes from './src/server/routes/reportLocks.routes.js';
+import {
+  loginSchema, translateSchema, extractPolicySchema, refineTextSchema,
+  improveEnglishSchema, hebrewReportSummarySchema, analyzeFileSchema,
+  analyzeMedicalComplaintSchema, analyzeDentalOpinionSchema, extractExpensesSchema,
+  analyzeToneRiskSchema, reviewHebrewStyleSchema, helpChatSchema, assistantHelpSchema,
+  generateSummarySchema, sendEmailSchema, renderReportSchema,
+  createTemplateSchema, updateTemplateSchema, reorderTemplateSchema,
+  createBestPracticeSchema, updateBestPracticeSchema, reorderBestPracticeSchema,
+  recordUsageSchema,
+} from './src/server/validation/schemas.js';
 import {
   initPostgresStore,
   listSectionTemplates,
@@ -34,6 +53,13 @@ import {
   createSession,
   getSessionUser,
   deleteSession,
+  listReports,
+  getReport,
+  upsertReport,
+  softDeleteReport,
+  bulkImportReports,
+  listCaseFolders,
+  upsertCaseFolder,
 } from './src/server/postgresStore.js';
 
 
@@ -132,30 +158,59 @@ if (!Number.isFinite(parsedSessionTtlHours) || parsedSessionTtlHours <= 0) {
 
 const app = express();
 
-// Middleware: allow credentials so cookie-based auth works for same-origin and trusted origins
-app.use(cors({ origin: true, credentials: true }));
+// Security: HTTP headers
+app.use(helmet({ contentSecurityPolicy: false })); // CSP disabled for embedded SVG/data URIs
+
+// CORS: whitelist trusted origins (defaults to localhost for dev)
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+  .split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (same-origin, Postman, server-to-server)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) callback(null, true);
+    else callback(new Error('CORS: origin not allowed'));
+  },
+  credentials: true,
+}));
+
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images/files
+
+// Rate limiting for login endpoint
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 login requests per window
+  message: { error: 'Too many login attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// CSRF token endpoint (must be before CSRF protection middleware)
+app.get('/api/csrf-token', csrfTokenEndpoint);
+
+// CSRF protection for all state-changing requests
+// Exempt login (no token yet) and render endpoints (used by preview iframe)
+app.use((req, res, next) => {
+  const exemptPaths = ['/api/login', '/api/render-report-pdf', '/api/render-report-html'];
+  if (exemptPaths.includes(req.path)) return next();
+  csrfProtection(req, res, next);
+});
 
 try {
   await initPostgresStore();
 } catch (error) {
   console.error('[Startup] Database initialization failed:', error);
-  throw error;
+  if (process.env.NODE_ENV !== 'test') {
+    throw error;
+  }
+  console.warn('[Startup] Running without database (test mode)');
 }
 
-// Initialize OpenAI (ChatGPT)
-const apiKey = process.env.OPENAI_API_KEY || process.env.API_KEY;
-if (!apiKey) {
-  console.warn("Warning: OPENAI_API_KEY is not defined. AI endpoints will not function until it is set.");
-}
-const openai = apiKey ? new OpenAI({ apiKey }) : null;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+// OpenAI client — imported from module
+import { openai, OPENAI_MODEL, ensureOpenAI as _ensureOpenAI, createTextCompletion, createTextCompletionWithDiagnostics } from './src/server/utils/openaiClient.js';
 const MAX_DOC_CHARS = Number(process.env.DOC_CHAR_LIMIT || 18000);
 const ENABLE_POLICY_OCR = process.env.POLICY_OCR_ENABLED !== 'false';
 const POLICY_OCR_MAX_PAGES = Number(process.env.POLICY_OCR_MAX_PAGES || 2);
-const AZURE_OCR_ENDPOINT = process.env.AZURE_OCR_ENDPOINT;
-const AZURE_OCR_KEY = process.env.AZURE_OCR_KEY;
-const USE_AZURE_OCR = Boolean(AZURE_OCR_ENDPOINT && AZURE_OCR_KEY);
+// Azure Computer Vision (OCR v3.2) removed — Document Intelligence replaces it
 
 // Document Intelligence: support both naming conventions (DOCINT vs DOCUMENT_INTELLIGENCE)
 const AZURE_DOCINT_ENDPOINT =
@@ -183,135 +238,13 @@ const DEFAULT_MEDICAL_ANALYSIS = {
 };
 
 
-const ensureOpenAI = () => {
-  if (!openai) {
-    throw new Error('OpenAI client is not configured. Please set OPENAI_API_KEY.');
-  }
-  return openai;
-};
+const ensureOpenAI = _ensureOpenAI;
 
-// ---------------------------------------------------------------------------
-// Session handling (cookie-based, persisted in PostgreSQL)
-// ---------------------------------------------------------------------------
+// Session handling — imported from module
+import { SESSION_COOKIE_NAME, createSessionId, parseCookies, getUserFromRequest, getUserRoleFromRequest, ensureAuthenticated, ensureAdminRole } from './src/server/auth/session.js';
 
-const SESSION_COOKIE_NAME = 'lp_session';
-
-const createSessionId = () => crypto.randomBytes(32).toString('hex');
-
-const parseCookies = (cookieHeader) => {
-  const cookies = {};
-  if (!cookieHeader) return cookies;
-  const parts = cookieHeader.split(';');
-  parts.forEach((part) => {
-    const [name, ...rest] = part.trim().split('=');
-    if (!name) return;
-    const value = rest.join('=');
-    cookies[name] = decodeURIComponent(value || '');
-  });
-  return cookies;
-};
-
-const getUserFromRequest = async (req) => {
-  try {
-    const cookies = parseCookies(req.headers.cookie || '');
-    const sessionId = cookies[SESSION_COOKIE_NAME];
-    if (!sessionId) return null;
-    const user = await getSessionUser(sessionId);
-    return user || null;
-  } catch (error) {
-    console.warn('[Auth] Failed to resolve session from request:', error?.message || error);
-    return null;
-  }
-};
-
-const getUserRoleFromRequest = async (req) => {
-  const user = await getUserFromRequest(req);
-  return user?.role ? String(user.role).toUpperCase() : '';
-};
-
-const ensureAuthenticated = async (req, res) => {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    res.status(401).json({ error: 'Not authenticated' });
-    return null;
-  }
-  return user;
-};
-
-
-const flattenCompletionText = (completion) => {
-  const choice = completion?.choices?.[0];
-  if (!choice || !choice.message) return '';
-  const content = choice.message.content;
-  if (typeof content === 'string') return content.trim();
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (!part) return '';
-        if (typeof part === 'string') return part;
-        if ('text' in part && part.text) return part.text;
-        return '';
-      })
-      .join('')
-      .trim();
-  }
-  return '';
-};
-
-const truncateText = (text = '', limit = MAX_DOC_CHARS) => {
-  if (!text) return '';
-  return text.length > limit ? text.slice(0, limit) : text;
-};
-
-const parseJsonSafely = (text, fallback = {}) => {
-  if (typeof text !== 'string') {
-    return fallback;
-  }
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    // Try to extract the first JSON object from within surrounding text
-    try {
-      const firstBrace = text.indexOf('{');
-      const lastBrace = text.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        const candidate = text.slice(firstBrace, lastBrace + 1);
-        return JSON.parse(candidate);
-      }
-    } catch (innerErr) {
-      console.error('Failed to extract JSON object from text:', innerErr);
-    }
-    console.error('Failed to parse JSON response:', error);
-    return fallback;
-  }
-};
-
-const chunkText = (text, size = 3500, overlap = 200) => {
-  if (!text) return [];
-  const chunks = [];
-  let start = 0;
-  while (start < text.length) {
-    const end = Math.min(start + size, text.length);
-    chunks.push(text.slice(start, end));
-    if (end === text.length) break;
-    start = end - overlap;
-    if (start < 0) start = 0;
-  }
-  return chunks;
-};
-
-const ensureAdminRole = async (req, res) => {
-  // Use the authenticated session and role derived from cookies.
-  // This keeps a single source of truth for role checking.
-  const user = await ensureAuthenticated(req, res);
-  if (!user) return false;
-  const role = await getUserRoleFromRequest(req);
-  if (role !== 'ADMIN') {
-    res.status(403).json({ error: 'Admin role required' });
-    return false;
-  }
-  return true;
-};
+// Text processing utilities — imported from module
+import { flattenCompletionText, truncateText, parseJsonSafely, chunkText } from './src/server/utils/textProcessing.js';
 
 const buildMedicalChunkPrompt = (chunk) => `
 אתה עוזר משפטי מומחה ברשלנות רפואית ונזקי גוף. קבל קטע מכתב תביעה/מכתב דרישה ותמצת רק את העובדות שנמצאות בקטע.
@@ -420,41 +353,7 @@ const isClaimSummaryAllowed = (text, analysisType) => {
   return true;
 };
 
-const extractTextWithOcr = async (buffer, maxPages = POLICY_OCR_MAX_PAGES) => {
-  try {
-    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
-    const pdf = await loadingTask.promise;
-    const pagesToScan = Math.min(pdf.numPages, typeof maxPages === 'number' && maxPages > 0 ? maxPages : POLICY_OCR_MAX_PAGES);
-    let collectedText = '';
-
-    for (let pageNumber = 1; pageNumber <= pagesToScan; pageNumber++) {
-      const page = await pdf.getPage(pageNumber);
-      const viewport = page.getViewport({ scale: 1.5 });
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-      await page.render({ canvasContext: context, viewport }).promise;
-      const imageBuffer = canvas.toBuffer('image/png');
-
-      const {
-        data: { text },
-      } = await Tesseract.recognize(imageBuffer, 'eng+heb', {
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzאבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789-./:() ',
-        psm: 3,
-      });
-      collectedText += `\n${text}`;
-    }
-
-    return collectedText.trim();
-  } catch (error) {
-    const shortMsg = (error?.message || String(error)).slice(0, 100);
-    const isTimeout = /timeout|ETIMEDOUT|timed out/i.test(shortMsg);
-    const isMemory = /memory|allocation|heap/i.test(shortMsg);
-    console.log(
-      `[getDocumentText] tesseract_ocr_failed error=${shortMsg} timeout=${isTimeout} memory=${isMemory}`,
-    );
-    return '';
-  }
-};
+// extractTextWithOcr (Tesseract) removed — Document Intelligence handles all OCR
 
 const extractTextWithPdfJs = async (buffer) => {
   try {
@@ -481,63 +380,7 @@ const normalizeAzureEndpoint = (endpoint) => {
   return endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
 };
 
-const extractTextWithAzureOcr = async (buffer) => {
-  if (!USE_AZURE_OCR) return '';
-  try {
-    const endpoint = `${normalizeAzureEndpoint(AZURE_OCR_ENDPOINT)}/vision/v3.2/read/analyze`;
-    const fileUrl = `data:application/octet-stream;base64,${buffer.toString('base64')}`;
-    console.log('[getDocumentText] azure_ocr_called=true');
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': AZURE_OCR_KEY,
-      },
-      body: JSON.stringify({
-        url: fileUrl,
-        language: 'en',
-        readingOrder: 'natural',
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      const shortErr = (text || '').slice(0, 120).replace(/\s+/g, ' ');
-      console.log(`[getDocumentText] azure_ocr_called=true status=${response.status} error=${shortErr}`);
-      throw new Error(`Azure OCR submission failed: ${response.status} ${text}`);
-    }
-    const operationLocation = response.headers.get('operation-location');
-    if (!operationLocation) {
-      throw new Error('Azure OCR missing operation-location header');
-    }
-    for (let attempt = 0; attempt < 12; attempt++) {
-      await sleep(1000);
-      const resultResponse = await fetch(operationLocation, {
-        headers: { 'Ocp-Apim-Subscription-Key': AZURE_OCR_KEY },
-      });
-      const resultJson = await resultResponse.json();
-      if (resultJson.status === 'succeeded') {
-        const analyzeResult = resultJson.analyzeResult;
-        const pages = analyzeResult?.readResults || analyzeResult?.pages || [];
-        const lines = [];
-        for (const page of pages) {
-          const pageLines = page.lines || [];
-          for (const line of pageLines) {
-            if (line.text) lines.push(line.text);
-          }
-        }
-        return lines.join('\n').trim();
-      }
-      if (resultJson.status === 'failed') {
-        throw new Error('Azure OCR processing failed');
-      }
-    }
-    throw new Error('Azure OCR timed out');
-  } catch (error) {
-    const shortMsg = (error?.message || String(error)).slice(0, 100);
-    console.log(`[getDocumentText] azure_ocr_called=true status=error error=${shortMsg}`);
-    return '';
-  }
-};
+// extractTextWithAzureOcr (Computer Vision v3.2) removed — replaced by Document Intelligence
 
 // Maps common mime types to Document Intelligence supported Content-Type
 const DOCINT_CONTENT_TYPE = (mimeType) => {
@@ -557,7 +400,7 @@ const submitDocumentIntelligenceJob = async (buffer, mimeType) => {
   if (!USE_DOC_INTELLIGENCE) return '';
   try {
     const contentType = DOCINT_CONTENT_TYPE(mimeType);
-    const endpoint = `${normalizeAzureEndpoint(AZURE_DOCINT_ENDPOINT)}/formrecognizer/documentModels/prebuilt-read:analyze?api-version=2023-07-31`;
+    const endpoint = `${normalizeAzureEndpoint(AZURE_DOCINT_ENDPOINT)}/documentintelligence/documentModels/prebuilt-layout:analyze?api-version=2024-11-30&features=languages`;
     console.log(`[getDocumentText] DOCINT_REQUEST_SENT ts=${new Date().toISOString()} content_type=${contentType} buffer_bytes=${buffer?.length || 0}`);
 
     const response = await fetch(endpoint, {
@@ -827,17 +670,7 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
         parsedText = await submitDocumentIntelligenceJob(buffer, mimeType);
         if (parsedText) extractPath = 'docint';
       }
-      // On Render: no Tesseract, no Azure Vision OCR (DocInt is the only cloud OCR)
-      if (!IS_RENDER) {
-        if ((!parsedText || parsedText.length < 200) && USE_AZURE_OCR) {
-          parsedText = await extractTextWithAzureOcr(buffer);
-          if (parsedText) extractPath = 'azure_ocr';
-        }
-        if ((!parsedText || parsedText.length < 200) && (ENABLE_POLICY_OCR || forceOcr)) {
-          parsedText = await extractTextWithOcr(buffer, ocrPages);
-          if (parsedText) extractPath = 'tesseract';
-        }
-      }
+      // Tesseract and Azure OCR v3.2 fallbacks removed — Document Intelligence is the sole cloud OCR
       const textLength = (parsedText || '').length;
       console.log(`[getDocumentText] mime=pdf path=${extractPath} textLength=${textLength}`);
       if (textLength === 0) {
@@ -864,58 +697,19 @@ const getDocumentText = async (base64, mimeType, options = {}) => {
       return txt;
     }
     if (mimeType.startsWith('image/')) {
-      let imgText = null;
+      if (!USE_DOC_INTELLIGENCE) {
+        console.log('[getDocumentText] mime=image reason=INVALID_DOCUMENT (DocInt not configured)');
+        return null;
+      }
       try {
-        if (USE_DOC_INTELLIGENCE) {
-          imgText = await submitDocumentIntelligenceJob(buffer, mimeType);
-          if (imgText) {
-            console.log(`[getDocumentText] mime=image path=docint textLength=${imgText.length}`);
-            return imgText;
-          }
+        const imgText = await submitDocumentIntelligenceJob(buffer, mimeType);
+        if (imgText?.trim()) {
+          console.log(`[getDocumentText] mime=image path=docint textLength=${imgText.trim().length}`);
+          return imgText.trim();
         }
-        // On Render: no Tesseract, no Azure Vision OCR
-        if (!IS_RENDER) {
-          if (USE_AZURE_OCR) {
-            imgText = await extractTextWithAzureOcr(buffer);
-            if (imgText) {
-              console.log(`[getDocumentText] mime=image path=azure_ocr textLength=${imgText.length}`);
-              return imgText;
-            }
-          }
-          const {
-            data: { text },
-          } = await Tesseract.recognize(buffer, 'eng+heb', {
-            tessedit_char_whitelist:
-              'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzאבגדהוזחטיכךלמםנןסעפףצץקרשת0123456789-./:() ',
-          });
-          if (text?.trim()) {
-            console.log(`[getDocumentText] mime=image path=tesseract_eng_heb textLength=${text.trim().length}`);
-            return text.trim();
-          }
-        }
-      } catch (primaryError) {
-        if (!IS_RENDER) {
-          const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
-          console.log(`[getDocumentText] mime=image tesseract_eng_heb_failed error=${shortMsg}`);
-          try {
-            const {
-              data: { text },
-            } = await Tesseract.recognize(buffer, 'eng', {
-              tessedit_char_whitelist:
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./:() ',
-            });
-            if (text?.trim()) {
-              console.log(`[getDocumentText] mime=image path=tesseract_eng textLength=${text.trim().length}`);
-              return text.trim();
-            }
-          } catch (secondaryError) {
-            const shortMsg2 = (secondaryError?.message || String(secondaryError)).slice(0, 80);
-            console.log(`[getDocumentText] mime=image tesseract_eng_failed error=${shortMsg2}`);
-          }
-        } else {
-          const shortMsg = (primaryError?.message || String(primaryError)).slice(0, 80);
-          console.log(`[getDocumentText] mime=image docint_or_primary_failed error=${shortMsg}`);
-        }
+      } catch (error) {
+        const shortMsg = (error?.message || String(error)).slice(0, 80);
+        console.log(`[getDocumentText] mime=image docint_failed error=${shortMsg}`);
       }
       console.log('[getDocumentText] mime=image path=none textLength=0 reason=INVALID_DOCUMENT');
       return null;
@@ -1014,56 +808,7 @@ const getDocumentTextForAnalysis = async (base64, mimeType) => {
   return { text: null, lowConfidenceDocument: false };
 };
 
-const createTextCompletion = async ({ systemPrompt, userPrompt, temperature = 0.2, responseFormat }) => {
-  const client = ensureOpenAI();
-  const completion = await client.chat.completions.create({
-    model: OPENAI_MODEL,
-    temperature,
-    response_format: responseFormat,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-  });
-  return flattenCompletionText(completion);
-};
-
-/** Wrapper that adds diagnostic logs and maps errors to reason codes (no sensitive data). */
-const createTextCompletionWithDiagnostics = async (
-  opts,
-  { endpoint = 'openai' } = {},
-) => {
-  const hasClient = Boolean(openai);
-  console.log(`[${endpoint}] openai_client_exists=${hasClient}`);
-  if (!hasClient) {
-    console.log(`[${endpoint}] reason=AI_UNAVAILABLE (no API key)`);
-    throw Object.assign(new Error('OpenAI client is not configured.'), { reason: 'AI_UNAVAILABLE' });
-  }
-  const startMs = Date.now();
-  try {
-    console.log(`[${endpoint}] OPENAI_REQUEST_SENT ts=${new Date().toISOString()}`);
-    const result = await createTextCompletion(opts);
-    const durationMs = Date.now() - startMs;
-    console.log(`[${endpoint}] OPENAI_RESPONSE_RECEIVED ts=${new Date().toISOString()} duration_ms=${durationMs}`);
-    return result;
-  } catch (err) {
-    const durationMs = Date.now() - startMs;
-    const status = err?.status ?? err?.response?.status ?? err?.code;
-    let reason = 'AI_UNAVAILABLE';
-    const msg = err && typeof err.message === 'string' ? err.message : String(err);
-    if (status === 401 || /invalid.*api.*key|unauthorized/i.test(msg)) {
-      reason = 'UNAUTHORIZED';
-    } else if (status === 429 || /rate.*limit/i.test(msg)) {
-      reason = 'RATE_LIMIT';
-    } else if (/timeout|ETIMEDOUT|timed out/i.test(msg)) {
-      reason = 'TIMEOUT';
-    }
-    console.log(
-      `[${endpoint}] OPENAI_RESPONSE_FAILED ts=${new Date().toISOString()} reason=${reason} status=${status ?? 'n/a'} duration_ms=${durationMs}`,
-    );
-    throw Object.assign(err, { reason });
-  }
-};
+// createTextCompletion and createTextCompletionWithDiagnostics — imported from openaiClient.js
 
 const REPORT_TEMPLATE_PATH = path.join(__dirname, 'templates', 'report-modern.html');
 let compiledReportTemplate = null;
@@ -2327,69 +2072,83 @@ const renderReportPdf = async (report) => {
 };
 
 
-// Initialize Email Transporter — Office365 SMTP (explicit; do not use service: 'outlook')
-const transporter = nodemailer.createTransport({
-  host: 'smtp.office365.com',
-  port: 587,
-  secure: false, // required for port 587
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Outlook App Password
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-function maskForLog(s) {
-  if (typeof s !== 'string' || s.length < 4) return '***';
-  return s.slice(0, 2) + '***' + s.slice(-2);
-}
-console.log('[MAIL] Transport created', { host: 'smtp.office365.com', user: maskForLog(process.env.EMAIL_USER || '') });
+// Email transporter — imported from module
+import { transporter, maskForLog, MAIL_MODE, lastSendByReportId, getEmailRecipients } from './src/server/email/transporter.js';
 
-// --- Mail mode & recipients (ENV-only, single source of truth) ---
-const MAIL_MODE = (process.env.MAIL_MODE || 'SANDBOX').trim().toUpperCase();
-const VALID_MODES = ['SANDBOX', 'PROD'];
-
-// In-memory soft lock: reportId -> last successful send timestamp (for duplicate-send guard)
-const lastSendByReportId = new Map();
-
-function getEmailRecipients() {
-  const mode = VALID_MODES.includes(MAIL_MODE) ? MAIL_MODE : 'SANDBOX';
-  const parseList = (raw) => (raw ? raw.split(',').map((e) => e.trim()).filter(Boolean) : []);
-  if (mode === 'SANDBOX') {
-    const toRaw = process.env.MAIL_TO_SANDBOX?.trim();
-    const to = parseList(toRaw);
-    const cc = parseList(process.env.MAIL_CC_SANDBOX?.trim());
-    if (!to.length) {
-      throw new Error('MAIL_MODE=SANDBOX requires MAIL_TO_SANDBOX to be set');
-    }
-    return { to, cc };
-  }
-  if (mode === 'PROD') {
-    const toRaw = process.env.MAIL_TO_PROD?.trim();
-    const to = parseList(toRaw);
-    const cc = parseList(process.env.MAIL_CC_PROD?.trim());
-    if (!to.length) {
-      throw new Error('MAIL_MODE=PROD requires MAIL_TO_PROD to be set');
-    }
-    return { to, cc };
-  }
-  throw new Error(`Invalid MAIL_MODE: ${MAIL_MODE}. Use SANDBOX or PROD.`);
-}
+// Azure AI services
+import { USE_AZURE_TRANSLATOR, translateWithAzure, detectLanguage } from './src/server/azure/translator.js';
+import { USE_AZURE_LANGUAGE, detectPII, recognizeEntities, extractKeyPhrases } from './src/server/azure/language.js';
+import { USE_CONTRACT_ANALYZER, analyzeContract } from './src/server/azure/contractAnalyzer.js';
 
 // --- API Endpoints ---
 
-// 1. Translation Endpoint
-app.post('/api/translate', async (req, res) => {
+// 1. Translation Endpoint — Azure Translator (primary) + GPT polish (secondary)
+app.post('/api/translate', validate(translateSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { text } = req.body;
-  if (!text) return res.status(400).json({ error: 'Text is required' });
   try {
-    const translation = await createTextCompletion({
-      systemPrompt: 'You are a professional Hebrew-to-English legal translator. Respond with the translated text only.',
-      userPrompt: text,
-      temperature: 0.1,
-    });
+    let translation = '';
+    let translationPath = 'gpt';
+
+    // Step 1: Use Azure Translator for accurate factual translation (names, dates, numbers)
+    if (USE_AZURE_TRANSLATOR) {
+      try {
+        translation = await translateWithAzure(text, 'he', 'en', true);
+        translationPath = 'azure-translator';
+        console.log(`[translate] Azure Translator succeeded, ${translation.length} chars`);
+      } catch (azureErr) {
+        console.warn('[translate] Azure Translator failed, falling back to GPT:', azureErr.message?.slice(0, 100));
+      }
+    }
+
+    // Step 2: If Azure succeeded, polish with GPT; if not, translate fully with GPT
+    if (translation && translationPath === 'azure-translator') {
+      // Polish the Azure translation with GPT for legal style
+      try {
+        const polished = await createTextCompletion({
+          systemPrompt: [
+            'You are a senior legal editor polishing an English translation of a Hebrew legal/insurance report.',
+            'The translation is already accurate. Your job is ONLY to improve the English style:',
+            '- Use British English spelling and legal conventions.',
+            '- Improve sentence flow and readability.',
+            '- Ensure formal, professional tone suitable for Lloyd\'s underwriters.',
+            '',
+            'STRICT: Do NOT change any facts, names, dates, numbers, or legal positions.',
+            'Do NOT add or remove content. Only polish the language.',
+            'Return the polished text only.',
+          ].join('\n'),
+          userPrompt: translation,
+          temperature: 0.15,
+        });
+        if (polished?.trim()) {
+          translation = polished;
+          translationPath = 'azure-translator+gpt-polish';
+        }
+      } catch (polishErr) {
+        console.warn('[translate] GPT polish failed, using raw Azure translation:', polishErr.message?.slice(0, 80));
+        // Keep the Azure translation as-is
+      }
+    } else if (!translation) {
+      // Full GPT translation (fallback)
+      translation = await createTextCompletion({
+        systemPrompt: [
+          'You are a professional Hebrew-to-English legal translator specialising in insurance and medical malpractice reports.',
+          '',
+          'Translation guidelines:',
+          '- Use British English spelling and legal drafting conventions throughout.',
+          '- Maintain the formal, professional tone appropriate for reports to Lloyd\'s underwriters and insurers.',
+          '- Preserve all factual content: names, dates, numbers, amounts, percentages, and case references must remain exactly as in the original.',
+          '- Translate legal terminology accurately: use standard English equivalents for Hebrew legal terms.',
+          '- Keep paragraph structure and numbered lists intact.',
+          '- Respond with the translated text only.',
+        ].join('\n'),
+        userPrompt: text,
+        temperature: 0.15,
+      });
+      translationPath = 'gpt-full';
+    }
+
+    console.log(`[translate] path=${translationPath} inputChars=${text.length} outputChars=${translation.length}`);
     res.json({ translation });
   } catch (error) {
     console.error('Translation API Error:', error);
@@ -2398,7 +2157,7 @@ app.post('/api/translate', async (req, res) => {
 });
 
 // 2. Policy Extraction Endpoint
-app.post('/api/extract-policy', async (req, res) => {
+app.post('/api/extract-policy', validate(extractPolicySchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { image, mimeType } = req.body;
   try {
@@ -2423,8 +2182,26 @@ app.post('/api/extract-policy', async (req, res) => {
     if (openai) {
       try {
     const responseText = await createTextCompletion({
-          systemPrompt:
-            'Extract insurance metadata from the provided document text. Always respond with a JSON object: {"insuredName":"","marketRef":"","lineSlipNo":""}. Use empty strings when data is missing. If multiple candidates exist, pick the value that most closely matches policy metadata.',
+          systemPrompt: [
+            'You are an insurance policy metadata extractor for Lloyd\'s and London Market policies.',
+            '',
+            'Extract the following fields from the document text. Always respond with a JSON object.',
+            'Use empty strings when a field is not found — never guess or fabricate values.',
+            '',
+            'Fields to extract:',
+            '- insuredName: the policyholder / insured party name',
+            '- marketRef: Unique Market Reference (UMR) or market reference number',
+            '- lineSlipNo: line slip number or policy number',
+            '- certificateRef: certificate reference number',
+            '- policyPeriodStart: policy inception date (DD/MM/YYYY if possible)',
+            '- policyPeriodEnd: policy expiry date (DD/MM/YYYY if possible)',
+            '- retroStart: retroactive date start (DD/MM/YYYY if possible)',
+            '- retroEnd: retroactive date end (if applicable)',
+            '',
+            'Response format: {"insuredName":"","marketRef":"","lineSlipNo":"","certificateRef":"","policyPeriodStart":"","policyPeriodEnd":"","retroStart":"","retroEnd":""}',
+            '',
+            'If multiple candidates exist for a field, pick the value that appears in the policy header or summary section.',
+          ].join('\n'),
       userPrompt: `Document text:\n${truncateText(documentText)}`,
       temperature: 0.1,
       responseFormat: { type: 'json_object' },
@@ -2468,7 +2245,7 @@ app.post('/api/extract-policy', async (req, res) => {
 });
 
 // 3. Text Refinement Endpoint
-app.post('/api/refine-text', async (req, res) => {
+app.post('/api/refine-text', validate(refineTextSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { text, mode } = req.body || {};
   if (typeof text !== 'string' || !text.trim()) {
@@ -2483,29 +2260,29 @@ app.post('/api/refine-text', async (req, res) => {
       const refined = await createTextCompletionWithDiagnostics(
         {
           systemPrompt: [
-          'You are rewriting an existing Hebrew legal text.',
+          'You are a senior Hebrew legal editor specialising in insurance and medical malpractice reports.',
           '',
-          'Your task is to improve the wording only:',
-          '- Make the Hebrew professional, formal, and suitable for a legal/insurance report.',
-          '- Improve clarity, flow, and conciseness.',
-          '- Remove repetitions and informal language.',
-          '- Improve grammar, syntax, and punctuation where needed.',
-          '- Keep the text in Hebrew.',
+          'Your task is to polish the wording of the following Hebrew legal text:',
+          '- Elevate the language to formal, professional legal Hebrew suitable for reports to insurance companies.',
+          '- Fix grammar, syntax, punctuation, and spelling errors.',
+          '- Remove word repetitions and redundancies.',
+          '- Replace informal or colloquial expressions with precise legal terminology.',
+          '- Improve sentence flow and readability while keeping the text concise.',
+          '- Ensure consistent use of third-person voice throughout.',
+          '- The text must remain entirely in Hebrew.',
           '',
-          'STRICT CONSTRAINTS (must not be violated):',
-          '- Do NOT add new facts, arguments, assumptions, or conclusions.',
-          '- Do NOT remove existing factual information.',
-          '- Do NOT change names of parties, people, institutions, locations, or case references.',
-          '- Do NOT change numbers, amounts, dates, percentages, or measurements.',
-          '- Do NOT change the level of certainty, responsibility, liability, or legal stance.',
-          '- Do NOT soften or strengthen claims.',
-          '- Do NOT interpret or analyze risk.',
+          'STRICT CONSTRAINTS (violating these will render the output unusable):',
+          '- Do NOT add new facts, arguments, assumptions, or conclusions that are not in the original.',
+          '- Do NOT remove or omit any existing factual information.',
+          '- Do NOT change names, dates, numbers, amounts, percentages, case references, or institutional names.',
+          '- Do NOT alter the degree of certainty, liability attribution, or legal position expressed.',
+          '- Do NOT soften or strengthen claims beyond the original wording.',
+          '- Do NOT add section headers, bullet points, or structural changes not in the original.',
           '',
-          'This is a linguistic refinement only.',
-          'The meaning, facts, and legal substance must remain identical to the original text.',
+          'Output: return ONLY the improved Hebrew text. No explanations, no meta-text.',
         ].join('\n'),
         userPrompt: text,
-        temperature: 0.35,
+        temperature: 0.3,
         },
         { endpoint: 'refine-text' },
       );
@@ -2518,27 +2295,30 @@ app.post('/api/refine-text', async (req, res) => {
     const refinedProtected = await createTextCompletionWithDiagnostics(
       {
         systemPrompt: [
-        'You are rewriting an existing Hebrew legal text.',
+        'You are a senior Hebrew legal editor performing a deep rewrite of legal text for insurance reports.',
         '',
-        'Your task is to significantly improve the wording while keeping all facts identical:',
-        '- Make the Hebrew professional, formal, and suitable for a legal/insurance report.',
-        '- Improve clarity, flow, and conciseness.',
-        '- You may restructure sentences, split or merge sentences, and reorder phrases when it improves readability.',
-        '- Replace informal or conversational wording with precise, formal legal Hebrew.',
-        '- Preserve placeholders exactly as they appear (for numbers, dates, IDs, names, and Hebrew number-words).',
+        'Your task is to substantially improve the writing quality while preserving all facts:',
+        '- Transform the Hebrew into polished, professional legal language suitable for Lloyd\'s/insurer reports.',
+        '- You may freely restructure sentences, split or merge them, and reorder phrases for better flow.',
+        '- Replace informal, colloquial, or repetitive wording with precise legal Hebrew.',
+        '- Ensure consistent third-person voice and formal register throughout.',
+        '- Improve paragraph transitions and logical flow between ideas.',
         '',
-        'STRICT CONSTRAINTS (must not be violated):',
-        '- Do NOT add new facts, arguments, assumptions, or conclusions.',
-        '- Do NOT remove existing factual information.',
+        'PLACEHOLDER RULES (critical):',
+        '- The text contains protected placeholders: __NUM_1__, __NUMWORD_1__, __DATE_1__, __ID_1__, __MONEY_1__, __NAME_1__, etc.',
+        '- You MUST preserve every placeholder exactly as it appears — same spelling, same position relative to surrounding text.',
+        '- Do NOT create new placeholders or remove existing ones.',
+        '',
+        'FACT CONSTRAINTS (violating these will reject the output):',
+        '- Do NOT add facts, arguments, or conclusions not in the original.',
+        '- Do NOT remove existing factual content.',
         '- Do NOT change the meaning of any factual statement.',
-        '- Do NOT modify placeholders such as __NUM_1__, __NUMWORD_1__, __DATE_1__, __ID_1__, __MONEY_1__, __NAME_1__, etc.',
-        '- Do NOT introduce new placeholders or delete existing ones.',
+        '- Do NOT alter liability attribution, certainty levels, or legal positions.',
         '',
-        'This is a linguistic rewrite only.',
-        'The factual content, parties, and legal substance must remain identical to the original text.',
+        'Output: return ONLY the rewritten Hebrew text. No explanations.',
       ].join('\n'),
       userPrompt: protectedText,
-      temperature: 0.65,
+      temperature: 0.55,
       },
       { endpoint: 'refine-text' },
     );
@@ -2574,7 +2354,7 @@ app.post('/api/refine-text', async (req, res) => {
 });
 
 // 3a. English Improvement Endpoint (post-translation polishing)
-app.post('/api/improve-english', async (req, res) => {
+app.post('/api/improve-english', validate(improveEnglishSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { text } = req.body || {};
   if (typeof text !== 'string' || !text.trim()) {
@@ -2584,30 +2364,28 @@ app.post('/api/improve-english', async (req, res) => {
   try {
     const improved = await createTextCompletion({
       systemPrompt: [
-        'You are an expert legal editor improving ENGLISH text for a legal/insurance report.',
+        'You are a senior legal editor at a London-based law firm, polishing English text for formal insurance reports submitted to Lloyd\'s underwriters.',
         '',
         'Language & conventions:',
-        '- Use British English spelling and legal drafting conventions.',
-        '- Tone: Confident, direct, and formal.',
-        '- Style intent: Relatable, considerate, understanding, formal, and showing interest.',
+        '- British English spelling throughout (e.g. "defence", "colour", "summarise").',
+        '- Legal drafting conventions: precise, unambiguous, formally structured.',
+        '- Tone: authoritative yet measured — confident without being aggressive, considerate without hedging.',
+        '- Avoid legalese where plain language suffices, but use proper legal terms where precision requires it.',
         '',
-        'STRICT CONSTRAINTS (must not be violated):',
-        '- Do NOT add, remove, or change any facts, events, or allegations.',
-        '- Do NOT change names of parties, people, institutions, locations, case identifiers, claim numbers, or policy numbers.',
-        '- Do NOT change numbers, monetary amounts, dates, times, percentages, or measurements.',
-        '- Do NOT change the legal position, degree of certainty, responsibility, or liability expressed in the text.',
-        '- Do NOT add commentary, disclaimers, meta-text, or explanations.',
+        'STRICT CONSTRAINTS (violating these will render the output unusable):',
+        '- Do NOT add, remove, or change any facts, events, allegations, or conclusions.',
+        '- Do NOT change names, dates, numbers, amounts, percentages, case/policy references, or identifiers.',
+        '- Do NOT alter the legal position, certainty level, liability attribution, or risk assessment.',
+        '- Do NOT add commentary, disclaimers, or meta-text.',
         '',
         'You MAY:',
-        '- Improve grammar, clarity, and sentence structure.',
+        '- Fix grammar, spelling, and punctuation.',
+        '- Improve sentence clarity and structure.',
         '- Adjust phrasing into polished British legal English.',
-        '- Slightly reorder sentences only when it clearly improves readability without altering meaning.',
+        '- Slightly reorder clauses within a sentence for better flow, without changing meaning.',
+        '- Ensure consistent tense and voice throughout.',
         '',
-        'Output rules:',
-        '- Return the improved text only.',
-        '- Preserve the overall structure, paragraphs, and line breaks as much as reasonably possible.',
-        '- Do NOT wrap the result in quotes or Markdown.',
-        '- Do NOT introduce new bullet points, headings, or numbering that do not exist in the original.',
+        'Output: return ONLY the improved text. No quotes, no Markdown, no preamble.',
       ].join('\n'),
       userPrompt: text,
       temperature: 0.15,
@@ -2621,7 +2399,7 @@ app.post('/api/improve-english', async (req, res) => {
 });
 
 // 3b. Hebrew report summary for follow-up reports (Update auto-summary)
-app.post('/api/hebrew-report-summary', async (req, res) => {
+app.post('/api/hebrew-report-summary', validate(hebrewReportSummarySchema), async (req, res) => {
   const user = await ensureAuthenticated(req, res);
   if (!user) return;
   const { text } = req.body || {};
@@ -2689,7 +2467,7 @@ app.post('/api/hebrew-report-summary', async (req, res) => {
 });
 
 // 4. Analyze File
-app.post('/api/analyze-file', async (req, res) => {
+app.post('/api/analyze-file', validate(analyzeFileSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { fileBase64, mimeType, userPrompt } = req.body;
   try {
@@ -2838,7 +2616,7 @@ const isValidDentalFormat = (text) => {
   return count >= 5;
 };
 
-app.post('/api/analyze-dental-opinion', async (req, res) => {
+app.post('/api/analyze-dental-opinion', validate(analyzeDentalOpinionSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { fileBase64, mimeType } = req.body || {};
   if (!fileBase64 || !mimeType) {
@@ -3174,7 +2952,7 @@ app.post('/api/analyze-dental-opinion', async (req, res) => {
 });
 
 // 4b. Medical Complaint Analysis
-app.post('/api/analyze-medical-complaint', async (req, res) => {
+app.post('/api/analyze-medical-complaint', validate(analyzeMedicalComplaintSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const {
     fileBase64,
@@ -3297,7 +3075,7 @@ Always write in Hebrew.
 });
 
 // 5. Extract Expenses Table (UPDATED to JSON)
-app.post('/api/extract-expenses', async (req, res) => {
+app.post('/api/extract-expenses', validate(extractExpensesSchema), async (req, res) => {
   const user = await ensureAuthenticated(req, res);
   if (!user) return;
   const role = await getUserRoleFromRequest(req);
@@ -3324,76 +3102,8 @@ app.post('/api/extract-expenses', async (req, res) => {
   }
 });
 
-// 0. Authentication
-app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body || {};
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
-
-    const user = USERS.find(
-      (u) => u.username === String(username) && u.password === String(password),
-    );
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-
-    const sessionId = createSessionId();
-    const sessionPayload = {
-      id: user.id,
-      username: user.username,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-    await createSession(sessionId, sessionPayload, SESSION_TTL_HOURS);
-
-    // Set HTTP-only cookie with the session id
-    res.cookie(SESSION_COOKIE_NAME, sessionId, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 1000 * 60 * 60 * SESSION_TTL_HOURS,
-    });
-
-    return res.json({ user: sessionPayload });
-  } catch (error) {
-    console.error('Login error', error);
-    return res.status(500).json({ error: 'Login failed' });
-  }
-});
-
-app.post('/api/logout', async (req, res) => {
-  try {
-    const cookies = parseCookies(req.headers.cookie || '');
-    const sessionId = cookies[SESSION_COOKIE_NAME];
-    if (sessionId) {
-      await deleteSession(sessionId);
-    }
-    res.cookie(SESSION_COOKIE_NAME, '', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      expires: new Date(0),
-      path: '/',
-    });
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('Logout error', error);
-    return res.status(500).json({ error: 'Logout failed' });
-  }
-});
-
-app.get('/api/me', async (req, res) => {
-  const user = await getUserFromRequest(req);
-  if (!user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  return res.json({ user });
-});
+// 0. Authentication — delegated to auth.routes.js (imported at top of file)
+app.use('/api', authRoutes);
 
 // 6. Tone & Risk analysis for Hebrew report body (pre-send review)
 const TONE_RISK_SEVERITIES = ['INFO', 'WARNING', 'CRITICAL'];
@@ -3417,7 +3127,7 @@ const isValidToneRiskIssue = (issue) => {
   return true;
 };
 
-app.post('/api/analyze-tone-risk', async (req, res) => {
+app.post('/api/analyze-tone-risk', validate(analyzeToneRiskSchema), async (req, res) => {
   const startedAt = new Date().toISOString();
   res.set('X-ToneRisk-Prompt-Version', TONE_RISK_PROMPT_VERSION);
 
@@ -3623,7 +3333,7 @@ severity:
 });
 
 // 7. Hebrew professional style review (Hebrew body only, pre-send)
-app.post('/api/review-hebrew-style', async (req, res) => {
+app.post('/api/review-hebrew-style', validate(reviewHebrewStyleSchema), async (req, res) => {
   try {
     const role = await getUserRoleFromRequest(req);
     if (role !== 'ADMIN' && role !== 'LAWYER') {
@@ -3791,7 +3501,7 @@ severity:
 });
 
 // 8. Help Chat
-app.post('/api/help-chat', async (req, res) => {
+app.post('/api/help-chat', validate(helpChatSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { question } = req.body;
   try {
@@ -3807,7 +3517,7 @@ app.post('/api/help-chat', async (req, res) => {
 });
 
 // 8b. Smart Assistant – intent-based help (no report bodies)
-app.post('/api/assistant/help', async (req, res) => {
+app.post('/api/assistant/help', validate(assistantHelpSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
 
   const hasApiKey = Boolean(process.env.OPENAI_API_KEY || process.env.API_KEY);
@@ -3983,7 +3693,7 @@ Task:
 });
 
 // 9. Executive Summary
-app.post('/api/generate-summary', async (req, res) => {
+app.post('/api/generate-summary', validate(generateSummarySchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const { reportContent, insurerName, insuredName } = req.body;
   try {
@@ -4015,7 +3725,7 @@ app.get('/api/mail-config', async (req, res) => {
 // 10. Send Email – TO/CC built server-side only: TO = broker (ENV), CC = REPORTS (ENV) + lawyer (from report)
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024; // 15MB
 
-app.post('/api/send-email', async (req, res) => {
+app.post('/api/send-email', validate(sendEmailSchema), async (req, res) => {
   if (!(await ensureAuthenticated(req, res))) return;
   const role = await getUserRoleFromRequest(req);
   if (role !== 'ADMIN') {
@@ -4256,324 +3966,100 @@ app.post('/api/render-report-html', async (req, res) => {
   }
 });
 
-// --- Section Templates API (Lightbulb / Ideas) ---
+// --- Section Templates, Best Practices, Reports & Case Folders ---
+// Delegated to modular route files (imported at top of file)
+app.use('/api', templatesRoutes);
+app.use('/api', bestPracticesRoutes);
+app.use('/api', reportsRoutes);
+app.use('/api', reportLocksRoutes);
 
-app.get('/api/templates', async (req, res) => {
+/*
+ * Templates, best-practices, reports, and case-folders routes
+ * have been moved to src/server/routes/*.routes.js
+ * See git history for the original inline implementations.
+ */
+
+// --- Azure AI Services API ---
+
+// PII Detection — scan text for sensitive personal data before sending
+app.post('/api/detect-pii', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
+  const { text, language } = req.body || {};
+  if (!text) return res.status(400).json({ error: 'Text is required' });
+  if (!USE_AZURE_LANGUAGE) {
+    return res.json({ available: false, entities: [], message: 'Azure Language service not configured' });
+  }
   try {
-    const { sectionKey } = req.query || {};
-    const templates = await listSectionTemplates(
-      sectionKey && typeof sectionKey === 'string' ? sectionKey : undefined,
-    );
-    res.json(templates);
-  } catch (err) {
-    console.error('Failed to list templates:', err);
-    res.status(500).json({ error: 'Failed to load templates' });
+    const result = await detectPII(text, language || 'he');
+    res.json({ available: true, ...result });
+  } catch (error) {
+    console.error('PII detection error:', error.message?.slice(0, 100));
+    res.status(500).json({ error: 'PII detection failed' });
   }
 });
 
-app.post('/api/templates', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
+// Entity Recognition — extract names, organizations, dates from text
+app.post('/api/recognize-entities', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
+  const { text, language } = req.body || {};
+  if (!text) return res.status(400).json({ error: 'Text is required' });
+  if (!USE_AZURE_LANGUAGE) {
+    return res.json({ available: false, entities: [] });
+  }
   try {
-    const payload = req.body || {};
-    const { sectionKey, title, body, isEnabled, orderIndex, createdByUserId } = payload;
-    if (!sectionKey || !title || !body) {
-      return res.status(400).json({ error: 'sectionKey, title and body are required' });
-    }
-    const all = await listSectionTemplates();
-    const nowIso = new Date().toISOString();
-    const maxOrder = all.reduce(
-      (max, t) => (typeof t.orderIndex === 'number' && t.orderIndex > max ? t.orderIndex : max),
-      -1,
-    );
-    const nextOrder = typeof orderIndex === 'number' ? orderIndex : maxOrder + 1;
-    const id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const tpl = {
-      id,
-      sectionKey,
-      title,
-      body,
-      createdByUserId: createdByUserId || 'system',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      isEnabled: isEnabled !== false,
-      orderIndex: nextOrder,
-    };
-    await createSectionTemplate(tpl);
-    const next = await listSectionTemplates();
-    next.sort(
-      (a, b) =>
-        (a.orderIndex || 0) - (b.orderIndex || 0) ||
-        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
-    );
-    res.status(201).json(next);
-  } catch (err) {
-    console.error('Failed to create template:', err);
-    res.status(500).json({ error: 'Failed to create template' });
+    const entities = await recognizeEntities(text, language || 'he');
+    res.json({ available: true, entities });
+  } catch (error) {
+    console.error('Entity recognition error:', error.message?.slice(0, 100));
+    res.status(500).json({ error: 'Entity recognition failed' });
   }
 });
 
-app.put('/api/templates/:id', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
+// Key Phrase Extraction
+app.post('/api/extract-key-phrases', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
+  const { text, language } = req.body || {};
+  if (!text) return res.status(400).json({ error: 'Text is required' });
+  if (!USE_AZURE_LANGUAGE) {
+    return res.json({ available: false, keyPhrases: [] });
+  }
   try {
-    const { id } = req.params;
-    const updates = req.body || {};
-    const all = await listSectionTemplates();
-    const idx = all.findIndex((t) => t.id === id);
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Template not found' });
-    }
-    const nowIso = new Date().toISOString();
-    const existing = all[idx];
-    const allowedFields = [
-      'sectionKey',
-      'title',
-      'body',
-      'isEnabled',
-      'orderIndex',
-      'createdByUserId',
-    ];
-    const patch = {};
-    allowedFields.forEach((key) => {
-      if (Object.prototype.hasOwnProperty.call(updates, key)) {
-        patch[key] = updates[key];
-      }
-    });
-    const dbPatch = {};
-    if (Object.prototype.hasOwnProperty.call(patch, 'sectionKey')) dbPatch.section_key = patch.sectionKey;
-    if (Object.prototype.hasOwnProperty.call(patch, 'title')) dbPatch.title = patch.title;
-    if (Object.prototype.hasOwnProperty.call(patch, 'body')) dbPatch.body = patch.body;
-    if (Object.prototype.hasOwnProperty.call(patch, 'isEnabled')) dbPatch.is_enabled = patch.isEnabled !== false;
-    if (Object.prototype.hasOwnProperty.call(patch, 'orderIndex')) dbPatch.order_index = patch.orderIndex;
-    if (Object.prototype.hasOwnProperty.call(patch, 'createdByUserId')) {
-      dbPatch.created_by_user_id = patch.createdByUserId;
-    }
-    dbPatch.updated_at = nowIso;
-    await updateSectionTemplate(id, dbPatch);
-    const next = await listSectionTemplates();
-    next.sort(
-      (a, b) =>
-        (a.orderIndex || 0) - (b.orderIndex || 0) ||
-        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
-    );
-    res.json(next);
-  } catch (err) {
-    console.error('Failed to update template:', err);
-    res.status(500).json({ error: 'Failed to update template' });
+    const keyPhrases = await extractKeyPhrases(text, language || 'he');
+    res.json({ available: true, keyPhrases });
+  } catch (error) {
+    console.error('Key phrase extraction error:', error.message?.slice(0, 100));
+    res.status(500).json({ error: 'Key phrase extraction failed' });
   }
 });
 
-app.delete('/api/templates/:id', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
+// Contract/Policy Analysis — extract structured data from insurance documents
+app.post('/api/analyze-contract', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
+  const { file, mimeType } = req.body || {};
+  if (!file) return res.status(400).json({ error: 'File (base64) is required' });
+  if (!USE_CONTRACT_ANALYZER) {
+    return res.json({ available: false, message: 'Contract analyzer not configured' });
+  }
   try {
-    const { id } = req.params;
-    await deleteSectionTemplate(id);
-    const next = await listSectionTemplates();
-    next.sort(
-      (a, b) =>
-        (a.orderIndex || 0) - (b.orderIndex || 0) ||
-        String(a.createdAt || '').localeCompare(String(b.createdAt || '')),
-    );
-    res.json(next);
-  } catch (err) {
-    console.error('Failed to delete template:', err);
-    res.status(500).json({ error: 'Failed to delete template' });
+    const buffer = Buffer.from(file, 'base64');
+    const result = await analyzeContract(buffer, mimeType || 'application/pdf');
+    res.json({ available: true, ...result });
+  } catch (error) {
+    console.error('Contract analysis error:', error.message?.slice(0, 100));
+    res.status(500).json({ error: 'Contract analysis failed' });
   }
 });
 
-app.post('/api/templates/:id/reorder', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
-  try {
-    const { id } = req.params;
-    const { direction } = req.body || {};
-    if (direction !== 'UP' && direction !== 'DOWN') {
-      return res.status(400).json({ error: 'direction must be UP or DOWN' });
-    }
-    const ok = await reorderSectionTemplate(id, direction);
-    if (!ok) {
-      return res.status(404).json({ error: 'Template not found' });
-    }
-    const sorted = await listSectionTemplates();
-    res.json(sorted);
-  } catch (err) {
-    console.error('Failed to reorder template:', err);
-    res.status(500).json({ error: 'Failed to reorder template' });
-  }
+// Azure services availability check
+app.get('/api/azure-services', async (req, res) => {
+  if (!(await ensureAuthenticated(req, res))) return;
+  res.json({
+    translator: USE_AZURE_TRANSLATOR,
+    language: USE_AZURE_LANGUAGE,
+    contractAnalyzer: USE_CONTRACT_ANALYZER,
+    documentIntelligence: USE_DOC_INTELLIGENCE,
+  });
 });
-
-// --- Best Practices API ---
-
-app.get('/api/best-practices', async (req, res) => {
-  try {
-    const { sectionKey } = req.query || {};
-    const list = await listBestPractices(
-      sectionKey && typeof sectionKey === 'string' ? sectionKey : undefined,
-    );
-    res.json(list);
-  } catch (err) {
-    console.error('Failed to list best practices:', err);
-    res.status(500).json({ error: 'Failed to load best practices' });
-  }
-});
-
-app.post('/api/best-practices', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
-  try {
-    const payload = req.body || {};
-    const { sectionKey, title, body, label, tags, behavior, isEnabled, createdByUserId } =
-      payload;
-    if (!sectionKey || !title || !body) {
-      return res.status(400).json({ error: 'sectionKey, title and body are required' });
-    }
-    const all = await listBestPractices();
-    const nowIso = new Date().toISOString();
-    const maxOrder = all.reduce(
-      (max, t) =>
-        typeof t.orderIndex === 'number' && t.orderIndex > max ? t.orderIndex : max,
-      -1,
-    );
-    const nextOrder = maxOrder + 1;
-    const id = `bp-${sectionKey}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const snippet = {
-      id,
-      sectionKey,
-      title,
-      body,
-      label: label === 'LLOYDS_RECOMMENDED' ? 'LLOYDS_RECOMMENDED' : 'BEST_PRACTICE',
-      tags: Array.isArray(tags) ? tags.map(String) : [],
-      isEnabled: isEnabled !== false,
-      createdByUserId: createdByUserId || 'system',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      usageCount: 0,
-      lastUsedAt: null,
-      behavior: behavior === 'COPY_ONLY' ? 'COPY_ONLY' : 'INSERTABLE',
-      orderIndex: nextOrder,
-    };
-    await createBestPractice(snippet);
-    const next = await listBestPractices();
-    res.status(201).json(next);
-  } catch (err) {
-    console.error('Failed to create best practice:', err);
-    res.status(500).json({ error: 'Failed to create best practice' });
-  }
-});
-
-app.put('/api/best-practices/:id', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
-  try {
-    const { id } = req.params;
-    const updates = req.body || {};
-    const all = await listBestPractices();
-    const idx = all.findIndex((bp) => bp.id === id);
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Best practice not found' });
-    }
-    const nowIso = new Date().toISOString();
-    const existing = all[idx];
-    const allowedFields = [
-      'sectionKey',
-      'title',
-      'body',
-      'label',
-      'tags',
-      'isEnabled',
-      'behavior',
-      'orderIndex',
-    ];
-    const patch = {};
-    allowedFields.forEach((key) => {
-      if (Object.prototype.hasOwnProperty.call(updates, key)) {
-        patch[key] = updates[key];
-      }
-    });
-    const dbPatch = {};
-    if (Object.prototype.hasOwnProperty.call(patch, 'sectionKey')) dbPatch.section_key = patch.sectionKey;
-    if (Object.prototype.hasOwnProperty.call(patch, 'title')) dbPatch.title = patch.title;
-    if (Object.prototype.hasOwnProperty.call(patch, 'body')) dbPatch.body = patch.body;
-    if (Object.prototype.hasOwnProperty.call(patch, 'label')) {
-      dbPatch.label = patch.label === 'LLOYDS_RECOMMENDED' ? 'LLOYDS_RECOMMENDED' : 'BEST_PRACTICE';
-    }
-    if (Object.prototype.hasOwnProperty.call(patch, 'tags')) {
-      dbPatch.tags = JSON.stringify(Array.isArray(patch.tags) ? patch.tags.map(String) : []);
-    }
-    if (Object.prototype.hasOwnProperty.call(patch, 'isEnabled')) dbPatch.is_enabled = patch.isEnabled !== false;
-    if (Object.prototype.hasOwnProperty.call(patch, 'behavior')) {
-      dbPatch.behavior = patch.behavior === 'COPY_ONLY' ? 'COPY_ONLY' : 'INSERTABLE';
-    }
-    if (Object.prototype.hasOwnProperty.call(patch, 'orderIndex')) dbPatch.order_index = patch.orderIndex;
-    dbPatch.updated_at = nowIso;
-    await updateBestPractice(id, dbPatch);
-    const next = await listBestPractices();
-    res.json(next);
-  } catch (err) {
-    console.error('Failed to update best practice:', err);
-    res.status(500).json({ error: 'Failed to update best practice' });
-  }
-});
-
-app.delete('/api/best-practices/:id', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
-  try {
-    const { id } = req.params;
-    await deleteBestPractice(id);
-    const next = await listBestPractices();
-    res.json(next);
-  } catch (err) {
-    console.error('Failed to delete best practice:', err);
-    res.status(500).json({ error: 'Failed to delete best practice' });
-  }
-});
-
-app.post('/api/best-practices/:id/reorder', async (req, res) => {
-  if (!(await ensureAdminRole(req, res))) return;
-  try {
-    const { id } = req.params;
-    const { direction } = req.body || {};
-    if (direction !== 'UP' && direction !== 'DOWN') {
-      return res.status(400).json({ error: 'direction must be UP or DOWN' });
-    }
-    const ok = await reorderBestPractice(id, direction);
-    if (!ok) {
-      return res.status(404).json({ error: 'Best practice not found' });
-    }
-    const sorted = await listBestPractices();
-    res.json(sorted);
-  } catch (err) {
-    console.error('Failed to reorder best practice:', err);
-    res.status(500).json({ error: 'Failed to reorder best practice' });
-  }
-});
-
-app.post('/api/best-practices/:id/usage', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const role = await getUserRoleFromRequest(req);
-    if (role !== 'ADMIN' && role !== 'LAWYER') {
-      return res.status(403).json({ error: 'Only ADMIN or LAWYER can record usage' });
-    }
-
-    // mode (e.g. 'INSERT' | 'COPY') is accepted but not currently used for persistence;
-    // it may be leveraged in future analytics without affecting behavior today.
-    const { mode } = req.body || {}; // eslint-disable-line @typescript-eslint/no-unused-vars
-
-    const all = await listBestPractices();
-    const idx = all.findIndex((bp) => bp.id === id);
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Best practice not found' });
-    }
-    const existing = all[idx];
-    await updateBestPractice(id, {
-      usage_count: (existing.usageCount || 0) + 1,
-      last_used_at: new Date().toISOString(),
-    });
-    const next = await listBestPractices();
-    res.json(next);
-  } catch (err) {
-    console.error('Failed to record best practice usage:', err);
-    res.status(500).json({ error: 'Failed to record best practice usage' });
-  }
-});
-
 
 // --- Serve Static Files ---
 app.use('/assets', express.static(path.join(__dirname, 'assets')));

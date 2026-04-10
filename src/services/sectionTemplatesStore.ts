@@ -1,4 +1,5 @@
 import { SectionTemplate } from '../types';
+import { csrfFetch } from '../utils/csrfFetch';
 
 const API_BASE = '/api/templates';
 
@@ -12,7 +13,7 @@ const handleResponse = async (res: Response): Promise<SectionTemplate[]> => {
 };
 
 export const loadTemplates = async (): Promise<SectionTemplate[]> => {
-  const res = await fetch(API_BASE);
+  const res = await csrfFetch(API_BASE);
   return handleResponse(res);
 };
 
@@ -23,7 +24,7 @@ export const saveTemplates = async (_list: SectionTemplate[]): Promise<void> => 
 
 export const getTemplatesBySection = async (sectionKey: string): Promise<SectionTemplate[]> => {
   const url = `${API_BASE}?sectionKey=${encodeURIComponent(sectionKey)}`;
-  const res = await fetch(url);
+  const res = await csrfFetch(url);
   return handleResponse(res);
 };
 
@@ -37,7 +38,7 @@ export const upsertTemplate = async (
   };
 
   if (!template.id) {
-    const res = await fetch(API_BASE, {
+    const res = await csrfFetch(API_BASE, {
       method: 'POST',
       headers,
       body: JSON.stringify(template),
@@ -45,7 +46,7 @@ export const upsertTemplate = async (
     return handleResponse(res);
   }
 
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(template.id)}`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(template.id)}`, {
     method: 'PUT',
     headers,
     body: JSON.stringify(template),
@@ -57,7 +58,7 @@ export const deleteTemplate = async (
   id: string,
   userRole: string,
 ): Promise<SectionTemplate[]> => {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: {
       'x-user-role': userRole,
@@ -71,7 +72,7 @@ export const reorderTemplate = async (
   direction: 'UP' | 'DOWN',
   userRole: string,
 ): Promise<SectionTemplate[]> => {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}/reorder`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(id)}/reorder`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

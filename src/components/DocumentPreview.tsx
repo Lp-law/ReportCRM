@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import type { ReportData } from '../types';
+import { csrfFetch } from '../utils/csrfFetch';
 
 interface DocumentPreviewProps {
   data: ReportData;
@@ -17,7 +18,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ data }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/render-report-html', {
+        const response = await csrfFetch('/api/render-report-html', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

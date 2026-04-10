@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&family=Heebo:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&family=Heebo:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,34 +6,223 @@
 
 @layer base {
   body {
-    @apply bg-bgDark text-textLight transition-colors duration-300 font-sans antialiased;
+    @apply bg-bgDark text-textLight font-sans antialiased;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* Hebrew content should use Heebo for better readability */
+  [dir="rtl"], [lang="he"] {
+    font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+    line-height: 1.8;
+  }
+
+  /* Ensure text is never too small for comfortable reading */
+  p, span, label, li, td, th {
+    min-font-size: 13px;
   }
 }
 
 .font-heebo {
-  font-family: 'Heebo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+  font-family: 'Heebo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Navy & Gold theme utilities */
+/* ============================================================
+   Navy & Gold theme — designed for comfortable daily use
+   ============================================================ */
 @layer components {
   .btn-primary {
-    @apply bg-navy text-gold font-semibold border border-borderDark rounded-lg px-4 py-2 hover:bg-navySecondary focus:outline-none focus:ring-2 focus:ring-gold/50;
+    @apply bg-navy text-gold font-semibold border border-borderDark rounded-lg
+           px-5 py-2.5 text-sm
+           hover:bg-navySecondary hover:border-gold/30
+           focus:outline-none focus:ring-2 focus:ring-gold/50
+           transition-all duration-200 ease-out;
   }
   .btn-secondary {
-    @apply bg-transparent text-gold border border-gold rounded-lg px-4 py-2 hover:bg-navySecondary/50 focus:outline-none focus:ring-2 focus:ring-gold/50;
+    @apply bg-transparent text-gold border border-gold rounded-lg
+           px-5 py-2.5 text-sm
+           hover:bg-navySecondary/50 hover:shadow-lg hover:shadow-gold/5
+           focus:outline-none focus:ring-2 focus:ring-gold/50
+           transition-all duration-200 ease-out;
+  }
+  .btn-danger {
+    @apply bg-danger/10 text-red-400 border border-red-800/30 rounded-lg
+           px-5 py-2.5 text-sm
+           hover:bg-danger/20 hover:border-red-700/50
+           focus:outline-none focus:ring-2 focus:ring-red-500/50
+           transition-all duration-200 ease-out;
   }
   .card-panel {
-    @apply bg-panel border border-borderDark rounded-lg text-textLight;
+    @apply bg-panel border border-borderDark rounded-xl text-textLight
+           shadow-lg shadow-black/20;
   }
   .input-field {
-    @apply bg-panel border border-borderDark rounded-md px-3 py-2 text-textLight placeholder-textMuted focus:outline-none focus:ring-1 focus:ring-gold;
+    @apply bg-panel border border-borderDark rounded-lg
+           px-4 py-3 text-[15px] text-textLight
+           placeholder-textMuted/70
+           focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/50
+           transition-all duration-150;
+    line-height: 1.5;
   }
   .heading-gold {
     @apply text-gold font-bold;
   }
 }
 
+/* ============================================================
+   Global typography overrides — make small text readable
+   ============================================================ */
+
+/* Bump text-[11px] to 13px globally — 11px is too small for daily work */
+.text-\[11px\] {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+/* Make text-xs (12px) slightly larger */
+.text-xs {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+/* Make text-sm comfortable for body text */
+.text-sm {
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+}
+
+/* Textareas — where lawyers spend most of their time */
+textarea {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+}
+
+[dir="rtl"] textarea {
+  font-family: 'Heebo', system-ui, sans-serif;
+  line-height: 2 !important;
+}
+
+/* Inputs — comfortable size for form fields */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+select {
+  font-size: 15px !important;
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+}
+
+/* Labels — clear and readable */
+label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   Smooth page transitions
+   ============================================================ */
+@layer utilities {
+  .animate-page-enter {
+    animation: pageEnter 0.3s ease-out;
+  }
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Custom scrollbar — subtle, non-distracting
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2D3748;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4A5568;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2D3748 transparent;
+}
+
+/* ============================================================
+   Focus styles — accessible, gold-themed
+   ============================================================ */
+*:focus-visible {
+  outline: 2px solid rgba(201, 162, 39, 0.5);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   Selection highlight — gold-themed
+   ============================================================ */
+::selection {
+  background: rgba(201, 162, 39, 0.25);
+  color: #F7FAFC;
+}
+
+/* ============================================================
+   Better spacing for section cards
+   ============================================================ */
+.space-y-8 > * + * {
+  margin-top: 2.5rem;
+}
+
+/* ============================================================
+   Responsive design
+   ============================================================ */
+@media (max-width: 1024px) {
+  .flex-row { flex-direction: column; }
+  .sidebar-panel { width: 100% !important; max-width: none !important; }
+}
+
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+  .card-panel { border-radius: 0.75rem; padding: 1rem; }
+  .btn-primary, .btn-secondary { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+  .step-nav { flex-direction: column; gap: 0.25rem; }
+  .modal-content { max-width: 100% !important; margin: 0.5rem; border-radius: 0.75rem; }
+  .hide-mobile { display: none !important; }
+  textarea { min-height: 120px; }
+}
+
+@media (max-width: 480px) {
+  .text-3xl { font-size: 1.5rem; }
+  .text-2xl { font-size: 1.25rem; }
+  .px-10 { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .p-10 { padding: 1.5rem; }
+}
+
+[dir="rtl"] .flex-row-reverse { flex-direction: row; }
+@media (max-width: 768px) {
+  [dir="rtl"] .flex-row-reverse { flex-direction: column; }
+}
+
+/* Touch-friendly targets */
+@media (pointer: coarse) {
+  button, a, input, select, textarea { min-height: 44px; }
+}
+
+/* ============================================================
+   Print styles
+   ============================================================ */
 @media print {
   @page { margin: 0; size: A4; }
   body {
@@ -47,12 +236,9 @@
     width: 100% !important;
     height: auto !important;
     position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
+    top: 0; left: 0;
+    margin: 0 !important; padding: 0 !important;
+    box-shadow: none !important; border: none !important;
     transform: none !important;
   }
   .page-break { page-break-before: always; }

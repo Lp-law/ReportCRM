@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app } from '../server.js';
 
-describe('Tone & Risk API role enforcement', () => {
+const hasDb = Boolean(process.env.DATABASE_URL);
+
+describe.skipIf(!hasDb)('Tone & Risk API role enforcement', () => {
   const sampleContent = { Update: 'טקסט בדיקה לבדיקת Tone & Risk.' };
 
   it('allows ADMIN to analyze tone & risk', async () => {

@@ -1,4 +1,5 @@
 import { BestPracticeSnippet } from '../types';
+import { csrfFetch } from '../utils/csrfFetch';
 
 const API_BASE = '/api/best-practices';
 
@@ -12,14 +13,14 @@ const handleResponse = async (res: Response): Promise<BestPracticeSnippet[]> => 
 };
 
 export const loadBestPractices = async (): Promise<BestPracticeSnippet[]> => {
-  const res = await fetch(API_BASE);
+  const res = await csrfFetch(API_BASE);
   return handleResponse(res);
 };
 
 export const getBestPracticesBySection = async (
   sectionKey: string,
 ): Promise<BestPracticeSnippet[]> => {
-  const res = await fetch(`${API_BASE}?sectionKey=${encodeURIComponent(sectionKey)}`);
+  const res = await csrfFetch(`${API_BASE}?sectionKey=${encodeURIComponent(sectionKey)}`);
   return handleResponse(res);
 };
 
@@ -33,7 +34,7 @@ export const upsertBestPractice = async (
   };
 
   if (!snippet.id) {
-    const res = await fetch(API_BASE, {
+    const res = await csrfFetch(API_BASE, {
       method: 'POST',
       headers,
       body: JSON.stringify(snippet),
@@ -41,7 +42,7 @@ export const upsertBestPractice = async (
     return handleResponse(res);
   }
 
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(snippet.id)}`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(snippet.id)}`, {
     method: 'PUT',
     headers,
     body: JSON.stringify(snippet),
@@ -53,7 +54,7 @@ export const deleteBestPractice = async (
   id: string,
   userRole: string,
 ): Promise<BestPracticeSnippet[]> => {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: {
       'x-user-role': userRole,
@@ -67,7 +68,7 @@ export const setBestPracticeEnabled = async (
   enabled: boolean,
   userRole: string,
 ): Promise<BestPracticeSnippet[]> => {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ export const recordBestPracticeUsage = async (
   mode: 'INSERT' | 'COPY',
   userRole: string,
 ): Promise<BestPracticeSnippet[]> => {
-  const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}/usage`, {
+  const res = await csrfFetch(`${API_BASE}/${encodeURIComponent(id)}/usage`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

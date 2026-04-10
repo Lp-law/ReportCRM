@@ -19,3 +19,7 @@ services:
         value: "12"
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: ./.playwright-browsers
+      - key: PG_REJECT_UNAUTHORIZED
+        value: "false"
+      - key: NODE_ENV
+        value: production

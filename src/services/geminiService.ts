@@ -9,13 +9,14 @@ import {
   AssistantReportMeta,
   AssistantHelpResponse,
 } from '../types';
+import { csrfFetch } from '../utils/csrfFetch';
 
 // Service now communicates with the backend server (server.js)
 
 export const translateLegalText = async (text: string): Promise<string> => {
   if (!text || !text.trim()) return '';
   try {
-    const response = await fetch('/api/translate', {
+    const response = await csrfFetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -31,7 +32,7 @@ export const translateLegalText = async (text: string): Promise<string> => {
 
 export const extractPolicyData = async (fileBase64: string, mimeType: string) => {
   try {
-    const response = await fetch('/api/extract-policy', {
+    const response = await csrfFetch('/api/extract-policy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: fileBase64, mimeType: mimeType }),
@@ -56,7 +57,7 @@ export const refineLegalText = async (
   mode: HebrewRefineMode = 'SAFE_POLISH',
 ): Promise<HebrewRefineResult> => {
   try {
-    const response = await fetch('/api/refine-text', {
+    const response = await csrfFetch('/api/refine-text', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, mode }),
@@ -94,7 +95,7 @@ export const refineLegalText = async (
 export const improveEnglishText = async (text: string): Promise<string> => {
   if (!text || !text.trim()) return text;
   try {
-    const response = await fetch('/api/improve-english', {
+    const response = await csrfFetch('/api/improve-english', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -112,7 +113,7 @@ export const improveEnglishText = async (text: string): Promise<string> => {
 export const generateHebrewReportSummary = async (text: string): Promise<string> => {
   if (!text || !text.trim()) return '';
   try {
-    const response = await fetch('/api/hebrew-report-summary', {
+    const response = await csrfFetch('/api/hebrew-report-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -139,7 +140,7 @@ export const generateHebrewReportSummary = async (text: string): Promise<string>
 
 export const analyzeUploadedFile = async (fileBase64: string, mimeType: string, prompt: string): Promise<string> => {
   try {
-    const response = await fetch('/api/analyze-file', {
+    const response = await csrfFetch('/api/analyze-file', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileBase64, mimeType, userPrompt: prompt }),
@@ -183,7 +184,7 @@ export const analyzeMedicalComplaint = async (
   analysisType: 'CLAIM' | 'DEMAND' | 'EXPERT' = 'CLAIM',
   options?: MedicalAnalysisOptions
 ): Promise<MedicalAnalysisResponse> => {
-  const response = await fetch('/api/analyze-medical-complaint', {
+  const response = await csrfFetch('/api/analyze-medical-complaint', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -225,7 +226,7 @@ export const analyzeDentalOpinion = async (
   fileBase64: string,
   mimeType: string,
 ): Promise<DentalOpinionResponse> => {
-  const response = await fetch('/api/analyze-dental-opinion', {
+  const response = await csrfFetch('/api/analyze-dental-opinion', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fileBase64, mimeType }),
@@ -246,7 +247,7 @@ export const analyzeDentalOpinion = async (
 
 export const extractExpensesTable = async (fileBase64: string, mimeType: string) => {
   try {
-    const response = await fetch('/api/extract-expenses', {
+    const response = await csrfFetch('/api/extract-expenses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileBase64, mimeType }),
@@ -261,7 +262,7 @@ export const extractExpensesTable = async (fileBase64: string, mimeType: string)
 
 export const askHelpChat = async (question: string): Promise<string> => {
   try {
-    const response = await fetch('/api/help-chat', {
+    const response = await csrfFetch('/api/help-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question }),
@@ -285,7 +286,7 @@ export const requestAssistantHelp = async (
   payload: AssistantHelpRequestPayload,
 ): Promise<AssistantHelpResponse> => {
   try {
-    const response = await fetch('/api/assistant/help', {
+    const response = await csrfFetch('/api/assistant/help', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -352,7 +353,7 @@ export const requestAssistantHelp = async (
 
 export const generateExecutiveSummary = async (reportContent: any, insurerName: string, insuredName: string): Promise<string> => {
   try {
-    const response = await fetch('/api/generate-summary', {
+    const response = await csrfFetch('/api/generate-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reportContent, insurerName, insuredName }),
@@ -379,7 +380,7 @@ export interface EmailPayload {
 
 export const sendEmailViaOutlook = async (emailData: EmailPayload): Promise<boolean> => {
   try {
-    const response = await fetch('/api/send-email', {
+    const response = await csrfFetch('/api/send-email', {
       method: 'POST',
       credentials: 'include', // required for session cookie so auth passes
       headers: { 'Content-Type': 'application/json' },
@@ -395,7 +396,7 @@ export const sendEmailViaOutlook = async (emailData: EmailPayload): Promise<bool
 
 export const fetchReportPdf = async (report: ReportData): Promise<Blob> => {
   try {
-    const response = await fetch('/api/render-report-pdf', {
+    const response = await csrfFetch('/api/render-report-pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -423,7 +424,7 @@ export async function analyzeToneAndRisk(
   _userRole?: string,
 ): Promise<ToneRiskAnalysisResult> {
   try {
-    const response = await fetch('/api/analyze-tone-risk', {
+    const response = await csrfFetch('/api/analyze-tone-risk', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -508,7 +509,7 @@ export async function reviewHebrewStyle(
   content: Record<string, string>,
   _userRole?: string,
 ): Promise<HebrewStyleReviewResult> {
-  const response = await fetch('/api/review-hebrew-style', {
+  const response = await csrfFetch('/api/review-hebrew-style', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

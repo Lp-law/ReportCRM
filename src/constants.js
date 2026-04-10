@@ -15,15 +15,15 @@ export const DEMAND_LETTER_SECTION_LABEL = 'Factual background – Letter of Dem
 export const PLAINTIFF_EXPERT_SECTION_KEY = "The plaintiff's expert opinion";
 export const CLAIMANT_EXPERT_SECTION_KEY = "The claimant's expert opinion";
 
-// --- USERS & AUTHENTICATION ---
+// --- USERS (public metadata only — passwords stored server-side with bcrypt) ---
 export const USERS = [
-  { id: 'u1', username: 'lior', password: 'lior123', name: 'Lior Perry', email: 'lior@lp-law.co.il', role: 'ADMIN' },
-  { id: 'u2', username: 'lidor', password: 'lidor123', name: 'Lidor Kabilo', email: 'Lidor@lp-law.co.il', role: 'SUB_ADMIN' },
-  { id: 'u3', username: 'iris', password: 'iris123', name: 'Iris Alfman', email: 'Iris@lp-law.co.il', role: 'FINANCE' },
-  { id: 'u4', username: 'hava', password: 'hava123', name: 'Hava Kabilo', email: 'Hava@lp-law.co.il', role: 'LAWYER' },
-  { id: 'u5', username: 'may', password: 'may123', name: 'May Harari', email: 'May@lp-law.co.il', role: 'LAWYER' },
-  { id: 'u6', username: 'vlada', password: 'vlada123', name: 'Vlada Boltach', email: 'Vlada@lp-law.co.il', role: 'LAWYER' },
-  { id: 'u7', username: 'orly', password: 'orly123', name: 'Orly Day', email: 'Orly@lp-law.co.il', role: 'LAWYER' },
+  { id: 'u1', username: 'lior', name: 'Lior Perry', email: 'lior@lp-law.co.il', role: 'ADMIN' },
+  { id: 'u2', username: 'lidor', name: 'Lidor Kabilo', email: 'Lidor@lp-law.co.il', role: 'SUB_ADMIN' },
+  { id: 'u3', username: 'iris', name: 'Iris Alfman', email: 'Iris@lp-law.co.il', role: 'FINANCE' },
+  { id: 'u4', username: 'hava', name: 'Hava Kabilo', email: 'Hava@lp-law.co.il', role: 'LAWYER' },
+  { id: 'u5', username: 'may', name: 'May Harari', email: 'May@lp-law.co.il', role: 'LAWYER' },
+  { id: 'u6', username: 'vlada', name: 'Vlada Boltach', email: 'Vlada@lp-law.co.il', role: 'LAWYER' },
+  { id: 'u7', username: 'orly', name: 'Orly Day', email: 'Orly@lp-law.co.il', role: 'LAWYER' },
 ];
 
 export const RECIPIENTS = [
